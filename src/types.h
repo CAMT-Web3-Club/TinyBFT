@@ -5,16 +5,15 @@
  * Definitions of various types.
  */
 #include <limits.h>
-#include <sys/socket.h>
+#include <netinet/in.h>
 #include <sys/param.h>
-#include <netinet/in.h> 
+#include <sys/socket.h>
 #include <sys/time.h>
 #include <unistd.h>
 
 #ifndef MAX
-#define MAX(a,b) ((a) > (b) ? (a) : (b))
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
 #endif
-
 
 #ifdef __alpha
 typedef long Long;
@@ -26,7 +25,7 @@ typedef unsigned long long ULong;
 
 typedef Long Seqno;
 typedef Seqno View;
-typedef ULong Request_id; 
+typedef ULong Request_id;
 
 typedef struct sockaddr_in Addr;
 
@@ -42,4 +41,4 @@ static const Seqno Seqno_max = 9223372036854775807LL;
 
 typedef Long BR_map;
 
-#endif // _types_h
+#endif  // _types_h

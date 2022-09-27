@@ -2,12 +2,13 @@
 #define _Rep_info_h 1
 
 #include <sys/time.h>
-#include "types.h"
-#include "Time.h"
-#include "Digest.h"
+
 #include "Array.h"
+#include "Digest.h"
 #include "Reply.h"
 #include "State_defs.h"
+#include "Time.h"
+#include "types.h"
 
 class Req_queue;
 
@@ -15,7 +16,7 @@ class Rep_info {
   //
   // Holds the last replies sent to each principal.
   //
-public:
+ public:
 #ifndef NO_STATE_TRANSLATION
   Rep_info(int nps);
   // Effects: Creates a new object that stores data for "nps"
@@ -45,7 +46,7 @@ public:
   // Effects: Returns a reference to the digest of the last reply
   // value sent to pid.
 
-  Reply* reply(int pid);
+  Reply *reply(int pid);
   // Requires: "pid" is a valid principal identifier.
   // Effects: Returns a pointer to the last reply value sent to "pid"
   // or 0 if no such reply was sent.
@@ -54,9 +55,9 @@ public:
   // Effects: Updates this to reflect the new state and removes stale
   // requests from rset. If it removes the first request in "rset",
   // returns true; otherwise returns false.
-  
+
   char *new_reply(int pid, int &size);
-  // Requires: "pid" is a valid principal identifier.  
+  // Requires: "pid" is a valid principal identifier.
   // Effects: Returns a pointer to a buffer where the new reply value
   // for principal "pid" can be placed. The length of the buffer in bytes
   // is returned in "size". Sets the reply to tentative.
@@ -76,7 +77,7 @@ public:
   // Effects: Returns true iff the last reply sent to "pid" is
   // committed.
 
-  void send_reply(int pid, View v, int id, bool tentative=true);
+  void send_reply(int pid, View v, int id, bool tentative = true);
   // Requires: "pid" is a valid principal identifier and end_reply was
   // called after the last call to new_reply for "pid"
   // Effects: Sends a reply message to "pid" for view "v" from replica
@@ -86,52 +87,40 @@ public:
 
 #ifndef NO_STATE_TRANSLATION
   char *rep_info_mem();
-  // Returns: pointer to the beggining of the mem region used to store the 
+  // Returns: pointer to the beggining of the mem region used to store the
   // replies
 #endif
 
-private:
+ private:
   int nps;
   char *mem;
-  Array<Reply*> reps; // Array of replies indexed by principal id.
+  Array<Reply *> reps;  // Array of replies indexed by principal id.
   static const int Max_rep_size = 8192;
 
   struct Rinfo {
-    bool tentative;       // True if last reply is tentative and was not committed.
-    Time lsent;           // Time at which reply was last sent.
+    bool tentative;  // True if last reply is tentative and was not committed.
+    Time lsent;      // Time at which reply was last sent.
   };
   Array<Rinfo> ireps;
 };
 
-inline int Rep_info::size() const {
-  return (nps+1)*Max_rep_size;
-}
+inline int Rep_info::size() const { return (nps + 1) * Max_rep_size; }
 
 inline void Rep_info::commit_reply(int pid) {
   ireps[pid].tentative = false;
   ireps[pid].lsent = zeroTime();
 }
 
-inline bool Rep_info::is_committed(int pid) {
-  return !ireps[pid].tentative;
-}
+inline bool Rep_info::is_committed(int pid) { return !ireps[pid].tentative; }
 
-inline Request_id Rep_info::req_id(int pid) {
-  return reps[pid]->request_id();
-}
+inline Request_id Rep_info::req_id(int pid) { return reps[pid]->request_id(); }
 
-inline Digest& Rep_info::digest(int pid) {
-  return reps[pid]->digest();
-}
+inline Digest &Rep_info::digest(int pid) { return reps[pid]->digest(); }
 
-inline Reply* Rep_info::reply(int pid) {
-  return reps[pid];
-}
+inline Reply *Rep_info::reply(int pid) { return reps[pid]; }
 
 #ifndef NO_STATE_TRANSLATION
-inline char* Rep_info::rep_info_mem() {
-  return mem;
-}
+inline char *Rep_info::rep_info_mem() { return mem; }
 #endif
 
-#endif // _Rep_info_h
+#endif  // _Rep_info_h

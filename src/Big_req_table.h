@@ -1,15 +1,13 @@
 #ifndef _Big_req_table_h
 #define _Big_req_table_h 1
 
-#include "types.h"
-#include "Digest.h"
 #include "Array.h"
+#include "Digest.h"
 #include "map.h"
-
+#include "types.h"
 
 class BR_entry;
 class Request;
-
 
 class Big_req_table {
   //
@@ -20,7 +18,7 @@ class Big_req_table {
   // pre-prepares with their big requests. (Big requests are those
   // whose size is greater than Request::big_req_thresh.)
   //
-public:
+ public:
   Big_req_table();
   // Effects: Creates an empty table.
 
@@ -31,7 +29,7 @@ public:
   // Effects: Records that request "r" is referenced by the
   // pre-prepare with sequence number "n" and that this information is
   // current in view "v".
-  
+
   bool add_pre_prepare(Digest& rd, int i, Seqno n, View v);
   // Effects: Records that the i-th reference to a big request in the
   // pre-prepare with sequence number "n" is to the request with
@@ -39,8 +37,8 @@ public:
   // "v". Returns true if the request is in the table; otherwise,
   // returns false.
 
-  bool add_request(Request* r, bool verified=true);
-  // Requires: r->size() > Request::big_req_thresh & verified == r->verify() 
+  bool add_request(Request* r, bool verified = true);
+  // Requires: r->size() > Request::big_req_thresh & verified == r->verify()
   // Effects: If there is an entry for digest "r->digest()", the entry
   // does not already contain a request and the authenticity of the
   // request can be verified, then it adds "r" to the entry, calls
@@ -62,7 +60,7 @@ public:
   // pre-prepares that were discarded due to view changing to view
   // "v".
 
-private:
+ private:
   bool check_pcerts(BR_entry* bre);
   // Requires: replica->has_new_view()
   // Effects: Returns true iff there is some pre-prepare in
@@ -73,10 +71,10 @@ private:
   // Requires: bre->r != 0
   // Effects: Zeros entry in unmatched.
 
-  Map<Digest,BR_entry*> breqs;
-  int max_entries;  // Maximum number of entries allowed in the table.
-  Array<Request*> unmatched; // Array of requests that have no waiting pre-prepares
-                             // indexed by client id.
+  Map<Digest, BR_entry*> breqs;
+  int max_entries;            // Maximum number of entries allowed in the table.
+  Array<Request*> unmatched;  // Array of requests that have no waiting
+                              // pre-prepares indexed by client id.
 };
 
-#endif // _Big_req_table_h
+#endif  // _Big_req_table_h

@@ -1,18 +1,17 @@
-#include "Request.h"
 #include "Req_queue.h"
-#include "Pre_prepare.h"
-#include "Node.h"
 
 #include "Array.t"
+#include "Node.h"
+#include "Pre_prepare.h"
+#include "Request.h"
 
-Req_queue::Req_queue() : reqs(PNode(), node->np()), head(0), 
-  tail(0), nelems(0), nbytes(0)  {}
-
+Req_queue::Req_queue()
+    : reqs(PNode(), node->np()), head(0), tail(0), nelems(0), nbytes(0) {}
 
 bool Req_queue::append(Request *r) {
   int cid = r->client_id();
   Request_id rid = r->request_id();
-  PNode& cn = reqs[cid];
+  PNode &cn = reqs[cid];
   if (cn.r != 0) {
     // There is a request from client cid in reqs.
     if (rid > cn.r->request_id()) {
@@ -21,12 +20,12 @@ bool Req_queue::append(Request *r) {
       return false;
     }
   }
-  
+
   // Append request to queue.
   cn.r = r;
   nbytes += r->size();
   nelems++;
-  
+
   if (head == 0) {
     head = tail = &cn;
     cn.prev = cn.next = 0;
@@ -40,7 +39,6 @@ bool Req_queue::append(Request *r) {
   return true;
 }
 
-
 Request *Req_queue::remove() {
   if (head == 0) return 0;
 
@@ -51,7 +49,7 @@ Request *Req_queue::remove() {
   head = head->next;
   if (head != 0)
     head->prev = 0;
-  else 
+  else
     tail = 0;
 
   nelems--;
@@ -60,14 +58,13 @@ Request *Req_queue::remove() {
   return ret;
 }
 
-
 bool Req_queue::remove(int cid, Request_id rid) {
   bool ret = false;
-  PNode& cn = reqs[cid];
+  PNode &cn = reqs[cid];
   if (cn.r && cn.r->request_id() <= rid) {
     nelems--;
     nbytes -= cn.r->size();
-    
+
     delete cn.r;
     cn.r = 0;
 
@@ -89,15 +86,12 @@ bool Req_queue::remove(int cid, Request_id rid) {
   return ret;
 }
 
-
 void Req_queue::clear() {
-  for (int i=0; i < node->np(); i++) 
-    reqs[i].clear();
+  for (int i = 0; i < node->np(); i++) reqs[i].clear();
 
   head = tail = 0;
   nelems = nbytes = 0;
 }
-
 
 void Req_queue::PNode::clear() {
   delete r;

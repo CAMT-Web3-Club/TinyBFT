@@ -1,18 +1,19 @@
-#include "th_assert.h"
-#include "Message_tags.h"
-#include "Partition.h"
 #include "Fetch.h"
+
+#include "Message_tags.h"
 #include "Node.h"
-#include "Replica.h"
+#include "Partition.h"
 #include "Principal.h"
+#include "Replica.h"
 #include "State_defs.h"
+#include "th_assert.h"
 
 Fetch::Fetch(Request_id rid, Seqno lu, int level, int index,
 #ifndef NO_STATE_TRANSLATION
-	     int chunkn,
+             int chunkn,
 #endif
-	     Seqno rc, int repid) :
-  Message(Fetch_tag, sizeof(Fetch_rep) + node->auth_size()) {
+             Seqno rc, int repid)
+    : Message(Fetch_tag, sizeof(Fetch_rep) + node->auth_size()) {
   rep().rid = rid;
   rep().lu = lu;
   rep().level = level;
@@ -32,39 +33,28 @@ void Fetch::re_authenticate(Principal *p) {
 }
 
 bool Fetch::verify() {
-  if (!node->is_replica(id())) 
-    return false;
-  
-  if (level() < 0 || level() >= PLevels)
-    return false;
-  
-  if (index() < 0 || index() >=  PLevelSize[level()])
-    return false;
-  
-  if (checkpoint() == -1 && replier() != -1)
-    return false; 
+  if (!node->is_replica(id())) return false;
+
+  if (level() < 0 || level() >= PLevels) return false;
+
+  if (index() < 0 || index() >= PLevelSize[level()]) return false;
+
+  if (checkpoint() == -1 && replier() != -1) return false;
 
 #ifndef NO_STATE_TRANSLATION
-  if (chunk_number() < 0)
-    return false;
+  if (chunk_number() < 0) return false;
 #endif
 
   // Check signature size.
-  if (size()-(int)sizeof(Fetch_rep) < node->auth_size(id())) 
-    return false;
+  if (size() - (int)sizeof(Fetch_rep) < node->auth_size(id())) return false;
 
   return node->verify_auth_out(id(), contents(), sizeof(Fetch_rep));
 }
 
+bool Fetch::convert(Message *m1, Fetch *&m2) {
+  if (!m1->has_tag(Fetch_tag, sizeof(Fetch_rep))) return false;
 
-bool Fetch::convert(Message *m1, Fetch  *&m2) {
-  if (!m1->has_tag(Fetch_tag, sizeof(Fetch_rep)))
-    return false;
-
-  m2 = (Fetch*)m1;
+  m2 = (Fetch *)m1;
   m2->trim();
   return true;
 }
- 
-
-

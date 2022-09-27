@@ -1,27 +1,27 @@
 #ifndef _Reply_stable_h
 #define _Reply_stable_h 1
 
-#include "types.h"
 #include "Digest.h"
 #include "Message.h"
+#include "types.h"
 class Principal;
 
-// 
+//
 // Reply_stable messages have the following format:
 //
 struct Reply_stable_rep : public Message_rep {
-  Seqno lc;  // last checkpoint at sending replica
-  Seqno lp;  // last prepared request at sending replica
-  int id;    // id of sending replica
-  int nonce; // nonce in query-stable
+  Seqno lc;   // last checkpoint at sending replica
+  Seqno lp;   // last prepared request at sending replica
+  int id;     // id of sending replica
+  int nonce;  // nonce in query-stable
   // Followed by a MAC
 };
 
 class Reply_stable : public Message {
-  // 
+  //
   //  Reply_stable messages
   //
-public:
+ public:
   Reply_stable(Seqno lc, Seqno lp, int n, Principal* p);
   // Effects: Creates a new authenticated Reply_stable message with
   // last checkpoint "lc", last prepared request "lp", for a
@@ -48,21 +48,21 @@ public:
   bool verify();
   // Effects: Verifies if the message is authenticated by "id()".
 
-  static bool convert(Message *m1, Reply_stable *&m2);
+  static bool convert(Message* m1, Reply_stable*& m2);
   // Effects: If "m1" has the right size and tag of a "Reply_stable",
   // casts "m1" to a "Reply_stable" pointer, returns the pointer in
   // "m2" and returns true. Otherwise, it returns false. Convert also
   // trims any surplus storage from "m1" when the conversion is
   // successfull.
- 
-private:
+
+ private:
   Reply_stable_rep& rep() const;
   // Effects: Casts "msg" to a Reply_stable_rep&
 };
 
-inline Reply_stable_rep& Reply_stable::rep() const { 
+inline Reply_stable_rep& Reply_stable::rep() const {
   th_assert(ALIGNED(msg), "Improperly aligned pointer");
-  return *((Reply_stable_rep*)msg); 
+  return *((Reply_stable_rep*)msg);
 }
 
 inline Seqno Reply_stable::last_checkpoint() const { return rep().lc; }
@@ -73,4 +73,4 @@ inline int Reply_stable::id() const { return rep().id; }
 
 inline int Reply_stable::nonce() const { return rep().nonce; }
 
-#endif // _Reply_stable_h
+#endif  // _Reply_stable_h

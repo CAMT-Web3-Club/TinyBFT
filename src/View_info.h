@@ -2,12 +2,12 @@
 #define _View_info_h 1
 
 #include "Array.h"
-#include "types.h"
 #include "Digest.h"
-#include "Node.h"
-#include "NV_info.h"
 #include "Log.h"
+#include "NV_info.h"
+#include "Node.h"
 #include "Pre_prepare.h"
+#include "types.h"
 
 class View_change;
 class New_view;
@@ -19,14 +19,14 @@ class View_info {
   //
   // Holds information for the view-change protocol.
   //
-public:
-  View_info(int id, View v=0);
+ public:
+  View_info(int id, View v = 0);
   // Effects: Create a view-info object for replica "id" with initial
   // view "v".
-  
+
   ~View_info();
   // Effects: Discards all storage associated with this.
- 
+
   //
   // View-change creation:
   //
@@ -36,7 +36,7 @@ public:
   // Effects: Adds "pp" to "this". This becomes the owner of "pp"'s
   // storage.
 
-  void add_incomplete(Seqno n, Digest const &d);
+  void add_incomplete(Seqno n, Digest const& d);
   // Requires: The replica sent a pre-prepare/prepare for sequence number
   // "n" in view view() and the request did not prepare locally.
   // Effects: Adds information to this.
@@ -54,15 +54,15 @@ public:
   // Effects: Returns true iff "this" logs that this replica sent a
   // prepare with digest "d" for sequence number "n".
 
-  void view_change(View v, Seqno le, State *state);
+  void view_change(View v, Seqno le, State* state);
   // Requires: All Pre_prepare messages in complete certificates for views
-  // less than "view()" have been added to "this".  
+  // less than "view()" have been added to "this".
   // Effects: Moves this to view "v", discards messages for views less
   // than v, sends a new authenticated view-change message for
   // view "v", and sends view-change acks for any logged view-change
   // messages from other replicas with view "v".
 
-  // 
+  //
   // Handling received messages:
   //
   bool add(View_change* vc);
@@ -75,15 +75,15 @@ public:
   // otherwise discards it. This becomes the owner of "nv"'s storage.
 
   void add(View_change_ack* vca);
-  // Effect: Adds message to this if valid and useful. 
- 
+  // Effect: Adds message to this if valid and useful.
+
   //
   // Observers:
   //
   View max_view() const;
   // Effects: Returns the maximum view number "v" for which it is
   // known that some correct replica is in view "v" or a later view.
-  
+
   View max_maj_view() const;
   // Effects: Returns the maximum view number "v" for which it is
   // known that f+1 correct replicas are in view "v" or a later view.
@@ -99,29 +99,28 @@ public:
   // Effects: Returns true iff this contains a new-view message for
   // view v.
 
-  void set_received_vcs(Status *m);
+  void set_received_vcs(Status* m);
   // Requires: m->view() == view()
   // Effects: Mutates "m" to record which view change messages were
   // accepted in the current view.
 
-  void set_missing_pps(Status *m);
-  // Requires: m->view() == view() 
+  void set_missing_pps(Status* m);
+  // Requires: m->view() == view()
   // Effects: Mutates "m" to record which pre-prepare messages are
   // missing in the current view and whether a proof of authenticity
   // for the associated request is required.
 
-  View_change* my_view_change(Time **t=0);
+  View_change* my_view_change(Time** t = 0);
   // Effects: Returns the view-change message sent by the calling replica
   // in view "view()".
 
-  New_view* my_new_view(Time **t=0);
+  New_view* my_new_view(Time** t = 0);
   // Effects: Returns any new-view message sent by the calling replica
   // in view "view()" or 0 if there is no such message.
 
   View_change_ack* my_vc_ack(int id);
   // Effects: Returns any view-change ack produced by the calling
   // replica or 0 if there is no such message.
-
 
   //
   // Misc.:
@@ -139,11 +138,11 @@ public:
   // Effects: Removes all messages from this except that it retains log for
   // prepares in old views.
 
-  Pre_prepare* fetch_request(Seqno n, Digest &d);
+  Pre_prepare* fetch_request(Seqno n, Digest& d);
   // Requires: "has_new_view(view())" and "n" is a request in new-view
   // message.
   // Effects: Sets "d" to the digest of the request with sequence
-  // number "n". If enough information to make a pre-prepare is available, it 
+  // number "n". If enough information to make a pre-prepare is available, it
   // returns an appropriate pre-prepare. Otherwise, returns zero. The
   // caller is responsible for deallocating any returned pre-prepare.
 
@@ -175,8 +174,8 @@ public:
   bool enforce_bound(Seqno b, Seqno ks, bool corrupt);
   // Effects: Enforces that there is no information above bound
   // "b". "ks" is the maximum sequence number that I know is stable.
-  
-private:
+
+ private:
   View v;
   int id;             // identifier of corresponding replica
   Seqno last_stable;  // last sequence number known to be stable
@@ -186,18 +185,18 @@ private:
   // pre-prepare/prepare message was sent.
   //
   // In case (1):
-  // - "m" points to the pre-prepare message in the last complete 
+  // - "m" points to the pre-prepare message in the last complete
   // prepared certificate for the corresponding sequence number.
   // - "v" and "d" are the view and digest in this message; and
-  // - "lv" is the latest view for which this replica sent a 
+  // - "lv" is the latest view for which this replica sent a
   // pre-prepare/prepare matching "m".
   //
   // In case (2):
   // - "m" is null;
-  // - "v" and "d" are the view and digest in the last 
-  // pre-prepare/prepare sent by this replica for the corresponding 
+  // - "v" and "d" are the view and digest in the last
+  // pre-prepare/prepare sent by this replica for the corresponding
   // sequence number.
-  // - no request prepared globally with sequence number "n" in any view 
+  // - no request prepared globally with sequence number "n" in any view
   // "v' <= lv".
   //
   struct ODigest_info {
@@ -210,8 +209,8 @@ private:
     View lv;
     View v;
     Digest d;
-    Pre_prepare *m;  
-    ODigest_info *ods;
+    Pre_prepare* m;
+    ODigest_info* ods;
 
     OReq_info();
     ~OReq_info();
@@ -231,8 +230,8 @@ private:
   // View-change messages with the highest view number "vn" for each
   // replica such that "vn >= v" and there is no new-view message for
   // "vn". It is indexed by replica id.
-  Array<View_change*> last_vcs; 
- 
+  Array<View_change*> last_vcs;
+
   // Keeps view-change acks sent in the current view by this replica.
   Array<View_change_ack*> my_vacks;
 
@@ -250,9 +249,9 @@ private:
   // messages.  It is indexed by replica id.
   Array<NV_info> last_nvs;
 
-  Time vc_sent; // time at which my view-change was last sent
+  Time vc_sent;  // time at which my view-change was last sent
 
-  // 
+  //
   // Auxiliary methods:
   //
 
@@ -262,76 +261,59 @@ private:
   View k_max(int k) const;
   // Effects: Returns the value "v" in "last_views" such that there
   // are "k" values greater than or equal to "v" in "last_views".
-  
 };
 
+inline View View_info::view() const { return v; }
 
-inline View View_info::view() const {
-  return v;
-}
-
-
-inline Pre_prepare* View_info::fetch_request(Seqno n, Digest &d) {
+inline Pre_prepare* View_info::fetch_request(Seqno n, Digest& d) {
   return last_nvs[node->primary(v)].fetch_request(n, d);
 }
-
 
 inline bool View_info::has_new_view(View vi) const {
   return last_nvs[node->primary(vi)].complete();
 }
 
-
 inline bool View_info::has_nv_message(View vi) const {
-  if (last_nvs[node->primary(vi)].view())
-    return true;
+  if (last_nvs[node->primary(vi)].view()) return true;
   return false;
 }
-
 
 inline View_change_ack* View_info::my_vc_ack(int id) {
   th_assert(node->is_replica(id), "Invalid argument");
   return my_vacks[id];
 }
 
-
 inline void View_info::add_missing(Pre_prepare* pp) {
   last_nvs[node->primary(view())].add_missing(pp);
 }
 
-
-inline void  View_info::add_missing(Digest& rd, Seqno n, int i) {
+inline void View_info::add_missing(Digest& rd, Seqno n, int i) {
   last_nvs[node->primary(view())].add_missing(rd, n, i);
 }
-
 
 inline void View_info::add_missing(Prepare* p) {
   last_nvs[node->primary(view())].add_missing(p);
 }
 
-
-inline View_info::OReq_info::OReq_info()  {
-  m = 0; 
-  v=-1; 
-  lv=-1; 
-  ods = new ODigest_info[node->f()+2];
+inline View_info::OReq_info::OReq_info() {
+  m = 0;
+  v = -1;
+  lv = -1;
+  ods = new ODigest_info[node->f() + 2];
 }
-
 
 inline View_info::OReq_info::~OReq_info() {
-  delete m; 
-  delete [] ods;
+  delete m;
+  delete[] ods;
 }
-
 
 inline void View_info::OReq_info::clear() {
-  delete m; 
-  m=0; 
-  v=-1; 
-  lv=-1; 
+  delete m;
+  m = 0;
+  v = -1;
+  lv = -1;
   d.zero();
-  for (int i=0; i < node->f()+2; i++)
-    ods[i].v = -1;
+  for (int i = 0; i < node->f() + 2; i++) ods[i].v = -1;
 }
 
-
-#endif // _View_info_h
+#endif  // _View_info_h

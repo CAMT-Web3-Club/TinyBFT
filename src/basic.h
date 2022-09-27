@@ -13,7 +13,6 @@
 #define FALSE 0
 #endif
 
-
 #if 0
 #ifndef __cplusplus
 typedef unsigned long bool; /* I really hate this -- ACM */
@@ -30,7 +29,9 @@ typedef unsigned char bool;
 /* An infinite loop construct */
 
 #define _BEGIN_ do {
-#define _END_   } while (0)
+#define _END_ \
+  }           \
+  while (0)
 /*
     The macros _BEGIN_ and _END_ are used when defining macros whose
     result is a statement. The definition should start with _BEGIN_ and

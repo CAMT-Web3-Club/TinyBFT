@@ -5,9 +5,9 @@
 //#define BASE
 
 #ifdef BASE
-	#define OBJ_REP
+#define OBJ_REP
 #else
-	#define NO_STATE_TRANSLATION
+#define NO_STATE_TRANSLATION
 #endif
 
 #endif

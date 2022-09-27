@@ -20,7 +20,6 @@ for any particular purpose. It is provided "as is" without express or
 implied warranty of any kind. These notices must be retained in any
 copies of any part of this documentation and/or software.  */
 
-
 /* POINTER defines a generic pointer type */
 typedef unsigned char *POINTER;
 
@@ -32,9 +31,9 @@ typedef unsigned int UINT4;
 
 /* MD5 context. */
 typedef struct {
-  UINT4 state[4];                                   /* state (ABCD) */
-  UINT4 count[2];        /* number of bits, modulo 2^64 (lsb first) */
-  unsigned char buffer[64];                         /* input buffer */
+  UINT4 state[4];           /* state (ABCD) */
+  UINT4 count[2];           /* number of bits, modulo 2^64 (lsb first) */
+  unsigned char buffer[64]; /* input buffer */
 } MD5_CTX;
 
 void MD5Init(MD5_CTX *);
@@ -42,4 +41,4 @@ void MD5InitIV(MD5_CTX *, unsigned int digest[4], int count);
 void MD5Update(MD5_CTX *, const char *, unsigned int);
 void MD5Final(unsigned int digest[4], MD5_CTX *);
 
-#endif //_MD5_h
+#endif  //_MD5_h

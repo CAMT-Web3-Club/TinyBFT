@@ -1,7 +1,7 @@
 #ifndef _K_max_h
 #define _K_max_h 1
 
-template <class T> 
+template <class T>
 inline T K_max(int k, const T* vector, int n, T tmax) {
   // Requires: "vector" has "n" elements and tmax is the maximum value
   // for type T.
@@ -16,19 +16,19 @@ inline T K_max(int k, const T* vector, int n, T tmax) {
   int cur_count = 0;
 
   while (last_count < k) {
-    for (int i=0; i < n; i++) {
+    for (int i = 0; i < n; i++) {
       T cv = vector[i];
-            
+
       if (cv == cur_max) {
-	cur_count++;
-	continue;
+        cur_count++;
+        continue;
       }
-      
+
       if (cv > cur_max) {
-	if (cv < last_max) {
-	  cur_count = 1;
-	  cur_max = cv;
-	}
+        if (cv < last_max) {
+          cur_count = 1;
+          cur_max = cv;
+        }
       }
     }
     last_max = cur_max;
@@ -39,4 +39,4 @@ inline T K_max(int k, const T* vector, int n, T tmax) {
   return last_max;
 }
 
-#endif //_K_max_h
+#endif  //_K_max_h

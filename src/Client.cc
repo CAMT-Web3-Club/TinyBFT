@@ -1,46 +1,45 @@
-#include <string.h>
+#include "Client.h"
+
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/types.h> 
-#include <unistd.h>
+#include <string.h>
 #include <sys/time.h>
+#include <sys/types.h>
+#include <unistd.h>
 
-#include "th_assert.h"
-#include "Client.h"
 #include "ITimer.h"
 #include "Message.h"
 #include "Reply.h"
 #include "Request.h"
+#include "th_assert.h"
 
 //#define ADJUST_RTIMEOUT 1
 
-Client::Client(FILE *config_file, FILE *config_priv, short port) : 
-  Node(config_file, config_priv, port), t_reps(2*f()+1), c_reps(f()+1) {
+Client::Client(FILE *config_file, FILE *config_priv, short port)
+    : Node(config_file, config_priv, port),
+      t_reps(2 * f() + 1),
+      c_reps(f() + 1) {
   // Fail if node is is a replica.
   if (is_replica(id())) th_fail("Node is a replica");
 
-  rtimeout = 150; // Initial timeout value
+  rtimeout = 150;  // Initial timeout value
   rtimer = new ITimer(rtimeout, rtimer_handler);
 
   out_rid = new_rid();
-  out_req = 0;     
+  out_req = 0;
 
   // Multicast new key to all replicas.
   send_new_key();
   atimer->start();
 }
 
-Client::~Client() {
-  delete rtimer;
-}
+Client::~Client() { delete rtimer; }
 
-void Client::reset() {
-  rtimeout = 150;
-}
+void Client::reset() { rtimeout = 150; }
 
 bool Client::send_request(Request *req) {
   bool ro = req->is_read_only();
-  if (out_req == 0) { 
+  if (out_req == 0) {
     // Send request to service
     if (ro || req->size() > Request::big_req_thresh) {
       // read-only requests and big requests are multicast to all replicas.
@@ -52,7 +51,7 @@ bool Client::send_request(Request *req) {
     out_req = req;
     need_auth = false;
     n_retrans = 0;
-    
+
 #ifdef ADJUST_RTIMEOUT
     // Adjust timeout to reflect average latency
     rtimer->adjust(rtimeout);
@@ -77,32 +76,32 @@ Reply *Client::recv_reply() {
 
   //
   // Wait for reply
-  // 
+  //
   while (1) {
-    Message* m = recv();
-    
-    Reply* rep;
+    Message *m = recv();
+
+    Reply *rep;
     if (!Reply::convert(m, rep) || rep->request_id() != out_rid) {
       delete m;
       continue;
     }
-    
+
     Certificate<Reply> &reps = (rep->is_tentative()) ? t_reps : c_reps;
     if (reps.is_complete()) {
-    	// We have a complete certificate without a full reply.
-    	if (!rep->full() || !rep->verify() || !rep->match(reps.cvalue())) {
-    		delete rep;
-    		continue;
-    	}
+      // We have a complete certificate without a full reply.
+      if (!rep->full() || !rep->verify() || !rep->match(reps.cvalue())) {
+        delete rep;
+        continue;
+      }
     } else {
       reps.add(rep);
-      rep = (reps.is_complete() && reps.cvalue()->full()) ? 
-                                             reps.cvalue_clear() : 0;
+      rep = (reps.is_complete() && reps.cvalue()->full()) ? reps.cvalue_clear()
+                                                          : 0;
     }
-      
+
     if (rep) {
       // printf("request %d has committed\n", (int)rep->request_id());
-    	
+
       out_rid = new_rid();
       rtimer->stop();
       out_req = 0;
@@ -117,8 +116,10 @@ Reply *Client::recv_reply() {
 
 #ifdef ADJUST_RTIMEOUT
       latency.stop();
-      rtimeout = (3*rtimeout+
-		  latency.elapsed()*Rtimeout_mult/(clock_mhz*1000))/4+1;
+      rtimeout = (3 * rtimeout +
+                  latency.elapsed() * Rtimeout_mult / (clock_mhz * 1000)) /
+                     4 +
+                 1;
 #endif
 
       return rep;
@@ -128,9 +129,8 @@ Reply *Client::recv_reply() {
 
 void rtimer_handler() {
   th_assert(node, "Client is not initialized");
-  ((Client*)node)->retransmit();
+  ((Client *)node)->retransmit();
 }
-
 
 void Client::retransmit() {
   // Retransmit any outstanding request.
@@ -158,8 +158,8 @@ void Client::retransmit() {
       if (ro && change) t_reps.clear();
     }
 
-    if (out_req->is_read_only() || n_retrans > thresh 
-	|| out_req->size() > Request::big_req_thresh) {
+    if (out_req->is_read_only() || n_retrans > thresh ||
+        out_req->size() > Request::big_req_thresh) {
       // read-only requests, requests retransmitted more than
       // mcast_threshold times, and big requests are multicast to all
       // replicas.
@@ -173,7 +173,7 @@ void Client::retransmit() {
 #ifdef ADJUST_RTIMEOUT
   // exponential back off
   if (rtimeout < Min_rtimeout) rtimeout = 100;
-  rtimeout = rtimeout+lrand48()%rtimeout;
+  rtimeout = rtimeout + lrand48() % rtimeout;
   if (rtimeout > Max_rtimeout) rtimeout = Max_rtimeout;
   rtimer->adjust(rtimeout);
 #endif

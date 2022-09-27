@@ -5,9 +5,9 @@
  * Definitions of various types.
  */
 #include <limits.h>
-#include <sys/socket.h>
+#include <netinet/in.h>
 #include <sys/param.h>
-#include <netinet/in.h> 
+#include <sys/socket.h>
 #include <sys/time.h>
 #include <unistd.h>
 
@@ -21,21 +21,21 @@ static inline Time currentTime() {
   return t;
 }
 
-static inline Time zeroTime() {  
+static inline Time zeroTime() {
   Time t;
   t.tv_sec = 0;
-  t.tv_usec = 0
-  return t; 
+  t.tv_usec = 0 return t;
 }
 
 static inline long long diffTime(Time t1, Time t2) {
   // t1-t2 in microseconds.
-  return (((unsigned long long)(t1.tv_sec-t2.tv_sec)) << 20) + (t1.tv_usec-t2.tv_usec);
+  return (((unsigned long long)(t1.tv_sec - t2.tv_sec)) << 20) +
+         (t1.tv_usec - t2.tv_usec);
 }
 
 static inline bool lessThanTime(Time t1, Time t2) {
-  return t1.tv_sec < t2.tv_sec ||  
-    (t1.tv_sec == t2.tv_sec &&  t1.tv_usec < t2.tv_usec);
+  return t1.tv_sec < t2.tv_sec ||
+         (t1.tv_sec == t2.tv_sec && t1.tv_usec < t2.tv_usec);
 }
 #else
 
@@ -54,14 +54,11 @@ static inline Time currentTime() { return rdtsc(); }
 static inline Time zeroTime() { return 0; }
 
 static inline long long diffTime(Time t1, Time t2) {
-  return (t1-t2)/clock_mhz;
+  return (t1 - t2) / clock_mhz;
 }
 
-static inline bool lessThanTime(Time t1, Time t2) {
-  return t1 < t2;
-
-}
+static inline bool lessThanTime(Time t1, Time t2) { return t1 < t2; }
 
 #endif
 
-#endif // _Time_h 
+#endif  // _Time_h

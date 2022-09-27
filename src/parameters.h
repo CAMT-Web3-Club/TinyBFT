@@ -15,4 +15,4 @@ const int checkpoint_interval = 128;
 // unable to make progress.
 const int max_out = 256;
 
-#endif // _parameters_h
+#endif  // _parameters_h

@@ -1,30 +1,30 @@
 #ifndef _Query_stable_h
 #define _Query_stable_h 1
 
-#include "types.h"
 #include "Message.h"
 #include "Principal.h"
+#include "types.h"
 
-// 
+//
 // Query_stable messages have the following format:
 //
 struct Query_stable_rep : public Message_rep {
-  int id;         // id of the replica that generated the message.
+  int id;  // id of the replica that generated the message.
   int nonce;
   // Followed by a variable-sized signature.
 };
 
 class Query_stable : public Message {
-  // 
+  //
   //  Query_stable messages
   //
-public:
+ public:
   Query_stable();
   // Effects: Creates a new authenticated Query_stable message.
 
-  void re_authenticate(Principal *p=0);
+  void re_authenticate(Principal *p = 0);
   // Effects: Recomputes the authenticator in the message using the
-  // most recent keys. 
+  // most recent keys.
 
   int id() const;
   // Effects: Fetches the identifier of the replica from the message.
@@ -41,19 +41,19 @@ public:
   // "m2" and returns true. Otherwise, it returns false. Convert also
   // trims any surplus storage from "m1" when the conversion is
   // successfull.
- 
-private:
-  Query_stable_rep& rep() const;
+
+ private:
+  Query_stable_rep &rep() const;
   // Effects: Casts "msg" to a Query_stable_rep&
 };
 
-inline Query_stable_rep& Query_stable::rep() const { 
+inline Query_stable_rep &Query_stable::rep() const {
   th_assert(ALIGNED(msg), "Improperly aligned pointer");
-  return *((Query_stable_rep*)msg); 
+  return *((Query_stable_rep *)msg);
 }
 
 inline int Query_stable::id() const { return rep().id; }
 
 inline int Query_stable::nonce() const { return rep().nonce; }
 
-#endif // _Query_stable_h
+#endif  // _Query_stable_h

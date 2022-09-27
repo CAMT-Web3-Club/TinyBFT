@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 #ifndef __cplusplus
-typedef unsigned long bool; 
+typedef unsigned long bool;
 #endif
 
 /* Because of FILE parameter */
@@ -15,39 +15,37 @@ typedef unsigned long bool;
 /* Should be a power of 2 less than or equal to the vm page size */
 static const int Block_size = 4096;
 
-
-#include "types.h"
 #include "Modify.h"
-  //#include "Digest.h"
+#include "types.h"
+//#include "Digest.h"
 #include "State_defs.h"
 
 struct _Byz_buffer {
   int size;
   char *contents;
   void *opaque;
-}; 
+};
 
 typedef struct _Byz_buffer Byz_buffer;
 typedef struct _Byz_buffer Byz_req;
 typedef struct _Byz_buffer Byz_rep;
-
 
 /*
  * Client
  */
 
 int Byz_init_client(char *conf, char *conf_priv, short port);
-/* Effects: Initializes a libbyz client process using the information in the file 
-   named by "conf" and the private key in the file named by "conf_priv". 
-   If port is 0 the library will select the first line matching this
-   host in "conf". Otherwise, it selects the line with port value "port". */
+/* Effects: Initializes a libbyz client process using the information in the
+   file named by "conf" and the private key in the file named by "conf_priv". If
+   port is 0 the library will select the first line matching this host in
+   "conf". Otherwise, it selects the line with port value "port". */
 
 int Byz_alloc_request(Byz_req *req, int size);
-/* Requires: "req" points to a Byz_req structure 
-   Effects: If successful returns 0 and initializes "req" by allocating internal 
-   memory for the request, making "req->contents" point to that memory, and "req->size" 
-   contain the number of bytes that can be used starting from "req->contents". If it fails
-   it returns -1. */
+/* Requires: "req" points to a Byz_req structure
+   Effects: If successful returns 0 and initializes "req" by allocating internal
+   memory for the request, making "req->contents" point to that memory, and
+   "req->size" contain the number of bytes that can be used starting from
+   "req->contents". If it fails it returns -1. */
 
 void Byz_free_request(Byz_req *req);
 /* Requires: "req" points to a Byz_req structure whose "req->contents" value
@@ -62,7 +60,7 @@ void Byz_free_reply(Byz_rep *rep);
 int Byz_send_request(Byz_req *req, bool ro);
 /* Requires: "req" points to a Byz_req structure whose "req->contents"
    value was obtained by calling Byz_alloc_req and whose "req->size"
-   value is the actual number of bytes in the request. 
+   value is the actual number of bytes in the request.
    "read_only" is true iff the request
    does not modify the service state. All previous request have been
    followed by an invocation of Byz_recv_reply.
@@ -71,10 +69,10 @@ int Byz_send_request(Byz_req *req, bool ro);
    Otherwise returns -1. */
 
 int Byz_recv_reply(Byz_rep *rep);
-/* Requires: "rep" points to an uninitialized Byz_rep structure. 
+/* Requires: "rep" points to an uninitialized Byz_rep structure.
    There was a previous request for which there was not an invocation
    of Byz_recv_reply.
-   
+
    If successful, initializes "rep" to
    point to the reply and returns 0. ("rep" must be deallocated by the
    caller using Byz_free_reply.) Otherwise, does not initialize "rep"
@@ -83,7 +81,7 @@ int Byz_recv_reply(Byz_rep *rep);
 int Byz_invoke(Byz_req *req, Byz_rep *rep, bool ro);
 /* Requires: "req" points to a Byz_req structure whose "req->contents"
    value was obtained by calling Byz_alloc_req and whose "req->size"
-   value is the actual number of bytes in the request. 
+   value is the actual number of bytes in the request.
    "read_only" is true iff the request
    does not modify the service state. All previous request have been
    followed by an invocation of Byz_recv_reply.
@@ -95,20 +93,19 @@ int Byz_invoke(Byz_req *req, Byz_rep *rep, bool ro);
    and returns -1. */
 
 /*
- * Replica 
+ * Replica
  */
 
 #ifndef NO_STATE_TRANSLATION
 
-int Byz_init_replica(char *conf, char *conf_priv, unsigned int num_objs, 
-		     int (*exec)(Byz_req*, Byz_rep*, Byz_buffer*, int, bool),
-		     void (*comp_ndet)(Seqno, Byz_buffer *), int ndet_max_len,
-		     bool (*check_ndet)(Byz_buffer *),
-		     int (*get_obj)(int, char **),
-		     void (*put_objs)(int, int *, int *, char **),
-		     void (*shutdown_proc)(FILE *o),
-		     void (*restart_proc)(FILE *i),
-		     short port);
+int Byz_init_replica(char *conf, char *conf_priv, unsigned int num_objs,
+                     int (*exec)(Byz_req *, Byz_rep *, Byz_buffer *, int, bool),
+                     void (*comp_ndet)(Seqno, Byz_buffer *), int ndet_max_len,
+                     bool (*check_ndet)(Byz_buffer *),
+                     int (*get_obj)(int, char **),
+                     void (*put_objs)(int, int *, int *, char **),
+                     void (*shutdown_proc)(FILE *o),
+                     void (*restart_proc)(FILE *i), short port);
 
 /* Effects: Initializes a libbyz replica process using the information
    in the file named by "conf" and the private key in the file named
@@ -130,12 +127,12 @@ int Byz_init_replica(char *conf, char *conf_priv, unsigned int num_objs,
    int exec(Byz_req *req, Byz_rep *rep, Byz_buffer *ndet,
             int client, bool read_only);
 
-   Effects: 
+   Effects:
    - "req->contents" is a character array with a request with
    "req->size" bytes
-   
+
    - "rep->contents" is a character array where exec should place the
-   reply to the request. This reply cannot excede the value of  
+   reply to the request. This reply cannot excede the value of
    "rep->size" on entry to the exec. On exit from exec, "rep->size"
    must contain the actual number of bytes in the reply.
 
@@ -147,7 +144,7 @@ int Byz_init_replica(char *conf, char *conf_priv, unsigned int num_objs,
 
    - "read_only" is true iff the request should execute only if it does
    not modify the replica's state.
-   
+
    If "read_only" is true "exec" should not execute the request in
    "req" unless it is in fact read only. If the request is not read
    only it should return -1 without modifying the service
@@ -156,7 +153,7 @@ int Byz_init_replica(char *conf, char *conf_priv, unsigned int num_objs,
    rep. The execution of the request will typically require access
    control checks using the client identifier. If the request executes
    successfully exec should return 0.
-   
+
 
    void comp_ndet(Seqno seqno, Byz_buffer *ndet);
    Effects: "ndet->contents" is a character array where comp_ndet
@@ -201,44 +198,44 @@ int Byz_init_replica(char *conf, char *conf_priv, unsigned int num_objs,
  *
  */
 
-
-void Byz_modify(int npages, int* pages);
+void Byz_modify(int npages, int *pages);
 /* Requires: "pages" is an array of "npages" integers. All the elements of the
              array are valid page numbers for the replica's state (i.e. they
-	     are between 0 and the num_objs-1, where num_objs is the
-	     total number of objects in the application state, as defined in
-	     the replica's initialization
+             are between 0 and the num_objs-1, where num_objs is the
+             total number of objects in the application state, as defined in
+             the replica's initialization
    Effects:  Informs library that the pages in pages[0..npages-1]
              are about to be modified. */
 
+#else  // ifndef NO_STATE_TRANSLATION
 
-#else // ifndef NO_STATE_TRANSLATION
+int Byz_init_replica(char *conf, char *conf_priv, char *mem, unsigned int size,
+                     int (*exec)(Byz_req *, Byz_rep *, Byz_buffer *, int, bool),
+                     void (*comp_ndet)(Seqno, Byz_buffer *), int ndet_max_len);
+/* Requires: "mem" is vm page aligned and "size" is a multiple of the vm page
+   size.
 
-
-int Byz_init_replica(char *conf, char *conf_priv, char *mem, unsigned int size, 
-		     int (*exec)(Byz_req *, Byz_rep *, Byz_buffer *, int, bool),
-		     void (*comp_ndet)(Seqno, Byz_buffer *), int ndet_max_len);
-/* Requires: "mem" is vm page aligned and "size" is a multiple of the vm page size.
-
-   Effects: Initializes a libbyz replica process using the information in the file 
-   named by "conf" and the private key in the file named by "conf_priv". 
-   The state managed by the replica is set to the "size" contiguous bytes starting
-   at "mem", and the replica will call the "exec" upcall to execute requests and 
-   the "comp_ndet" upcall to compute non-deterministic choices for each request.
-   "ndet_max_len" must be the maximum number of bytes comp_ndet places in its argument
-   buffer. The replication code uses the begining of "mem" to store protocol data.
-   If successful, the function returns the number of bytes used which is guaranteed 
-   to be a multiple of the vm page size. Otherwise, the function returns -1.
+   Effects: Initializes a libbyz replica process using the information in the
+   file named by "conf" and the private key in the file named by "conf_priv".
+   The state managed by the replica is set to the "size" contiguous bytes
+   starting at "mem", and the replica will call the "exec" upcall to execute
+   requests and the "comp_ndet" upcall to compute non-deterministic choices for
+   each request. "ndet_max_len" must be the maximum number of bytes comp_ndet
+   places in its argument buffer. The replication code uses the begining of
+   "mem" to store protocol data. If successful, the function returns the number
+   of bytes used which is guaranteed to be a multiple of the vm page size.
+   Otherwise, the function returns -1.
 
    The specs for the upcalls are:
-   int exec(Byz_req *req, Byz_rep *rep, Byz_buffer *ndet, int client, bool read_only);
+   int exec(Byz_req *req, Byz_rep *rep, Byz_buffer *ndet, int client, bool
+   read_only);
 
-   Effects: 
+   Effects:
    - "req->contents" is a character array with a request with
    "req->size" bytes
-   
+
    - "rep->contents" is a character array where exec should place the
-   reply to the request. This reply cannot excede the value of  
+   reply to the request. This reply cannot excede the value of
    "rep->size" on entry to the exec. On exit from exec, "rep->size"
    must contain the actual number of bytes in the reply.
 
@@ -250,7 +247,7 @@ int Byz_init_replica(char *conf, char *conf_priv, char *mem, unsigned int size,
 
    - "read_only" is true iff the request should execute only if it does
    not modify the replica's state.
-   
+
    If "read_only" is true "exec" should not execute the request in
    "req" unless it is in fact read only. If the request is not read
    only it should return -1 without modifying the service
@@ -259,7 +256,7 @@ int Byz_init_replica(char *conf, char *conf_priv, char *mem, unsigned int size,
    rep. The execution of the request will typically require access
    control checks using the client identifier. If the request executes
    successfully exec should return 0.
-   
+
 
    void comp_ndet(Seqno seqno, Byz_buffer *ndet);
    Effects: "ndet->contents" is a character array where comp_ndet
@@ -290,12 +287,12 @@ void Byz_modify(char *mem, int size);
    was modified. (When applicable, it is more efficient than Byz_modify or
    Byz_modify2.) */
 
-#define Byz_modify2(mem,size) _Byz_modify2(mem,size)
+#define Byz_modify2(mem, size) _Byz_modify2(mem, size)
 /* void Byz_modify2(char *mem, unsigned int size);
-   Requires: Same as Byz_modify and modified memory can not span more 
+   Requires: Same as Byz_modify and modified memory can not span more
    than two "Block_size" block of state.
-   Effects: Same as Byz_modify and more efficient than Byz_modify and less efficient
-   than Byz_modify1. */
+   Effects: Same as Byz_modify and more efficient than Byz_modify and less
+   efficient than Byz_modify1. */
 
 #endif
 
@@ -313,7 +310,7 @@ void Byz_reset_client();
    points */
 
 #ifndef NO_STATE_TRANSLATION
-char* Byz_get_cached_object(int i);
+char *Byz_get_cached_object(int i);
 #endif
 
 #ifdef __cplusplus

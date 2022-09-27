@@ -7,10 +7,10 @@
 
 template <class T>
 class Generator {
-  public:
-	Generator() {}
-    virtual bool get(T&) = 0;
-    virtual ~Generator() {};
+ public:
+  Generator() {}
+  virtual bool get(T&) = 0;
+  virtual ~Generator(){};
 };
 
 #endif /* _GENERATOR_H */
