@@ -1,0 +1,69 @@
+cmake_minimum_required(VERSION 3.18.4)
+
+project(libbyzea VERSION 0.0.1)
+
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD_REQUIRED True)
+
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+
+add_library(byzea STATIC)
+
+target_include_directories(byzea PRIVATE src)
+target_include_directories(byzea PUBLIC include)
+if(DEFINED MBEDTLS_INCLUDE_PATH)
+    # For some reason, the EXISTS and IS_DIRECTORY operators only work as intended
+    # with absolute paths.
+    get_filename_component(MBEDTLS_INCLUDE_PATH ${MBEDTLS_INCLUDE_PATH} ABSOLUTE)
+    if ((NOT EXISTS ${MBEDTLS_INCLUDE_PATH}) OR (NOT IS_DIRECTORY ${MBEDTLS_INCLUDE_PATH}))
+        message(FATAL_ERROR "${MBEDTLS_INCLUDE_PATH}: path does not exist or is not a directory")
+    endif()
+    target_include_directories(byzea PRIVATE ${MBEDTLS_INCLUDE_PATH})
+endif()
+
+message("${INCLUDE_DIRECTORIES}")
+target_sources(byzea PRIVATE
+    src/Client.cc
+    src/Replica.cc
+    src/New_key.cc
+    src/Commit.cc
+    src/Message.cc
+    src/Reply.cc
+    src/Digest.cc
+    src/Node.cc
+    src/Request.cc
+    src/Checkpoint.cc
+    src/Pre_prepare.cc
+    src/Req_queue.cc
+    src/Prepare.cc
+    src/Status.cc
+    src/Prepared_cert.cc
+    src/ITimer.cc
+    src/Principal.cc
+    src/Log_allocator.cc
+    src/Meta_data.cc
+    src/Data.cc
+    src/Fetch.cc
+    src/Meta_data_cert.cc
+    src/State.cc
+    src/libbyz.cc
+    src/View_change.cc
+    src/New_view.cc
+    src/View_change_ack.cc
+    src/View_info.cc
+    src/NV_info.cc
+    src/Rep_info.cc
+    src/Meta_data_d.cc
+    src/Query_stable.cc
+    src/Reply_stable.cc
+    src/Stable_estimator.cc
+    src/Statistics.cc
+    src/Time.cc
+    src/Big_req_table.cc
+    src/Pre_prepare_info.cc
+    src/rsa_private_key.cc
+    src/rsa_public_key.cc
+    src/fail.c
+    src/umac.c
+)
