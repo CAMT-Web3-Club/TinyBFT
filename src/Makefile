@@ -4,7 +4,7 @@ CC:=g++
 C:=gcc
 AR:=ar
 RANLIB:=ranlib
-MAKEDEPEND:=makedepend -Y
+MAKEDEPEND:=../gcc-makedepend.pl
 MAKE=gmake
 INCS:=-I../gmp -I../sfs/include/sfslite
 
