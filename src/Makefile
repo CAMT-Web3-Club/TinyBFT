@@ -6,7 +6,7 @@ AR:=ar
 RANLIB:=ranlib
 MAKEDEPEND:=../gcc-makedepend.pl
 MAKE=gmake
-INCS:=-I../gmp -I../sfs/include/sfslite
+INCS:=$(MBEDTLS_INCLUDE_PATH)
 
 CPPFLAGS:= $(INCS) -g -Wall -DRECOVERY 
 #CPPFLAGS:= $(INCS) -O9 -funroll-loops -ffast-math -malign-double -march=pentiumpro -fomit-frame-pointer -fno-exceptions -DNDEBUG 
@@ -16,12 +16,10 @@ CPPFLAGS:= $(INCS) -g -Wall -DRECOVERY
 
 CFLAGS:= $(CPPFLAGS)
 
-SINCS:= #-I../sfs  -I../sfs/crypt -I../sfs/async -I../sfs/arpc -I../sfs/sfsmisc -I../sfs/svc -I../sfs/include/sfs 
-
 Principal.o: Principal.cc Principal.h
-	$(CC) $(CPPFLAGS) $(SINCS) -o Principal.o -c Principal.cc
+	$(CC) $(CPPFLAGS) -o Principal.o -c Principal.cc
 Node.o: Node.cc Node.h
-	$(CC) $(CPPFLAGS) $(SINCS) -o Node.o -c Node.cc
+	$(CC) $(CPPFLAGS) -o Node.o -c Node.cc
 
 %.o:: %.cc
 	$(CC) $(CPPFLAGS) -o $@ -c $<
@@ -43,7 +41,8 @@ View_change.cc        New_view.cc           View_change_ack.cc \
 View_info.cc          NV_info.cc            Rep_info.cc \
 Meta_data_d.cc        Query_stable.cc       Reply_stable.cc \
 Stable_estimator.cc   Statistics.cc         Time.cc \
-Big_req_table.cc      Pre_prepare_info.cc
+Big_req_table.cc      Pre_prepare_info.cc   rsa_private_key.cc \
+rsa_public_key.cc
 
 
 c_FILES= fail.c umac.c
@@ -66,7 +65,7 @@ clobber:
 	-rm *~
 
 depend:
-	$(MAKEDEPEND) $(INCS) $(SINCS) $(C_FILES)
+	$(MAKEDEPEND) $(INCS) $(C_FILES)
 
 libbyz.a: objs
 	$(AR) rcv $@ $(OBJ_FILES) 

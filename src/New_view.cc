@@ -51,8 +51,9 @@ void New_view::re_authenticate(Principal *p) {
       sizeof(New_view_rep) + sizeof(VC_info) * node->n() + max() - min();
 
   // Compute authenticator and update size.
-  th_assert(Max_message_size - old_size >= node->auth_size(),
-            "Message is too small");
+  th_assert(
+      Max_message_size - old_size >= static_cast<size_t>(node->auth_size()),
+      "Message is too small");
   set_size(old_size + node->auth_size());
   node->gen_auth_out(contents(), old_size, contents() + old_size);
   trim();
@@ -83,7 +84,8 @@ bool New_view::verify() {
 
   int old_size =
       sizeof(New_view_rep) + sizeof(VC_info) * node->n() + max() - min();
-  if (Max_message_size - old_size < node->auth_size(id())) return false;
+  if (Max_message_size - old_size < static_cast<size_t>(node->auth_size(id())))
+    return false;
 
   // Check authenticator
   if (!node->verify_auth_in(id(), contents(), old_size, contents() + old_size))

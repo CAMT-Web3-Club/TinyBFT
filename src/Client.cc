@@ -15,8 +15,9 @@
 
 //#define ADJUST_RTIMEOUT 1
 
-Client::Client(FILE *config_file, FILE *config_priv, short port)
-    : Node(config_file, config_priv, port),
+Client::Client(FILE *config_file, const std::string &private_key_file,
+               short port)
+    : Node(config_file, private_key_file, port),
       t_reps(2 * f() + 1),
       c_reps(f() + 1) {
   // Fail if node is is a replica.

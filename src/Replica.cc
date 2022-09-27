@@ -58,7 +58,7 @@ template class Set<Checkpoint>;
 template <class T>
 void Replica::retransmit(T *m, Time &cur, Time *tsent, Principal *p) {
   // XXXXXXXXXXXthere most be a bug in the way tsent is managed. Figure out
-  // where and reinsert this protection against denial of service attacks.
+  //  where and reinsert this protection against denial of service attacks.
   // if (diffTime(cur, *tsent) > 1000) {
   if (1) {
     // if (p->is_stale(tsent)) {
@@ -79,8 +79,8 @@ void Replica::retransmit(T *m, Time &cur, Time *tsent, Principal *p) {
 
 #ifndef NO_STATE_TRANSLATION
 
-Replica::Replica(FILE *config_file, FILE *config_priv, int num_objs,
-                 int (*get)(int, char **),
+Replica::Replica(FILE *config_file, const std::string &private_key_file,
+                 int num_objs, int (*get)(int, char **),
                  void (*put)(int, int *, int *, char **),
                  void (*shutdown_proc)(FILE *o), void (*restart_proc)(FILE *i),
                  short port)
@@ -97,8 +97,9 @@ Replica::Replica(FILE *config_file, FILE *config_priv, int num_objs,
       n_mem_blocks(num_objs) {
 #else
 
-Replica::Replica(FILE *config_file, FILE *config_priv, char *mem, int nbytes)
-    : Node(config_file, config_priv),
+Replica::Replica(FILE *config_file, const std::string &private_key_file,
+                 char *mem, int nbytes)
+    : Node(config_file, private_key_file),
       rqueue(),
       ro_rqueue(),
       plog(max_out),
@@ -248,7 +249,6 @@ void Replica::recv() {
     }
 
     Message *m = Node::recv();
-
     if (qs) {
       if (m->tag() != New_key_tag && m->tag() != Query_stable_tag &&
           m->tag() != Reply_stable_tag && m->tag() != Status_tag) {
@@ -270,74 +270,92 @@ void Replica::recv() {
     // TODO: This should probably be a jump table.
     switch (m->tag()) {
       case Request_tag:
+        fprintf(stderr, "Request.\n");
         gen_handle<Request>(m);
         break;
 
       case Pre_prepare_tag:
+        fprintf(stderr, "Pre-Prepare.\n");
         gen_handle<Pre_prepare>(m);
         break;
 
       case Prepare_tag:
+        fprintf(stderr, "Prepare.\n");
         gen_handle<Prepare>(m);
         break;
 
       case Commit_tag:
+        fprintf(stderr, "Commit.\n");
         gen_handle<Commit>(m);
         break;
 
       case Checkpoint_tag:
+        fprintf(stderr, "Checkpoint.\n");
         gen_handle<Checkpoint>(m);
         break;
 
       case New_key_tag:
+        fprintf(stderr, "New Key.\n");
         gen_handle<New_key>(m);
         break;
 
       case View_change_ack_tag:
+        fprintf(stderr, "View Change ACK.\n");
         gen_handle<View_change_ack>(m);
         break;
 
       case Status_tag:
+        fprintf(stderr, "Status.\n");
         gen_handle<Status>(m);
         break;
 
       case Fetch_tag:
+        fprintf(stderr, "Fetch.\n");
         gen_handle<Fetch>(m);
         break;
 
       case Reply_tag:
+        fprintf(stderr, "Reply.\n");
         gen_handle<Reply>(m);
         break;
 
       case Query_stable_tag:
+        fprintf(stderr, "Query Stable.\n");
         gen_handle<Query_stable>(m);
         break;
 
       case Reply_stable_tag:
+        fprintf(stderr, "Reply Stable.\n");
         gen_handle<Reply_stable>(m);
         break;
 
       case Meta_data_tag:
+        fprintf(stderr, "Metadata.\n");
         gen_handle<Meta_data>(m);
         break;
 
       case Meta_data_d_tag:
+        fprintf(stderr, "Metadata D.\n");
         gen_handle<Meta_data_d>(m);
         break;
 
       case Data_tag:
+        fprintf(stderr, "Data.\n");
         gen_handle<Data>(m);
         break;
 
       case View_change_tag:
+        fprintf(stderr, "View Change.\n");
         gen_handle<View_change>(m);
         break;
 
       case New_view_tag:
+        fprintf(stderr, "New View.\n");
         gen_handle<New_view>(m);
         break;
 
       default:
+        fprintf(stderr, "Unknown.\n");
         // Unknown message type.
         delete m;
     }
@@ -620,7 +638,7 @@ void Replica::handle(Checkpoint *m) {
             Seqno rc = state.rollback();
             last_tentative_execute = last_executed = rc;
             //	    fprintf(stderr, ":):):):):):):):) Set le = %d\n",
-            //last_executed);
+            // last_executed);
           }
 
           // Stop view change timer while fetching state. It is restarted
@@ -638,7 +656,7 @@ void Replica::handle(Checkpoint *m) {
 
 void Replica::handle(New_key *m) {
   if (!m->verify()) {
-    // printf("BAD NKEY from %d\n", m->id());
+    fprintf(stderr, "BAD NKEY from %d\n", m->id());
   }
   delete m;
 }
@@ -1102,7 +1120,7 @@ void Replica::execute_prepared(bool committed) {
           // differently.  TODO: make more general to allow other types
           // of requests from replicas.
           //	  printf("\n\n\nExecuting recovery request seqno=%qd rep
-          //id=%d\n", last_tentative_execute, cid);
+          // id=%d\n", last_tentative_execute, cid);
 
           if (inb.size != sizeof(Seqno)) {
             // Invalid recovery request.
@@ -1126,8 +1144,8 @@ void Replica::execute_prepared(bool committed) {
                  i++)
               outb.contents[outb.size + i] = 0;
           // if (last_tentative_execute%100 == 0)
-          //  printf("%s - %qd\n",((node_id == primary()) ? "P" : "B"),
-          //  last_tentative_execute);
+          //   printf("%s - %qd\n",((node_id == primary()) ? "P" : "B"),
+          //   last_tentative_execute);
         }
 
         // Finish constructing the reply.
@@ -1171,7 +1189,7 @@ void Replica::execute_committed() {
         // last_executed+1.
         last_executed = last_executed + 1;
         //	fprintf(stderr, ":):):):):):):):) Set le = %d\n",
-        //last_executed);
+        // last_executed);
         th_assert(pp->seqno() == last_executed, "Invalid execution");
 
         // Execute any buffered read-only requests
@@ -1793,7 +1811,7 @@ void Replica::handle(Reply *m, bool mine) {
         if (new_rp > recovery_point) recovery_point = new_rp;
 
         //	printf("XXX Complete rec reply with seqno %qd
-        //rec_point=%qd\n",rec_seqno,  recovery_point);
+        // rec_point=%qd\n",rec_seqno,  recovery_point);
 
         // Update view number
         View rec_view = K_max<View>(f() + 1, rr_views, n(), View_max);

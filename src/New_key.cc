@@ -16,7 +16,7 @@ New_key::New_key() : Message(New_key_tag, Max_message_size) {
   // Get new keys and encrypt them
   Principal *p;
   char *dst = contents() + sizeof(New_key_rep);
-  int dst_len = Max_message_size - sizeof(New_key_rep);
+  size_t dst_len = Max_message_size - sizeof(New_key_rep);
   for (int i = 0; i < node->n(); i++) {
     // Skip myself.
     if (i == node->id()) continue;
@@ -25,7 +25,7 @@ New_key::New_key() : Message(New_key_tag, Max_message_size) {
     p = node->i_to_p(i);
     p->set_in_key(k);
     unsigned ssize = p->encrypt((char *)k, Nonce_size, dst, dst_len);
-    th_assert(ssize != 0, "Message is too small");
+    th_assert(ssize != 0U, "Message is too small");
     dst += ssize;
     dst_len -= ssize;
   }
@@ -48,7 +48,7 @@ bool New_key::verify() {
   }
 
   char *dst = contents() + sizeof(New_key_rep);
-  int dst_len = size() - sizeof(New_key_rep);
+  size_t dst_len = size() - sizeof(New_key_rep);
   unsigned k[Nonce_size_u];
 
   for (int i = 0; i < node->n(); i++) {
@@ -60,7 +60,9 @@ bool New_key::verify() {
 
     if (i == node->id()) {
       // found my key
+      printf("Decrypting stuff\n");
       int ksize = node->decrypt(dst, dst_len, (char *)k, Nonce_size);
+      printf("%d != %d?\n", ksize, Nonce_size);
       if (ksize != Nonce_size) return false;
     }
 

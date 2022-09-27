@@ -86,9 +86,9 @@ struct Statistics {
   // Recovery:
   //
   Array<Recovery_stats> rec_stats;
-  long rec_counter;   // Number of recoveries
-  long rec_overlaps;  // Number of recoveries that ended after executing
-                      // recovery request for next replica.
+  long rec_counter;          // Number of recoveries
+  long rec_overlaps;         // Number of recoveries that ended after executing
+                             // recovery request for next replica.
   long incomplete_recs;      // Number of recoveries ended by my next recovery
   Cycle_counter rec_time;    // Total cycles for recovery
   Cycle_counter est_time;    // Cycles for estimation procedure

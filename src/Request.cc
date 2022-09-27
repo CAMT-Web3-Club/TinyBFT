@@ -70,7 +70,7 @@ void Request::re_authenticate(bool change, Principal *p) {
   rep().replier =
       (new_rep != rep().replier) ? new_rep : (new_rep + 1) % node->n();
 
-  int old_size = sizeof(Request_rep) + rep().command_size;
+  size_t old_size = sizeof(Request_rep) + rep().command_size;
   if ((rep().extra & 2) == 0) {
     node->gen_auth_in(contents(), sizeof(Request_rep), contents() + old_size);
   } else {
@@ -97,7 +97,7 @@ Request::Request(Request_rep *contents) : Message(contents) {}
 bool Request::verify() {
   const int nid = node->id();
   const int cid = client_id();
-  const int old_size = sizeof(Request_rep) + rep().command_size;
+  const size_t old_size = sizeof(Request_rep) + rep().command_size;
   Principal *p = node->i_to_p(cid);
   Digest d;
 
@@ -106,7 +106,7 @@ bool Request::verify() {
     if ((rep().extra & 2) == 0) {
       // Message has an authenticator.
       if (cid != nid && cid >= node->n() &&
-          size() - old_size >= node->auth_size(cid))
+          size() - old_size >= static_cast<size_t>(node->auth_size(cid)))
         return node->verify_auth_out(cid, contents(), sizeof(Request_rep),
                                      contents() + old_size);
     } else {

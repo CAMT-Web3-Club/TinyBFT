@@ -1,6 +1,7 @@
 #include "Node.h"
 
 #include <arpa/inet.h>
+#include <fcntl.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <stdio.h>
@@ -11,14 +12,14 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <cstring>
+
 #include "ITimer.h"
 #include "Message.h"
 #include "New_key.h"
 #include "Principal.h"
 #include "Time.h"
-#include "crypt.h"
 #include "parameters.h"
-#include "rabin.h"
 #include "th_assert.h"
 
 #define NO_IP_MULTICAST
@@ -33,7 +34,11 @@ Node *node = 0;
 // Enable statistics
 #include "Statistics.h"
 
-Node::Node(FILE *config_file, FILE *config_priv, short req_port) {
+static const char *DRBG_PERSONALIZATION_STRING =
+    static_cast<const char *>("libbyz");
+
+Node::Node(FILE *config_file, const std::string &private_key_file,
+           short req_port) {
   node = this;
 
 #ifdef NO_IP_MULTICAST
@@ -41,21 +46,23 @@ Node::Node(FILE *config_file, FILE *config_priv, short req_port) {
 #endif
 
   // Intialize random number generator
-  random_init();
+  mbedtls_entropy_init(&entropy);
+  mbedtls_ctr_drbg_init(&ctr_drbg_ctx);
+  int err = mbedtls_ctr_drbg_seed(
+      &ctr_drbg_ctx, mbedtls_entropy_func, &entropy,
+      reinterpret_cast<const unsigned char *>(DRBG_PERSONALIZATION_STRING),
+      std::strlen(DRBG_PERSONALIZATION_STRING));
+  if (err) {
+    th_fail("Failed to seed random number generator");
+  }
 
   // Compute clock frequency.
   init_clock_mhz();
 
-  // Read private configuration file:
-  char pk1[1024], pk2[1024];
-  fscanf(config_priv, "%s %s\n", pk1, pk2);
-  bigint n1(pk1, 16);
-  bigint n2(pk2, 16);
-  if (n1 >= n2) th_fail("Invalid private file: first number >= second number");
-
-  priv_key = new rabin_priv(n1, n2);
+  // Read private key file:
   // TODO: this file should be encrypted under some passphrase and user
   // should be prompted for that passphrase.
+  priv_key = new libbyz::RsaPrivateKey(private_key_file, &ctr_drbg_ctx);
 
   // Read public configuration file:
   // TODO: this should be more robust
@@ -73,7 +80,7 @@ Node::Node(FILE *config_file, FILE *config_priv, short req_port) {
 
   // read in all the principals
   char addr_buff[100];
-  char pk[1024];
+  char public_keyfile[1024];
   short port;
 
   fscanf(config_file, "%d\n", &num_principals);
@@ -87,7 +94,7 @@ Node::Node(FILE *config_file, FILE *config_priv, short req_port) {
   a.sin_family = AF_INET;
   a.sin_addr.s_addr = inet_addr(addr_buff);
   a.sin_port = htons(port);
-  group = new Principal(num_principals + 1, a);
+  group = new Principal(num_principals + 1, a, &ctr_drbg_ctx);
 
   // read in remaining principals' addresses and figure out my principal
   char host_name[MAXHOSTNAMELEN + 1];
@@ -103,10 +110,10 @@ Node::Node(FILE *config_file, FILE *config_priv, short req_port) {
   principals = (Principal **)malloc(num_principals * sizeof(Principal *));
   for (int i = 0; i < num_principals; i++) {
     fscanf(config_file, "%256s %32s %hd %1024s \n", host_name, addr_buff, &port,
-           pk);
+           public_keyfile);
     a.sin_addr.s_addr = inet_addr(addr_buff);
     a.sin_port = htons(port);
-    principals[i] = new Principal(i, a, pk);
+    principals[i] = new Principal(i, a, &ctr_drbg_ctx, public_keyfile);
     if (my_address.s_addr == a.sin_addr.s_addr && node_id == -1 &&
         (req_port == 0 || req_port == port)) {
       node_id = i;
@@ -136,7 +143,7 @@ Node::Node(FILE *config_file, FILE *config_priv, short req_port) {
     exit(1);
   }
 
-#define WANMCAST
+#define WANMCAST 0
 #ifdef WANMCAST
   // Set TTL larger than 1 to enable multicast across routers.
   u_char i = 20;
@@ -184,6 +191,7 @@ Node::~Node() {
 
   free(principals);
   delete group;
+  delete priv_key;
 }
 
 void Node::send(Message *m, int i) {
@@ -354,14 +362,18 @@ void Node::gen_signature(const char *src, unsigned src_len, char *sig) {
   INCR_OP(num_sig_gen);
   START_CC(sig_gen_cycles);
 
-  bigint bsig = priv_key->sign(str(src, src_len));
-  int size = mpz_rawsize(&bsig);
-  if (size + sizeof(unsigned) > sig_size()) th_fail("Signature is too big");
+  size_t key_size = priv_key->size();
+  if (key_size + sizeof(key_size) > sig_size()) {
+    th_fail("Signature is too big");
+  }
 
-  memcpy(sig, (char *)&size, sizeof(unsigned));
-  sig += sizeof(unsigned);
-
-  mpz_get_raw(sig, size, &bsig);
+  memcpy(sig, &key_size, sizeof(key_size));
+  sig += sizeof(key_size);
+  const std::string msg(src, src_len);
+  int err = priv_key->sign(msg, reinterpret_cast<uint8_t *>(sig), key_size);
+  if (err) {
+    th_fail("failed to sign message");
+  }
 
   STOP_CC(sig_gen_cycles);
 }
@@ -370,21 +382,25 @@ unsigned Node::decrypt(char *src, unsigned src_len, char *dst,
                        unsigned dst_len) {
   if (src_len < 2 * sizeof(unsigned)) return 0;
 
-  bigint b;
-  unsigned csize, psize;
-  memcpy((char *)&psize, src, sizeof(unsigned));
-  src += sizeof(unsigned);
-  memcpy((char *)&csize, src, sizeof(unsigned));
-  src += sizeof(unsigned);
+  unsigned ciphertext_len;
+  unsigned plaintext_len;
+  memcpy((char *)&plaintext_len, src, sizeof(unsigned));
+  src += sizeof(plaintext_len);
+  memcpy((char *)&ciphertext_len, src, sizeof(unsigned));
+  src += sizeof(ciphertext_len);
+  src_len -= (sizeof(plaintext_len) + sizeof(ciphertext_len));
 
-  if (dst_len < psize || src_len < csize) return 0;
+  if (dst_len < plaintext_len || src_len < ciphertext_len) return 0;
 
-  mpz_set_raw(&b, src, csize);
+  size_t dec_plaintext_len;
+  int err = priv_key->decrypt(reinterpret_cast<uint8_t *>(src), ciphertext_len,
+                              dst, dst_len, &dec_plaintext_len);
+  if (err) {
+    th_fail("failed to decrypt message");
+  }
+  th_assert(plaintext_len == dec_plaintext_len, "unexpected plaintext length");
 
-  str ptext = priv_key->decrypt(b, psize);
-  memcpy(dst, ptext.cstr(), ptext.len());
-
-  return psize;
+  return plaintext_len;
 }
 
 Request_id Node::new_rid() {
@@ -397,11 +413,17 @@ Request_id Node::new_rid() {
 void Node::new_tstamp() {
   struct timeval t;
   gettimeofday(&t, 0);
-  th_assert(sizeof(t.tv_sec) <= sizeof(int), "tv_sec is too big");
+
+  // FIXME: Originally, this checked whether sizeof(tv_sec's) <= sizeof(int).
+  // The change here is only a quick fix. We probably should replace the current
+  // request ID implementation with a struct or something similar.
+  th_assert(t.tv_sec <= INT_MAX, "tv_sec is too big");
   Long tstamp = t.tv_sec;
   long int_bits = sizeof(int) * 8;
   cur_rid = tstamp << int_bits;
 }
+
+mbedtls_ctr_drbg_context *Node::drbg_context() { return &this->ctr_drbg_ctx; }
 
 void atimer_handler() {
   th_assert(node, "replica is not initialized\n");

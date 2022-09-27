@@ -47,7 +47,7 @@ class Replica : public Node {
  public:
 #ifndef NO_STATE_TRANSLATION
 
-  Replica(FILE *config_file, FILE *config_priv, int num_objs,
+  Replica(FILE *config_file, const std::string &private_key_file, int num_objs,
           int (*get_segment)(int, char **),
           void (*put_segments)(int, int *, int *, char **),
           void (*shutdown_proc)(FILE *o), void (*restart_proc)(FILE *i),
@@ -61,7 +61,8 @@ class Replica : public Node {
   // state information are "shutdown_proc" and "restart_proc".
 
 #else
-  Replica(FILE *config_file, FILE *config_priv, char *mem, int nbytes);
+  Replica(FILE *config_file, const std::string &private_key_file, char *mem,
+          int nbytes);
   // Requires: "mem" is vm page aligned and nbytes is a multiple of the
   // vm page size.
   // Effects: Create a new server replica using the information in

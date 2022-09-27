@@ -6,6 +6,8 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+#include <cstring>
+
 #include "Client.h"
 #include "Replica.h"
 #include "Reply.h"
@@ -33,16 +35,21 @@ int Byz_init_client(char *conf, char *conf_priv, short port) {
     return -1;
   }
 
+  // FIXME: we should make sure that client initialization was successful in the
+  // constructor, by adding a is_valid method or something similar.
   FILE *config_priv_file = fopen(conf_priv, "r");
   if (config_priv_file == 0) {
-    fprintf(stderr, "libbyz: Invalid private configuration file %s \n", conf);
+    fprintf(stderr, "libbyz: Invalid private configuration file %s \n",
+            conf_priv);
     return -1;
   }
+  fclose(config_priv_file);
 
   // Initialize random number generator
   srand48(getpid());
 
-  Client *client = new Client(config_file, config_priv_file, port);
+  const std::string private_key_file(conf_priv, std::strlen(conf_priv));
+  Client *client = new Client(config_file, private_key_file, port);
   node = client;
   return 0;
 }
@@ -114,17 +121,21 @@ int Byz_init_replica(char *conf, char *conf_priv, unsigned int num_objs,
     return -1;
   }
 
+  // FIXME: we should make sure that replica initialization was successful in
+  // the constructor, by adding a is_valid method or something similar.
   FILE *config_priv_file = fopen(conf_priv, "r");
   if (config_priv_file == 0) {
     fprintf(stderr, "libbyz: Invalid private configuration file %s \n",
             conf_priv);
     return -1;
   }
+  fclose(config_priv_file);
 
   // Initialize random number generator
   srand48(getpid());
 
-  replica = new Replica(config_file, config_priv_file, num_objs, get, put,
+  const std::string private_key_file(conf_priv, std::strlen(conf_priv));
+  replica = new Replica(config_file, private_key_file, num_objs, get, put,
                         shutdown_proc, restart_proc, port);
   node = replica;
 
@@ -156,17 +167,21 @@ int Byz_init_replica(char *conf, char *conf_priv, char *mem, unsigned int size,
     return -1;
   }
 
+  // FIXME: we should make sure that replica initialization was successful in
+  // the constructor, by adding a is_valid method or something similar.
   FILE *config_priv_file = fopen(conf_priv, "r");
   if (config_priv_file == 0) {
     fprintf(stderr, "libbyz: Invalid private configuration file %s \n",
             conf_priv);
     return -1;
   }
+  fclose(config_priv_file);
 
   // Initialize random number generator
   srand48(getpid());
 
-  replica = new Replica(config_file, config_priv_file, mem, size);
+  const std::string private_key_file(conf_priv, std::strlen(conf_priv));
+  replica = new Replica(config_file, private_key_file, mem, size);
   node = replica;
 
   // Register service-specific functions.

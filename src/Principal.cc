@@ -3,23 +3,23 @@
 #include <stdlib.h>
 #include <strings.h>
 
+#include <cstring>
+#include <string>
+
 #include "Node.h"
 #include "Reply.h"
-#include "crypt.h"
-#include "rabin.h"
 
-Principal::Principal(int i, Addr a, char *p) {
+Principal::Principal(int i, Addr a, mbedtls_ctr_drbg_context *drbg,
+                     char *key_filename) {
   id = i;
   addr = a;
+  drbg_ctx = drbg;
   last_fetch = 0;
 
-  if (p == 0) {
-    pkey = 0;
-    ssize = 0;
-  } else {
-    bigint b(p, 16);
-    ssize = (mpz_sizeinbase2(&b) >> 3) + 1 + sizeof(unsigned);
-    pkey = new rabin_pub(b);
+  if (key_filename != nullptr) {
+    std::string filename(key_filename, std::strlen(key_filename));
+    pkey = new libbyz::RsaPublicKey(filename, drbg);
+    ssize = pkey->size() + sizeof(size_t) + 1;
   }
 
   for (int j = 0; j < 4; j++) {
@@ -116,21 +116,23 @@ bool Principal::verify_signature(const char *src, unsigned src_len,
                                  const char *sig, bool allow_self) {
   // Principal never verifies its own authenticator.
   if ((id == node->id()) && !allow_self) return false;
-
   INCR_OP(num_sig_ver);
   START_CC(sig_ver_cycles);
 
-  bigint bsig;
-  int s_size;
-  memcpy((char *)&s_size, sig, sizeof(int));
-  sig += sizeof(int);
-  if (s_size + (int)sizeof(int) > sig_size()) {
+  printf("Verifying signature...\n");
+  size_t signature_len;
+  memcpy(&signature_len, sig, sizeof(signature_len));
+  sig += sizeof(signature_len);
+  if (signature_len + sizeof(signature_len) > sig_size()) {
+    printf("%lx > %lx?\n", (signature_len + sizeof(signature_len)), sig_size());
     STOP_CC(sig_ver_cycles);
     return false;
   }
 
-  mpz_set_raw(&bsig, sig, s_size);
-  bool ret = pkey->verify(str(src, src_len), bsig);
+  const std::string msg(src, src_len);
+  bool ret =
+      pkey->verify(msg, reinterpret_cast<const uint8_t *>(sig), signature_len);
+  printf("ret = %d\n", ret);
 
   STOP_CC(sig_ver_cycles);
   return ret;
@@ -138,29 +140,40 @@ bool Principal::verify_signature(const char *src, unsigned src_len,
 
 unsigned Principal::encrypt(const char *src, unsigned src_len, char *dst,
                             unsigned dst_len) {
+  unsigned ciphertext_len = pkey->size();
+  unsigned total_len =
+      ciphertext_len + sizeof(src_len) + sizeof(ciphertext_len);
+  if (dst_len < total_len) {
+    return 0;
+  }
+
+  memcpy(dst, (char *)&src_len, sizeof(src_len));
+  dst += sizeof(src_len);
+  memcpy(dst, (char *)&ciphertext_len, sizeof(ciphertext_len));
+  dst += sizeof(ciphertext_len);
+  dst_len -= (sizeof(src_len) + sizeof(ciphertext_len));
+
+  std::string plaintext(src, src_len);
   // This is rather inefficient if message is big but messages will
   // be small.
-  bigint ctext = pkey->encrypt(str(src, src_len));
-  unsigned size = mpz_rawsize(&ctext);
-  if (dst_len < size + 2 * sizeof(unsigned)) return 0;
+  int err = pkey->encrypt(plaintext, reinterpret_cast<uint8_t *>(dst), dst_len);
+  th_assert(err == 0, "unexpected error while encrypting message");
 
-  memcpy(dst, (char *)&src_len, sizeof(unsigned));
-  dst += sizeof(unsigned);
-  memcpy(dst, (char *)&size, sizeof(unsigned));
-  dst += sizeof(unsigned);
-
-  mpz_get_raw(dst, size, &ctext);
-  return size + 2 * sizeof(unsigned);
+  return total_len;
 }
 
 void random_nonce(unsigned *n) {
-  bigint n1 = random_bigint(Nonce_size * 8);
-  mpz_get_raw((char *)n, Nonce_size, &n1);
+  th_assert(
+      mbedtls_ctr_drbg_random(node->drbg_context(),
+                              reinterpret_cast<uint8_t *>(n), Nonce_size) == 0,
+      "failed to generate random nonce");
 }
 
 int random_int() {
-  bigint n1 = random_bigint(sizeof(int) * 8);
   int i;
-  mpz_get_raw((char *)&i, sizeof(int), &n1);
+  th_assert(
+      mbedtls_ctr_drbg_random(node->drbg_context(),
+                              reinterpret_cast<uint8_t *>(&i), sizeof(i)) == 0,
+      "failed to generate random integer");
   return i;
 }

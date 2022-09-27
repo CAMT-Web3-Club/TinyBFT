@@ -10,7 +10,7 @@
 #include "types.h"
 
 // Maximum message size. Must verify ALIGNED_SIZE.
-const int Max_message_size = 9000;
+const size_t Max_message_size = 9000;
 
 //
 // All messages have the following format:

@@ -1,16 +1,18 @@
 #ifndef _Node_h
-#define _Node_h 1
+#define _Node_h
 
+#include <mbedtls/ctr_drbg.h>
+#include <mbedtls/entropy.h>
 #include <stdio.h>
 
 #include "ITimer.h"
 #include "Principal.h"
 #include "Statistics.h"
+#include "rsa_private_key.h"
 #include "th_assert.h"
 #include "types.h"
 
 class Message;
-class rabin_priv;
 class New_key;
 class ITimer;
 
@@ -18,7 +20,7 @@ extern void atimer_handler();
 
 class Node {
  public:
-  Node(FILE *config_file, FILE *config_priv, short port = 0);
+  Node(FILE *config_file, const std::string &private_key_file, short port = 0);
   // Effects: Create a new Node object using the information in
   // "config_file" and "config_priv".  If port is 0, use the first
   // line from configuration whose host address matches the address
@@ -55,6 +57,9 @@ class Node {
 
   inline int primary() const;
   // Effects: Returns  the identifier of the primary for current view.
+
+  mbedtls_ctr_drbg_context *drbg_context();
+  // Effects: Returns the node's random number generator context.
 
   //
   // Communication methods:
@@ -150,7 +155,11 @@ class Node {
   int threshold;     // Number of correct replicas. It must be
                      // threshold == 2*max_faulty+1.
 
-  rabin_priv *priv_key;  // Node's private key.
+  libbyz::RsaPrivateKey *priv_key;  // Node's private key.
+
+  // Random number generator data
+  mbedtls_ctr_drbg_context ctr_drbg_ctx;
+  mbedtls_entropy_context entropy;
 
   // Map from principal identifiers to Principal*. The first "num_replicas"
   // principals correspond to the replicas.
