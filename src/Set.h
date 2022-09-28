@@ -3,6 +3,8 @@
 
 #include "types.h"
 
+namespace libbyzea {
+
 template <class T>
 class Set {
   //
@@ -46,5 +48,7 @@ template <class T>
 inline int Set<T>::size() const {
   return cur_size;
 }
+
+}  // namespace libbyzea
 
 #endif  // _Set_h

@@ -35,6 +35,8 @@
    become too sparse.
 */
 
+namespace libbyzea {
+
 BH_TEMPLATE bool BHashGenerator<ELEM, SET, GEN>::get(ELEM &e) {
     if (gen.get(e)) return TRUE;
     do {
@@ -52,7 +54,7 @@ BH_TEMPLATE bool BHashGenerator<ELEM, SET, GEN>::get(ELEM &e) {
 }
 
 BH_TEMPLATE void BHashGenerator<ELEM, SET, GEN>::remove() {
-    gen.remove(); 
+    gen.remove();
     hash_table->numItems--;
 }
 
@@ -98,7 +100,7 @@ BH_TEMPLATE void BHashT::copy_items(BHashT const &bh) {
 BH_TEMPLATE BHashT::BHash(BHashT const &bh) {
      copy_items(bh);
 }
- 
+
 BH_TEMPLATE BHashT const &BHashT::operator=(BHashT const &bh) {
     if (this == &bh) return *this;
     delete [] buckets;
@@ -197,7 +199,7 @@ BH_TEMPLATE void BHashT::resize(int desired_size) {
     self.sizeup(desired_size);
     self.buckets = new SET[numSlots];
     self.numItems = 0;
-    
+
     int i;
     for (i=0; i<old_slots; i++) {
 	GEN g(old_buckets[i]);
@@ -246,5 +248,7 @@ BH_TEMPLATE int BHashT::memory_usage() const {
 	+ numSlots*sizeof(Buckets<ELEM>) // the array of pointers to chains
 	+ numItems*Buckets<ELEM>::sizeof_BucketsImpl(); // actual buckets
 }
+
+}  // namespace libbyzea
 
 #endif /* _BHASH_T */

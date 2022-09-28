@@ -9,6 +9,8 @@
 #include "th_assert.h"
 #include "types.h"
 
+namespace libbyzea {
+
 // Maximum message size. Must verify ALIGNED_SIZE.
 const size_t Max_message_size = 9000;
 
@@ -120,7 +122,7 @@ class Message {
   int max_size;      // Maximum number of bytes that can be stored in "msg"
                      // or "-1" if this instance is not responsible for
                      // deallocating the storage in msg.
-  // Invariant: max_size <= 0 || 0 < msg->size <= max_size
+                     // Invariant: max_size <= 0 || 0 < msg->size <= max_size
 
  private:
   //
@@ -162,5 +164,7 @@ inline int Message::msize() const {
 }
 
 inline char *Message::contents() { return (char *)msg; }
+
+}  // namespace libbyzea
 
 #endif  //_Message_h

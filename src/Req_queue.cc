@@ -5,6 +5,8 @@
 #include "Pre_prepare.h"
 #include "Request.h"
 
+namespace libbyzea {
+
 Req_queue::Req_queue()
     : reqs(PNode(), node->np()), head(0), tail(0), nelems(0), nbytes(0) {}
 
@@ -100,3 +102,5 @@ void Req_queue::PNode::clear() {
   out_rid = 0;
   out_v = -1;
 }
+
+}  // namespace libbyzea

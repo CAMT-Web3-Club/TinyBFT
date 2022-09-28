@@ -4,6 +4,9 @@
 #include "Digest.h"
 #include "Message.h"
 #include "types.h"
+
+namespace libbyzea {
+
 class Principal;
 
 //
@@ -72,5 +75,7 @@ inline Seqno Reply_stable::last_prepared() const { return rep().lp; }
 inline int Reply_stable::id() const { return rep().id; }
 
 inline int Reply_stable::nonce() const { return rep().nonce; }
+
+}  // namespace libbyzea
 
 #endif  // _Reply_stable_h

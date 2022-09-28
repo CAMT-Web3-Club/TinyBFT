@@ -10,6 +10,8 @@
 #include "View_change_ack.h"
 #include "View_info.h"
 
+namespace libbyzea {
+
 //
 // NV_info::VC_info methods:
 //
@@ -770,3 +772,5 @@ void NV_info::mark_stable(Seqno ls) {
     replica->process_new_view(ls, Digest(), ls, ls);
   }
 }
+
+}  // namespace libbyzea

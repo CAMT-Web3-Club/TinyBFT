@@ -5,6 +5,9 @@
 #include "Message.h"
 #include "parameters.h"
 #include "types.h"
+
+namespace libbyzea {
+
 class Principal;
 
 //
@@ -108,5 +111,7 @@ inline int Meta_data_d::level() const { return rep().l; }
 inline int Meta_data_d::index() const { return rep().i; }
 
 inline int Meta_data_d::id() const { return rep().id; }
+
+}  // namespace libbyzea
 
 #endif  // _Meta_data_d_h

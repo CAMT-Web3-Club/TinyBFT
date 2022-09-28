@@ -4,6 +4,9 @@
 #include "Digest.h"
 #include "Message.h"
 #include "types.h"
+
+namespace libbyzea {
+
 class Principal;
 
 //
@@ -81,5 +84,7 @@ inline bool Checkpoint::match(const Checkpoint *c) const {
   th_assert(seqno() == c->seqno(), "Invalid argument");
   return digest() == c->digest();
 }
+
+}  // namespace libbyzea
 
 #endif  // _Checkpoint_h

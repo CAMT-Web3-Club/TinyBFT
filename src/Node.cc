@@ -28,11 +28,16 @@
 #define NDEBUG
 #endif
 
+namespace libbyzea {
 // Pointer to global node instance.
 Node *node = 0;
+}  // namespace libbyzea
 
+// TODO: Check if this needsto be here or can be moved above node's declaration.
 // Enable statistics
 #include "Statistics.h"
+
+namespace libbyzea {
 
 static const char *DRBG_PERSONALIZATION_STRING =
     static_cast<const char *>("libbyz");
@@ -62,7 +67,7 @@ Node::Node(FILE *config_file, const std::string &private_key_file,
   // Read private key file:
   // TODO: this file should be encrypted under some passphrase and user
   // should be prompted for that passphrase.
-  priv_key = new libbyz::RsaPrivateKey(private_key_file, &ctr_drbg_ctx);
+  priv_key = new RsaPrivateKey(private_key_file, &ctr_drbg_ctx);
 
   // Read public configuration file:
   // TODO: this should be more robust
@@ -443,3 +448,5 @@ void Node::send_new_key() {
   atimer->stop();
   atimer->restart();
 }
+
+}  // namespace libbyzea

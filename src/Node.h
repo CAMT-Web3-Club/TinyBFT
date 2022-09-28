@@ -12,6 +12,8 @@
 #include "th_assert.h"
 #include "types.h"
 
+namespace libbyzea {
+
 class Message;
 class New_key;
 class ITimer;
@@ -155,7 +157,7 @@ class Node {
   int threshold;     // Number of correct replicas. It must be
                      // threshold == 2*max_faulty+1.
 
-  libbyz::RsaPrivateKey *priv_key;  // Node's private key.
+  RsaPrivateKey *priv_key;  // Node's private key.
 
   // Random number generator data
   mbedtls_ctr_drbg_context ctr_drbg_ctx;
@@ -295,5 +297,7 @@ inline int cypher_size(char *dst, unsigned dst_len) {
 
 // Pointer to global node object.
 extern Node *node;
+
+}  // namespace libbyzea
 
 #endif  // _Node_h

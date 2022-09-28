@@ -4,7 +4,7 @@
 
 #include "th_assert.h"
 
-namespace libbyz {
+namespace libbyzea {
 
 RsaPublicKey::RsaPublicKey(const std::string &key_filename,
                            mbedtls_ctr_drbg_context *rng_ctx)
@@ -57,4 +57,4 @@ bool RsaPublicKey::verify(const std::string &msg, const uint8_t *signature,
 
 size_t RsaPublicKey::size() const { return mbedtls_rsa_get_len(ctx_); }
 
-}  // namespace libbyz
+}  // namespace libbyzea

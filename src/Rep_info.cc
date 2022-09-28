@@ -10,6 +10,8 @@
 #include "State_defs.h"
 #include "Statistics.h"
 
+namespace libbyzea {
+
 #ifndef NO_STATE_TRANSLATION
 
 Rep_info::Rep_info(int n) {
@@ -151,3 +153,5 @@ bool Rep_info::new_state(Req_queue* rset) {
   }
   return first;
 }
+
+}  // namespace libbyzea

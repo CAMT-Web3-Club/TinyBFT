@@ -3,6 +3,8 @@
 #include "Pre_prepare.h"
 #include "Replica.h"
 
+namespace libbyzea {
+
 Pre_prepare_info::~Pre_prepare_info() { delete pp; }
 
 void Pre_prepare_info::add(Pre_prepare* p) {
@@ -66,3 +68,5 @@ bool Pre_prepare_info::BRS_iter::get(Request*& r) {
   }
   return false;
 }
+
+}  // namespace libbyzea

@@ -133,6 +133,8 @@ void _enlarge_by(int n);
 
 #include "th_assert.h"
 
+namespace libbyzea {
+
 template <class T>
 class Array {
  public:
@@ -244,5 +246,7 @@ inline void Array<T>::_enlarge_by(int n) {
   if (newsize > alloc_) enlarge_allocation_to(newsize);
   size_ = newsize;
 }
+
+}  // namespace libbyzea
 
 #endif  // _Array_h

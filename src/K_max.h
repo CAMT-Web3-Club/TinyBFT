@@ -1,6 +1,8 @@
 #ifndef _K_max_h
 #define _K_max_h 1
 
+namespace libbyzea {
+
 template <class T>
 inline T K_max(int k, const T* vector, int n, T tmax) {
   // Requires: "vector" has "n" elements and tmax is the maximum value
@@ -38,5 +40,7 @@ inline T K_max(int k, const T* vector, int n, T tmax) {
   }
   return last_max;
 }
+
+}  // namespace libbyzea
 
 #endif  //_K_max_h

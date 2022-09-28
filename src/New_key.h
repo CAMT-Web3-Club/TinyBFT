@@ -6,6 +6,8 @@
 #include "Principal.h"
 #include "types.h"
 
+namespace libbyzea {
+
 //
 // New_key messages have the following format:
 //
@@ -54,5 +56,7 @@ inline New_key_rep &New_key::rep() const {
 }
 
 inline int New_key::id() const { return rep().id; }
+
+}  // namespace libbyzea
 
 #endif  // _New_key_h

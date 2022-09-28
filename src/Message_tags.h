@@ -1,6 +1,8 @@
 #ifndef _Message_tags_h
 #define _Message_tags_h 1
 
+namespace libbyzea {
+
 //
 // Each message type is identified by one of the tags in the set below.
 //
@@ -24,5 +26,7 @@ const short Data_tag = 14;
 const short Fetch_tag = 15;
 const short Query_stable_tag = 16;
 const short Reply_stable_tag = 17;
+
+}  // namespace libbyzea
 
 #endif  // _Message_tags_h

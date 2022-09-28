@@ -7,6 +7,8 @@
 #include "parameters.h"
 #include "types.h"
 
+namespace libbyzea {
+
 //
 // Status messages have the following format:
 //
@@ -299,5 +301,7 @@ inline bool Status::has_vc(int i) {
   th_assert(i >= 0 && i < Status_rep::vcs_size, "Invalid argument");
   return Bits_test(vcs(), i);
 }
+
+}  // namespace libbyzea
 
 #endif  // _Status_h

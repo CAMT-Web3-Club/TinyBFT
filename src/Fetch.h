@@ -6,6 +6,8 @@
 #include "State_defs.h"
 #include "types.h"
 
+namespace libbyzea {
+
 class Principal;
 
 //
@@ -107,5 +109,7 @@ inline int Fetch::chunk_number() const { return rep().chunk_no; }
 inline Seqno Fetch::checkpoint() const { return rep().rc; }
 
 inline int Fetch::replier() const { return rep().repid; }
+
+}  // namespace libbyzea
 
 #endif  // _Fetch_h

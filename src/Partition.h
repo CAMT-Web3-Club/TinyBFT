@@ -3,6 +3,8 @@
 
 #include "libbyz.h"
 
+namespace libbyzea {
+
 //
 // Definitions for hierarchical state partitions.
 //
@@ -20,5 +22,7 @@ const int PLevelSize[] = {1, PChildren, PChildren* PChildren,
 // Number of blocks in a partition at each level
 const int PBlocks[] = {PChildren * PChildren * PChildren, PChildren* PChildren,
                        PChildren, 1};
+
+}  // namespace libbyzea
 
 #endif /* _Partition_h */

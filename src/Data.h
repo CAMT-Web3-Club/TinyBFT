@@ -6,6 +6,8 @@
 #include "State_defs.h"
 #include "types.h"
 
+namespace libbyzea {
+
 #ifndef NO_STATE_TRANSLATION
 static const int Fragment_size = 4096;
 #endif
@@ -100,5 +102,7 @@ inline int Data::num_chunks() const {
 #endif
 
 inline char *Data::data() const { return rep().data; }
+
+}  // namespace libbyzea
 
 #endif  // _Data_h

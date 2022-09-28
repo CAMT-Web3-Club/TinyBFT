@@ -5,6 +5,8 @@
 #include "Replica.h"
 #include "th_assert.h"
 
+namespace libbyzea {
+
 Checkpoint::Checkpoint(Seqno s, Digest &d, bool stable)
     :
 #ifndef USE_PKEY
@@ -63,3 +65,5 @@ bool Checkpoint::convert(Message *m1, Checkpoint *&m2) {
   m2 = (Checkpoint *)m1;
   return true;
 }
+
+}  // namespace libbyzea

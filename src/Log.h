@@ -4,6 +4,8 @@
 #include "parameters.h"
 #include "types.h"
 
+namespace libbyzea {
+
 template <class T>
 class Log {
   //
@@ -72,5 +74,7 @@ template <class T>
 inline Seqno Log<T>::max_seqno() const {
   return head + max_size - 1;
 }
+
+}  // namespace libbyzea
 
 #endif  // _Log_h

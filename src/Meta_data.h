@@ -5,6 +5,8 @@
 #include "Message.h"
 #include "types.h"
 
+namespace libbyzea {
+
 //
 // Meta_data messages contain information about a partition and its
 // subpartitions. They have the following format:
@@ -131,5 +133,7 @@ inline int Meta_data::id() const { return rep().id; }
 inline Digest& Meta_data::digest() { return rep().d; }
 
 inline int Meta_data::num_sparts() const { return rep().np; }
+
+}  // namespace libbyzea
 
 #endif  // _Meta_data_h

@@ -5,6 +5,8 @@
 #include "Message.h"
 #include "types.h"
 
+namespace libbyzea {
+
 class Principal;
 
 //
@@ -149,5 +151,7 @@ inline bool Request::is_read_only() const { return rep().extra & 1; }
 inline bool Request::is_signed() const { return rep().extra & 2; }
 
 inline Digest &Request::digest() const { return rep().od; }
+
+}  // namespace libbyzea
 
 #endif  // _Request_h

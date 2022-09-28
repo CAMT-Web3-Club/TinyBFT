@@ -7,6 +7,8 @@
 #include "Replica.h"
 #include "th_assert.h"
 
+namespace libbyzea {
+
 New_view::New_view(View v) : Message(New_view_tag, Max_message_size) {
   rep().v = v;
   rep().min = -1;
@@ -101,3 +103,5 @@ bool New_view::convert(Message *m1, New_view *&m2) {
   m2 = (New_view *)m1;
   return true;
 }
+
+}  // namespace libbyzea

@@ -8,6 +8,8 @@
 #include "parameters.h"
 #include "types.h"
 
+namespace libbyzea {
+
 template <class T>
 class Certificate {
   //
@@ -217,5 +219,7 @@ inline bool Certificate<T>::Val_iter::get(T *&m, int &count) {
   }
   return false;
 }
+
+}  // namespace libbyzea
 
 #endif  // Certificate_h

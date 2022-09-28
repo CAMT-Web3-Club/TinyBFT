@@ -7,6 +7,8 @@
 #include "Node.h"
 #include "types.h"
 
+namespace libbyzea {
+
 class Reply;
 class Request;
 class ITimer;
@@ -78,5 +80,7 @@ class Client : public Node {
 };
 
 inline Request_id Client::get_rid() const { return out_rid; }
+
+}  // namespace libbyzea
 
 #endif  // _Client_h

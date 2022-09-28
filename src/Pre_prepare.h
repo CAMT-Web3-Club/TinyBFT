@@ -6,6 +6,8 @@
 #include "Prepare.h"
 #include "types.h"
 
+namespace libbyzea {
+
 class Principal;
 class Req_queue;
 class Request;
@@ -180,5 +182,7 @@ inline Digest& Pre_prepare::big_req_digest(int i) {
   th_assert(i >= 0 && i < num_big_reqs(), "Invalid argument");
   return *(big_reqs() + i);
 }
+
+}  // namespace libbyzea
 
 #endif  // _Pre_prepare_h

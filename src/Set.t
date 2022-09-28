@@ -1,22 +1,24 @@
 #include "Set.h"
 
-template <class T> 
+namespace libbyzea {
+
+template <class T>
 Set<T>::Set(int sz) : max_size(sz), cur_size(0) {
-  elems = (T**) malloc(sizeof(T*)*sz);  
+  elems = (T**) malloc(sizeof(T*)*sz);
   for (int  i=0; i < max_size; i++)
     elems[i] = 0;
 }
 
-template <class T> 
+template <class T>
 Set<T>::~Set() {
   for (int i=0; i < max_size; i++)
     if (elems[i]) delete elems[i];
   free(elems);
 }
 
-template <class T> 
+template <class T>
 bool Set<T>::store(T *e) {
-  if (e->id() >= max_size || e->id() < 0 || elems[e->id()] != 0) 
+  if (e->id() >= max_size || e->id() < 0 || elems[e->id()] != 0)
     return false;
   elems[e->id()] = e;
   ++cur_size;
@@ -25,7 +27,7 @@ bool Set<T>::store(T *e) {
 
 template <class T>
 T* Set<T>::fetch(int id) {
-  if (id >= max_size || id < 0) 
+  if (id >= max_size || id < 0)
     return 0;
   return elems[id];
 }
@@ -48,3 +50,5 @@ void Set<T>::clear() {
     elems[i] = 0;
   }
 }
+
+} // namespace libbyzea

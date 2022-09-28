@@ -5,6 +5,8 @@
 #include "Replica.h"
 #include "th_assert.h"
 
+namespace libbyzea {
+
 Reply_stable::Reply_stable(Seqno lc, Seqno lp, int n, Principal *p)
     : Message(Reply_stable_tag, sizeof(Reply_stable_rep) + MAC_size) {
   rep().lc = lc;
@@ -46,3 +48,5 @@ bool Reply_stable::convert(Message *m1, Reply_stable *&m2) {
   m2 = (Reply_stable *)m1;
   return true;
 }
+
+}  // namespace libbyzea

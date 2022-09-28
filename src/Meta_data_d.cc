@@ -7,6 +7,8 @@
 #include "Replica.h"
 #include "th_assert.h"
 
+namespace libbyzea {
+
 Meta_data_d::Meta_data_d(Request_id r, int l, int i, Seqno ls)
     : Message(Meta_data_d_tag, sizeof(Meta_data_d_rep) + MAC_size) {
   th_assert(l < PLevels, "Invalid argument");
@@ -89,3 +91,5 @@ bool Meta_data_d::convert(Message *m1, Meta_data_d *&m2) {
   m2 = (Meta_data_d *)m1;
   return true;
 }
+
+}  // namespace libbyzea

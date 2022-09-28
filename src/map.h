@@ -11,6 +11,8 @@
 #include "generator.h"
 #include "th_assert.h"
 
+namespace libbyzea {
+
 /*
    \section{High-Performance Dynamically-Resizing Hash Table}
 
@@ -374,5 +376,7 @@ class PtrMap : private _superclass {
 #undef _superclass
 #undef K
 #undef HP
+
+}  // namespace libbyzea
 
 #endif /* _HASH_MAP_H */

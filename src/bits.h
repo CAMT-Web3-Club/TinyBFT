@@ -74,4 +74,4 @@ typedef long long Bits64;
 
 #undef _BITS_H_OK
 
-#endif
+#endif  // _BITS_H

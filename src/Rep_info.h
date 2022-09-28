@@ -10,6 +10,8 @@
 #include "Time.h"
 #include "types.h"
 
+namespace libbyzea {
+
 class Req_queue;
 
 class Rep_info {
@@ -122,5 +124,7 @@ inline Reply *Rep_info::reply(int pid) { return reps[pid]; }
 #ifndef NO_STATE_TRANSLATION
 inline char *Rep_info::rep_info_mem() { return mem; }
 #endif
+
+}  // namespace libbyzea
 
 #endif  // _Rep_info_h

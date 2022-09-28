@@ -5,6 +5,8 @@
 #include "Principal.h"
 #include "types.h"
 
+namespace libbyzea {
+
 //
 // Query_stable messages have the following format:
 //
@@ -55,5 +57,7 @@ inline Query_stable_rep &Query_stable::rep() const {
 inline int Query_stable::id() const { return rep().id; }
 
 inline int Query_stable::nonce() const { return rep().nonce; }
+
+}  // namespace libbyzea
 
 #endif  // _Query_stable_h

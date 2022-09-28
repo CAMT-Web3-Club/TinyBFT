@@ -10,6 +10,8 @@
 #include "Cycle_counter.h"
 #endif  // USE_GETTIMEOFDAY
 
+namespace libbyzea {
+
 Array<ITimer *> ITimer::timers;
 Time ITimer::min_deadline = Long_max;
 
@@ -118,4 +120,7 @@ void ITimer::_handle_timeouts(Time current) {
     }
   }
 }
+
 #endif  // USE_GETTIMEOFDAY
+
+}  // namespace libbyzea

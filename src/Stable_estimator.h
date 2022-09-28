@@ -3,6 +3,8 @@
 
 #include "types.h"
 
+namespace libbyzea {
+
 class Reply_stable;
 
 class Stable_estimator {
@@ -63,5 +65,7 @@ class Stable_estimator {
 };
 
 inline Seqno Stable_estimator::estimate() const { return est; }
+
+}  // namespace libbyzea
 
 #endif  // _Stable_estimator_h

@@ -9,6 +9,8 @@
 #include "Node.h"
 #include "Reply.h"
 
+namespace libbyzea {
+
 Principal::Principal(int i, Addr a, mbedtls_ctr_drbg_context *drbg,
                      char *key_filename) {
   id = i;
@@ -18,7 +20,7 @@ Principal::Principal(int i, Addr a, mbedtls_ctr_drbg_context *drbg,
 
   if (key_filename != nullptr) {
     std::string filename(key_filename, std::strlen(key_filename));
-    pkey = new libbyz::RsaPublicKey(filename, drbg);
+    pkey = new libbyzea::RsaPublicKey(filename, drbg);
     ssize = pkey->size() + sizeof(size_t) + 1;
   }
 
@@ -177,3 +179,5 @@ int random_int() {
       "failed to generate random integer");
   return i;
 }
+
+}  // namespace libbyzea

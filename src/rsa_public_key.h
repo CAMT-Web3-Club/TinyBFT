@@ -6,7 +6,7 @@
 
 #include <string>
 
-namespace libbyz {
+namespace libbyzea {
 
 class RsaPublicKey {
  public:
@@ -68,6 +68,6 @@ class RsaPublicKey {
   mbedtls_rsa_context *ctx_;
   mbedtls_ctr_drbg_context *rng_ctx_;
 };
-}  // namespace libbyz
+}  // namespace libbyzea
 
 #endif  // LIBBYZ_RSA_PUBLIC_KEY_H_

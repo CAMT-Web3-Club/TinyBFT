@@ -7,6 +7,8 @@
 #include "Timer.h"
 #include "th_assert.h"
 
+namespace libbyzea {
+
 Statistics stats;
 
 Statistics::Statistics() : rec_stats(20) { zero_stats(); }
@@ -329,3 +331,5 @@ void Recovery_stats::print_stats() {
   printf("Bytes in = %qd \n", rec_bin);
   printf("Bytes out = %qd \n", rec_bout);
 }
+
+}  // namespace libbyzea

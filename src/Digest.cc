@@ -1,6 +1,7 @@
 
 #include "Digest.h"
 
+#include <stdio.h>
 #include <string.h>
 
 #include "Statistics.h"
@@ -48,6 +49,8 @@ documentation and/or software.  */
 #define S42 10
 #define S43 15
 #define S44 21
+
+namespace libbyzea {
 
 static void MD5Transform(UINT4[4], unsigned char[64]);
 
@@ -298,6 +301,6 @@ Digest::Digest(char *s, unsigned n) {
 #endif  // NODIGESTS
 }
 
-#include <stdio.h>
-
 void Digest::print() { printf("digest=[%d,%d,%d,%d]", d[0], d[1], d[2], d[3]); }
+
+}  // namespace libbyzea

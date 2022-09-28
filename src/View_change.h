@@ -8,6 +8,8 @@
 #include "parameters.h"
 #include "types.h"
 
+namespace libbyzea {
+
 //
 // Req_infos describe requests that (1) prepared or (2) for which a
 // pre-prepare/prepare message was sent.
@@ -203,5 +205,7 @@ inline bool View_change::last_ckpt(Digest &d, Seqno &n) {
 
   return false;
 }
+
+}  // namespace libbyzea
 
 #endif  // _View_change_h

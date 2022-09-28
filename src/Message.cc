@@ -5,6 +5,8 @@
 #include "Node.h"
 #include "th_assert.h"
 
+namespace libbyzea {
+
 Log_allocator *Message::a = 0;
 
 Message::Message(unsigned sz) : msg(0), max_size(ALIGNED_SIZE(sz)) {
@@ -101,3 +103,5 @@ const char *Message::stag() {
       "Query_stable", "Reply_stable"};
   return string_tags[tag()];
 }
+
+}  // namespace libbyzea

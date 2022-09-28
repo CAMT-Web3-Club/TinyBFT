@@ -13,6 +13,8 @@
 #include "View_change_ack.h"
 #include "th_assert.h"
 
+namespace libbyzea {
+
 View_info::VCA_info::VCA_info()
     : v(0), vacks((View_change_ack *)0, node->n()) {}
 
@@ -571,3 +573,5 @@ void View_info::mark_stale() {
     vacks[i].clear();
   }
 }
+
+}  // namespace libbyzea

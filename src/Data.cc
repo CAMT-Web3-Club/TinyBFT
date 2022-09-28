@@ -5,6 +5,8 @@
 #include "Message_tags.h"
 #include "th_assert.h"
 
+namespace libbyzea {
+
 #ifndef NO_STATE_TRANSLATION
 Data::Data(int i, Seqno lm, char *data, int totalsz, int chunkn)
 #else
@@ -40,3 +42,5 @@ bool Data::convert(Message *m1, Data *&m2) {
   m2->trim();
   return true;
 }
+
+}  // namespace libbyzea

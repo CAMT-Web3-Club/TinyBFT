@@ -6,6 +6,8 @@
 #include "Replica.h"
 #include "th_assert.h"
 
+namespace libbyzea {
+
 Prepare::Prepare(View v, Seqno s, Digest &d, Principal *dst)
     : Message(Prepare_tag, sizeof(Prepare_rep)
 #ifndef USE_PKEY
@@ -81,3 +83,5 @@ bool Prepare::convert(Message *m1, Prepare *&m2) {
   m2->trim();
   return true;
 }
+
+}  // namespace libbyzea

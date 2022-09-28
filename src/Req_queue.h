@@ -4,6 +4,8 @@
 #include "Array.h"
 #include "types.h"
 
+namespace libbyzea {
+
 class Request;
 
 class Req_queue {
@@ -107,5 +109,7 @@ inline bool Req_queue::in_progress(int cid, Request_id rid, View v) {
   }
   return true;
 }
+
+}  // namespace libbyzea
 
 #endif  // _Req_queue_h

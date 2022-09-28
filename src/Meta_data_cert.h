@@ -7,6 +7,8 @@
 #include "parameters.h"
 #include "types.h"
 
+namespace libbyzea {
+
 class Meta_data_d;
 
 class Meta_data_cert {
@@ -89,5 +91,7 @@ inline bool Meta_data_cert::cvalue(Seqno& ci, Digest& di) const {
 }
 
 inline Seqno Meta_data_cert::last_stable() const { return ls; }
+
+}  // namespace libbyzea
 
 #endif  // Meta_data_cert_h

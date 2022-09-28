@@ -9,6 +9,8 @@
 #include "Request.h"
 #include "th_assert.h"
 
+namespace libbyzea {
+
 Pre_prepare::Pre_prepare(View v, Seqno s, Req_queue &reqs)
     : Message(Pre_prepare_tag, Max_message_size) {
   rep().view = v;
@@ -257,3 +259,5 @@ bool Pre_prepare::convert(Message *m1, Pre_prepare *&m2) {
   m2->trim();
   return true;
 }
+
+}  // namespace libbyzea

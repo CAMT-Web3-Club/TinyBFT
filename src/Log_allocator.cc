@@ -6,6 +6,8 @@
 #define MAP_VARIABLE 0x00
 #endif
 
+namespace libbyzea {
+
 Log_allocator::Log_allocator(int csz, int nc) {
   chunk_size = csz;
   max_num_chunks = nc;
@@ -77,3 +79,5 @@ void Log_allocator::debug_print() {
     p->debug_print();
   }
 }
+
+}  // namespace libbyzea

@@ -6,6 +6,8 @@
 #include "Node.h"
 #include "types.h"
 
+namespace libbyzea {
+
 //
 // New_view messages have the following format:
 //
@@ -162,5 +164,7 @@ inline bool New_view::view_change(int id) {
   if (vci.d.is_zero()) return false;
   return true;
 }
+
+}  // namespace libbyzea
 
 #endif  // _New_view_h

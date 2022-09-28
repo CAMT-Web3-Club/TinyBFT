@@ -8,6 +8,8 @@
 #include "Replica.h"
 #include "th_assert.h"
 
+namespace libbyzea {
+
 Meta_data::Meta_data(Request_id r, int l, int i, Seqno lu, Seqno lm, Digest &d)
     : Message(Meta_data_tag, Max_message_size) {
   th_assert(l < PLevels, "Invalid argument");
@@ -111,3 +113,5 @@ bool Meta_data::convert(Message *m1, Meta_data *&m2) {
   m2 = (Meta_data *)m1;
   return true;
 }
+
+}  // namespace libbyzea

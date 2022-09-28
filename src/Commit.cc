@@ -6,6 +6,8 @@
 #include "Replica.h"
 #include "th_assert.h"
 
+namespace libbyzea {
+
 Commit::Commit(View v, Seqno s)
     : Message(Commit_tag, sizeof(Commit_rep) + node->auth_size()) {
   rep().view = v;
@@ -45,3 +47,5 @@ bool Commit::convert(char *m1, unsigned max_len, Commit &m2) {
     return false;
   return true;
 }
+
+}  // namespace libbyzea

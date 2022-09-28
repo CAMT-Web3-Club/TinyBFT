@@ -13,6 +13,8 @@
 
 #ifdef USE_GETTIMEOFDAY
 
+namespace libbyzea {
+
 typedef struct timeval Time;
 static inline Time currentTime() {
   Time t;
@@ -37,11 +39,16 @@ static inline bool lessThanTime(Time t1, Time t2) {
   return t1.tv_sec < t2.tv_sec ||
          (t1.tv_sec == t2.tv_sec && t1.tv_usec < t2.tv_usec);
 }
+
+}  // namespace libbyzea
+
 #else
 
-typedef long long Time;
-
 #include "Cycle_counter.h"
+
+namespace libbyzea {
+
+typedef long long Time;
 
 extern long long clock_mhz;
 // Clock frequency in MHz
@@ -60,5 +67,7 @@ static inline long long diffTime(Time t1, Time t2) {
 static inline bool lessThanTime(Time t1, Time t2) { return t1 < t2; }
 
 #endif
+
+}  // namespace libbyzea
 
 #endif  // _Time_h

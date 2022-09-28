@@ -11,6 +11,8 @@
 #include "parameters.h"
 #include "types.h"
 
+namespace libbyzea {
+
 class View_info;
 class View_change;
 class New_view;
@@ -233,5 +235,7 @@ inline New_view *NV_info::new_view(Time **t) {
 }
 
 inline View_change *NV_info::view_change(int id) { return vcs[id].vc; }
+
+}  // namespace libbyzea
 
 #endif  // _NV_info_h

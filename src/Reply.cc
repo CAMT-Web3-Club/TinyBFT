@@ -8,6 +8,8 @@
 #include "Statistics.h"
 #include "th_assert.h"
 
+namespace libbyzea {
+
 Reply::Reply(View view, Request_id req, int replica)
     : Message(Reply_tag, Max_message_size) {
   rep().v = view;
@@ -123,3 +125,5 @@ bool Reply::convert(Message *m1, Reply *&m2) {
   m2 = (Reply *)m1;
   return true;
 }
+
+}  // namespace libbyzea

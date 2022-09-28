@@ -18,6 +18,8 @@
 #include "libbyz.h"
 #include "types.h"
 
+namespace libbyzea {
+
 class Request;
 class Reply;
 class Pre_prepare;
@@ -451,5 +453,7 @@ inline char *Replica::rep_info_mem() { return replies.rep_info_mem(); }
 #endif
 
 inline Big_req_table *Replica::big_reqs() { return &brt; }
+
+}  // namespace libbyzea
 
 #endif  //_Replica_h

@@ -5,6 +5,8 @@
 #include "Message.h"
 #include "types.h"
 
+namespace libbyzea {
+
 class Principal;
 class Rep_info;
 
@@ -134,5 +136,7 @@ inline bool Reply::match(Reply *r) {
   return (rep().digest == r->rep().digest) &
          (!is_tentative() | r->is_tentative() | (view() == r->view()));
 }
+
+}  // namespace libbyzea
 
 #endif  // _Reply_h

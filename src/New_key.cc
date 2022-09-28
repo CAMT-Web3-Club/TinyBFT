@@ -5,6 +5,8 @@
 #include "Principal.h"
 #include "th_assert.h"
 
+namespace libbyzea {
+
 New_key::New_key() : Message(New_key_tag, Max_message_size) {
   unsigned k[Nonce_size_u];
 
@@ -88,3 +90,5 @@ bool New_key::convert(Message *m1, New_key *&m2) {
   m2 = (New_key *)m1;
   return true;
 }
+
+}  // namespace libbyzea

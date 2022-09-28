@@ -30,6 +30,9 @@
 #include "Log.t"
 #include "bhash.t"
 #include "buckets.t"
+
+namespace libbyzea {
+
 template class Log<Checkpoint_rec>;
 
 #ifdef NO_STATE_TRANSLATION
@@ -1343,7 +1346,7 @@ bool State::handle(Fetch* m, Seqno ls) {
             replica->send(&d, m->id());
 #endif
             //	    fprintf(stderr, "Sending data i=%d lm=%qd sz=%d chunk %d\n",
-            //i, p.lm, sz, m->chunk_number());
+            // i, p.lm, sz, m->chunk_number());
           } else {
             // Send meta-data
             Part& p = get_meta_data(chosen, l, i);
@@ -1360,7 +1363,7 @@ bool State::handle(Fetch* m, Seqno ls) {
             }
             replica->send(&md, m->id());
             //	    fprintf(stderr, "Sending meta-data l=%d i=%d lm=%qd\n", l-1,
-            //i, p.lm);
+            // i, p.lm);
           }
           delete m;
           return verified;
@@ -1458,7 +1461,7 @@ void State::handle(Data* m) {
           if (wp.c >= 0 && wp.d == d) {
             INCR_OP(num_fetched_a);
             //	fprintf(stderr, "DDDDDData i=%d, last chunk=%d, sz=%d\n",
-            //i,next_chunk,m->total_size());
+            // i,next_chunk,m->total_size());
 
             Part& p = ptree[l][i];
             DSum& psum = stree[l - 1][i / PSize[l]];
@@ -1831,7 +1834,7 @@ void State::done_with_level() {
 
       if (!clog.within_range(lc)) {
         //	fprintf(stderr, "done w/level: Truncating clog to %qd\n",
-        //lc-max_out);
+        // lc-max_out);
         clog.truncate(lc - max_out);
       }
 
@@ -2183,3 +2186,5 @@ void State::simulate_reboot() {
   usleep(reboot_usec - inv_time.elapsed() / clock_mhz);
   STOP_CC(reboot_time);
 }
+
+}  // namespace libbyzea

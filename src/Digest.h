@@ -1,6 +1,8 @@
 #ifndef _Digest_h
 #define _Digest_h 1
 
+namespace libbyzea {
+
 class Digest {
  public:
   inline Digest() {
@@ -55,5 +57,7 @@ class Digest {
  private:
   unsigned int d[4];
 };
+
+}  // namespace libbyzea
 
 #endif  // _Digest_h

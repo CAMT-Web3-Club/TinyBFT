@@ -16,6 +16,8 @@ static inline long long rdtsc(void) {
   return v.w64;
 }
 
+namespace libbyzea {
+
 class Cycle_counter {
  public:
   Cycle_counter();
@@ -87,5 +89,7 @@ inline long long Cycle_counter::elapsed() {
 }
 
 inline long long Cycle_counter::max_increment() { return max_incr; }
+
+}  // namespace libbyzea
 
 #endif  // _Cycle_counter_h

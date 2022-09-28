@@ -10,6 +10,8 @@
 #include "th_assert.h"
 #include "types.h"
 
+namespace libbyzea {
+
 //
 // Auxiliary classes:
 //
@@ -45,7 +47,7 @@ class State {
   // and restore extra state information are "shutdown_p" and "restart_p".
 
 #else  // ifndef NO_STATE_TRANSLATION
-  State(Replica* replica, char* memory, int num_bytes);
+  State(Replica *replica, char *memory, int num_bytes);
   // Requires: mem is Block aligned and contains an integral number of
   // Blocks.
   // Effects: Creates an object that handles state digesting and
@@ -158,7 +160,7 @@ class State {
 #ifdef NO_STATE_TRANSLATION
   Block *mem;
 #else
-  Block* rep_mem;
+  Block *rep_mem;
 #endif
   int nb;
 
@@ -244,7 +246,7 @@ class State {
 #ifndef NO_STATE_TRANSLATION
   char *get_data(Seqno c, int i, int &objsz);
 #else
-  char* get_data(Seqno c, int i);
+  char *get_data(Seqno c, int i);
 #endif
   // Requires: There is a checkpoint with sequence number "c" in this
   // Effects: Returns a pointer to the data for block index "i" at
@@ -267,5 +269,7 @@ inline bool State::in_check_state() const { return checking; }
 inline bool State::retrans_fetch(Time cur) const {
   return fetching && diffTime(cur, last_fetch_t) > 100000;
 }
+
+}  // namespace libbyzea
 
 #endif  // _State_h

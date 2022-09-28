@@ -8,6 +8,8 @@
 #include "State_defs.h"
 #include "th_assert.h"
 
+namespace libbyzea {
+
 Fetch::Fetch(Request_id rid, Seqno lu, int level, int index,
 #ifndef NO_STATE_TRANSLATION
              int chunkn,
@@ -58,3 +60,5 @@ bool Fetch::convert(Message *m1, Fetch *&m2) {
   m2->trim();
   return true;
 }
+
+}  // namespace libbyzea

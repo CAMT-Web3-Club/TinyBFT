@@ -9,6 +9,8 @@
 #include "Cycle_counter.h"
 #include "types.h"
 
+namespace libbyzea {
+
 struct Recovery_stats {
   Long shutdown_time;  // Cycles spent in shutdown
   Long reboot_time;
@@ -181,5 +183,7 @@ extern Statistics stats;
 #define INIT_REC_STATS()
 #define END_REC_STATS()
 #endif
+
+}  // namespace libbyzea
 
 #endif  // _Statistics_h

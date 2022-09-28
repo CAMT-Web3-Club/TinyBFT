@@ -6,6 +6,8 @@
 #include "map.h"
 #include "types.h"
 
+namespace libbyzea {
+
 class BR_entry;
 class Request;
 
@@ -76,5 +78,7 @@ class Big_req_table {
   Array<Request*> unmatched;  // Array of requests that have no waiting
                               // pre-prepares indexed by client id.
 };
+
+}  // namespace libbyzea
 
 #endif  // _Big_req_table_h

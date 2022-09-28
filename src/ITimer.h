@@ -7,6 +7,8 @@
 #include "Time.h"
 #include "types.h"
 
+namespace libbyzea {
+
 class ITimer {
   //
   // Interface to a real time interval timer that can be in three
@@ -68,5 +70,7 @@ class ITimer {
 
   static Array<ITimer*> timers;
 };
+
+}  // namespace libbyzea
 
 #endif  // _ITimer_h

@@ -1,5 +1,7 @@
 #include "Time.h"
 
+namespace libbyzea {
+
 long long clock_mhz = 0;
 
 void init_clock_mhz() {
@@ -16,3 +18,5 @@ void init_clock_mhz() {
       (c1 - c0) / ((t1.tv_sec - t0.tv_sec) * 1000000 + t1.tv_usec - t0.tv_usec);
 #endif
 }
+
+}  // namespace libbyzea

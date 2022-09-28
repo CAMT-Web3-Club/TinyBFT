@@ -49,15 +49,16 @@ int Byz_init_client(char *conf, char *conf_priv, short port) {
   srand48(getpid());
 
   const std::string private_key_file(conf_priv, std::strlen(conf_priv));
-  Client *client = new Client(config_file, private_key_file, port);
-  node = client;
+  libbyzea::Client *client =
+      new libbyzea::Client(config_file, private_key_file, port);
+  libbyzea::node = client;
   return 0;
 }
 
-void Byz_reset_client() { ((Client *)node)->reset(); }
+void Byz_reset_client() { ((libbyzea::Client *)libbyzea::node)->reset(); }
 
 int Byz_alloc_request(Byz_req *req, int size) {
-  Request *request = new Request((Request_id)0);
+  libbyzea::Request *request = new libbyzea::Request((Request_id)0);
   if (request == 0) return -1;
 
   int len;
@@ -68,16 +69,16 @@ int Byz_alloc_request(Byz_req *req, int size) {
 }
 
 int Byz_send_request(Byz_req *req, bool ro) {
-  Request *request = (Request *)req->opaque;
-  request->request_id() = ((Client *)node)->get_rid();
+  libbyzea::Request *request = (libbyzea::Request *)req->opaque;
+  request->request_id() = ((libbyzea::Client *)libbyzea::node)->get_rid();
   request->authenticate(req->size, ro);
 
-  bool retval = ((Client *)node)->send_request(request);
+  bool retval = ((libbyzea::Client *)libbyzea::node)->send_request(request);
   return (retval) ? 0 : -1;
 }
 
 int Byz_recv_reply(Byz_rep *rep) {
-  Reply *reply = ((Client *)node)->recv_reply();
+  libbyzea::Reply *reply = ((libbyzea::Client *)libbyzea::node)->recv_reply();
   if (reply == NULL) return -1;
   rep->contents = reply->reply(rep->size);
   rep->opaque = reply;
@@ -90,12 +91,12 @@ int Byz_invoke(Byz_req *req, Byz_rep *rep, bool ro) {
 }
 
 void Byz_free_request(Byz_req *req) {
-  Request *request = (Request *)req->opaque;
+  libbyzea::Request *request = (libbyzea::Request *)req->opaque;
   delete request;
 }
 
 void Byz_free_reply(Byz_rep *rep) {
-  Reply *reply = (Reply *)rep->opaque;
+  libbyzea::Reply *reply = (libbyzea::Reply *)rep->opaque;
   delete reply;
 }
 
@@ -181,31 +182,32 @@ int Byz_init_replica(char *conf, char *conf_priv, char *mem, unsigned int size,
   srand48(getpid());
 
   const std::string private_key_file(conf_priv, std::strlen(conf_priv));
-  replica = new Replica(config_file, private_key_file, mem, size);
-  node = replica;
+  libbyzea::replica =
+      new libbyzea::Replica(config_file, private_key_file, mem, size);
+  libbyzea::node = libbyzea::replica;
 
   // Register service-specific functions.
-  replica->register_exec(exec);
-  replica->register_nondet_choices(comp_ndet, ndet_max_len);
-  return replica->used_state_bytes();
+  libbyzea::replica->register_exec(exec);
+  libbyzea::replica->register_nondet_choices(comp_ndet, ndet_max_len);
+  return libbyzea::replica->used_state_bytes();
 }
 
-void Byz_modify(char *mem, int size) { replica->modify(mem, size); }
+void Byz_modify(char *mem, int size) { libbyzea::replica->modify(mem, size); }
 
 #endif
 
 void Byz_replica_run() {
-  stats.zero_stats();
-  replica->recv();
+  libbyzea::stats.zero_stats();
+  libbyzea::replica->recv();
 }
 
 #ifdef NO_STATE_TRANSLATION
-void _Byz_modify_index(int bindex) { replica->modify_index(bindex); }
+void _Byz_modify_index(int bindex) { libbyzea::replica->modify_index(bindex); }
 #endif
 
-void Byz_reset_stats() { stats.zero_stats(); }
+void Byz_reset_stats() { libbyzea::stats.zero_stats(); }
 
-void Byz_print_stats() { stats.print_stats(); }
+void Byz_print_stats() { libbyzea::stats.print_stats(); }
 
 #ifndef NO_STATE_TRANSLATION
 char *Byz_get_cached_object(int i) { return replica->get_cached_obj(i); }

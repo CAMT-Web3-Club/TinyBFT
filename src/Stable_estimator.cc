@@ -4,6 +4,8 @@
 #include "Replica.h"
 #include "Reply_stable.h"
 
+namespace libbyzea {
+
 Stable_estimator::Stable_estimator() {
   nv = node->n();
   vals = new Val[nv];
@@ -83,3 +85,5 @@ Seqno Stable_estimator::low_estimate() {
   return (mlp - max_out + checkpoint_interval - 2) / checkpoint_interval *
          checkpoint_interval;
 }
+
+}  // namespace libbyzea

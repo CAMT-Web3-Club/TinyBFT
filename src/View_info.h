@@ -9,6 +9,8 @@
 #include "Pre_prepare.h"
 #include "types.h"
 
+namespace libbyzea {
+
 class View_change;
 class New_view;
 class State;
@@ -315,5 +317,7 @@ inline void View_info::OReq_info::clear() {
   d.zero();
   for (int i = 0; i < node->f() + 2; i++) ods[i].v = -1;
 }
+
+}  // namespace libbyzea
 
 #endif  // _View_info_h

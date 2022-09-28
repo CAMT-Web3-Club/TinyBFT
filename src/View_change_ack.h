@@ -4,6 +4,9 @@
 #include "Digest.h"
 #include "Message.h"
 #include "types.h"
+
+namespace libbyzea {
+
 class Principal;
 
 //
@@ -80,5 +83,7 @@ inline bool View_change_ack::match(const View_change_ack* p) const {
   th_assert(view() == p->view(), "Invalid argument");
   return vc_id() == p->vc_id() && vc_digest() == p->vc_digest();
 }
+
+}  // namespace libbyzea
 
 #endif  // _View_change_ack_h

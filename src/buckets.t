@@ -17,6 +17,7 @@
 #define BucketsT Buckets<ELEM>
 #define BucketsImplT BucketsImpl<ELEM>
 
+namespace libbyzea {
 
 BK_TEMPLATE struct BucketsImpl {
     BucketsImpl(ELEM const &e, BucketsImpl<ELEM> *n) : elem(e), next(n) {}
@@ -40,7 +41,7 @@ BK_TEMPLATE BucketsImplT *BucketsImplT::last_freed = 0;
 BK_TEMPLATE inline BucketsT::Buckets() { pairs = 0; }
 BK_TEMPLATE inline BucketsT::~Buckets() { clear(); }
 
-BK_TEMPLATE void BucketsT::clear(void) { 
+BK_TEMPLATE void BucketsT::clear(void) {
   BucketsImplT *b = pairs;
   while (b) {
     BucketsImplT *n = b->next;
@@ -136,7 +137,7 @@ BK_TEMPLATE void BucketsT::operator=(BucketsT const &buckets) {
     }
 }
 
-BK_TEMPLATE int BucketsT::sizeof_BucketsImpl() { 
+BK_TEMPLATE int BucketsT::sizeof_BucketsImpl() {
     return sizeof(BucketsImplT);
 }
 
@@ -190,5 +191,7 @@ BK_TEMPLATE inline void BucketsImplT::operator delete(void *x) {
 
 #undef CHUNKSIZE
 #undef FAST_ALLOC_BUCKETS
+
+}  // namespace libbyzea
 
 #endif /* _BUCKETS_T */

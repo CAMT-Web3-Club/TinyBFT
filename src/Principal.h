@@ -9,6 +9,8 @@
 #include "th_assert.h"
 #include "types.h"
 
+namespace libbyzea {
+
 //#define USE_SECRET_SUFFIX_MD5
 #ifdef USE_SECRET_SUFFIX_MD5
 #include "MD5.h"
@@ -143,7 +145,7 @@ class Principal {
  private:
   int id;
   Addr addr;
-  libbyz::RsaPublicKey *pkey;
+  RsaPublicKey *pkey;
   mbedtls_ctr_drbg_context *drbg_ctx;
   size_t ssize;  // signature size
   unsigned
@@ -292,5 +294,7 @@ void random_nonce(unsigned *n);
 
 int random_int();
 // Effects: Returns a new random int.
+
+}  // namespace libbyzea
 
 #endif  // _Principal_h

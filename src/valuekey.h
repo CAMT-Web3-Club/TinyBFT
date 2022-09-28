@@ -70,6 +70,8 @@
 */
 #define ident_hash(x) ((int)(x));
 
+namespace libbyzea {
+
 DECLARE_value_key(IntKey, int, ident_hash);
 DECLARE_value_key(LongKey, int, ident_hash);
 DECLARE_value_key(UIntKey, unsigned int, ident_hash);
@@ -77,5 +79,7 @@ DECLARE_value_key(UIntKey, unsigned int, ident_hash);
 DECLARE_value_elem(IntElem, int, ident_hash);
 DECLARE_value_elem(LongElem, int, ident_hash);
 DECLARE_value_elem(UIntElem, unsigned int, ident_hash);
+
+}  // namespace libbyzea
 
 #endif /* _VALUEKEY_H */

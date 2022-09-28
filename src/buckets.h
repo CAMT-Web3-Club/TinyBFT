@@ -1,6 +1,8 @@
 #ifndef _BUCKETS_H
 #define _BUCKETS_H
 
+namespace libbyzea {
+
 #define BK_TEMPLATE template <class ELEM>
 
 BK_TEMPLATE struct BucketsImpl;
@@ -58,5 +60,7 @@ BK_TEMPLATE class BucketsGenerator {
   BucketsImpl<ELEM> **last;
   // points to the "next" field of the previous mapping
 };
+
+}  // namespace libbyzea
 
 #endif /* _BUCKETS_H */

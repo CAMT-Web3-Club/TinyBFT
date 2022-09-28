@@ -4,6 +4,8 @@
 #include "Pre_prepare.h"
 #include "types.h"
 
+namespace libbyzea {
+
 class Pre_prepare_info {
   //
   // Holds information about a pre-prepare and matching big requests.
@@ -98,5 +100,7 @@ inline void Pre_prepare_info::clear() {
 inline bool Pre_prepare_info::is_complete() const {
   return pp != 0 && mreqs == 0;
 }
+
+}  // namespace libbyzea
 
 #endif  //_Pre_prepare_info_h

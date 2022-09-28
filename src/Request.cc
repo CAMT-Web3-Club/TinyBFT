@@ -13,6 +13,8 @@
 // extra & 1 = read only
 // extra & 2 = signed
 
+namespace libbyzea {
+
 Request::Request(Request_id r, short rr)
     : Message(Request_tag, Max_message_size) {
   rep().cid = node->id();
@@ -132,3 +134,5 @@ bool Request::convert(char *m1, unsigned max_len, Request &m2) {
     return false;
   return true;
 }
+
+}  // namespace libbyzea

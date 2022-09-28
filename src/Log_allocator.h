@@ -31,6 +31,8 @@
 #define DEBUG_ALLOC 1
 #endif
 
+namespace libbyzea {
+
 class Log_allocator {
   // Overview: A fast and space efficient memory allocator. It assumes
   // objects that are allocated close together in time are freed close
@@ -170,5 +172,7 @@ inline bool Log_allocator::realloc(char *p, int osz, int nsz) {
   }
   return false;
 }
+
+}  // namespace libbyzea
 
 #endif  // _Log_allocator_h

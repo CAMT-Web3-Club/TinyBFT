@@ -1,7 +1,9 @@
 #include "Certificate.h"
 #include "Node.h"
 
-template <class T> 
+namespace libbyzea {
+
+template <class T>
 Certificate<T>::Certificate(int comp) : bmap(Max_num_replicas) {
   max_size = node->f()+1;
   vals = new Message_val[max_size];
@@ -9,25 +11,25 @@ Certificate<T>::Certificate(int comp) : bmap(Max_num_replicas) {
   correct = node->f()+1;
   complete = (comp == 0) ? node->f()*2+1 : comp;
   c = 0;
-  mym = 0; 
+  mym = 0;
 }
 
-template <class T> 
+template <class T>
 Certificate<T>::~Certificate() {
   delete [] vals;
 }
 
-template <class T> 
+template <class T>
 bool Certificate<T>::add(T *m) {
   const int id = m->id();
   if (node->is_replica(id) && !bmap.test(id)) {
     // "m" was sent by a replica that does not have a message in
     // the certificate
     if ((c == 0 || (c->count < complete && c->m->match(m))) && m->verify()) {
-      // add "m" to the certificate	
+      // add "m" to the certificate
       th_assert(id != node->id(), "verify should return false for messages from self");
-      
-      bmap.set(id);	
+
+      bmap.set(id);
       if (c) {
 	c->count++;
 	if (!c->m->full() && m->full()) {
@@ -38,15 +40,15 @@ bool Certificate<T>::add(T *m) {
 	  delete m;
 	}
 	return true;
-      } 
-      
+      }
+
       // Check if there is a value that matches "m"
       int i;
       for (i=0; i < cur_size; i++) {
 	Message_val &val = vals[i];
 	if (val.m->match(m)) {
 	  val.count++;
-	  if (val.count >= correct) 
+	  if (val.count >= correct)
 	    c = vals+i;
 	  if (!val.m->full() && m->full()) {
 	    // if val.m is not full and m is, replace val.m
@@ -58,7 +60,7 @@ bool Certificate<T>::add(T *m) {
 	  return true;
 	}
       }
-      
+
       // "m" has a new value.
       if (cur_size < max_size) {
 	vals[cur_size].m = m;
@@ -68,7 +70,7 @@ bool Certificate<T>::add(T *m) {
 	// Should only happen for replies to read-only requests.
 	fprintf(stderr, "More than f+1 distinct values in certificate");
 	clear();
-      } 
+      }
 
     } else {
       if (m->verify()) bmap.set(id);
@@ -77,9 +79,9 @@ bool Certificate<T>::add(T *m) {
   delete m;
   return false;
 }
-    
 
-template <class T> 
+
+template <class T>
 bool Certificate<T>::add_mine(T *m) {
   th_assert(m->id() == node->id(), "Invalid argument");
   th_assert(m->full(), "Invalid argument");
@@ -99,13 +101,13 @@ bool Certificate<T>::add_mine(T *m) {
 	break;
       }
     }
-    
+
     if (c == 0) {
       c = vals;
       vals->count = 0;
     }
   }
-  
+
   if (c->m == 0) {
     th_assert(cur_size == 0, "Invalid state");
     cur_size = 1;
@@ -120,7 +122,7 @@ bool Certificate<T>::add_mine(T *m) {
 }
 
 
-template <class T> 
+template <class T>
 void Certificate<T>::mark_stale() {
   if (!is_complete()) {
     int i = 0;
@@ -136,14 +138,14 @@ void Certificate<T>::mark_stale() {
     } else {
       c = 0;
     }
-    cur_size = i;    
+    cur_size = i;
 
     for (; i < old_cur_size; i++) vals[i].clear();
     bmap.clear();
   }
 }
-  
-template <class T> 
+
+template <class T>
 T * Certificate<T>::cvalue_clear() {
   if (c == 0) {
     return 0;
@@ -161,7 +163,7 @@ T * Certificate<T>::cvalue_clear() {
 }
 
 
-template <class T> 
+template <class T>
 bool Certificate<T>::encode(FILE* o) {
   bool ret = bmap.encode(o);
 
@@ -182,12 +184,12 @@ bool Certificate<T>::encode(FILE* o) {
 
   bool hmym = mym != 0;
   sz += fwrite(&hmym, sizeof(bool), 1, o);
-  
+
   return ret & (sz == 5U+cur_size);
 }
 
 
-template <class T> 
+template <class T>
 bool Certificate<T>::decode(FILE* in) {
   bool ret = bmap.decode(in);
 
@@ -195,7 +197,7 @@ bool Certificate<T>::decode(FILE* in) {
   delete [] vals;
 
   vals = new Message_val[max_size];
-  
+
   sz += fread(&cur_size, sizeof(int), 1, in);
   if (cur_size < 0 || cur_size >= max_size)
     return false;
@@ -219,20 +221,22 @@ bool Certificate<T>::decode(FILE* in) {
 
   bool hmym;
   sz += fread(&hmym, sizeof(bool), 1, in);
-  
+
   if (cindex == -1) {
     c = 0;
     mym = 0;
   } else {
-    if (cindex < 0 || cindex > cur_size) 
+    if (cindex < 0 || cindex > cur_size)
       return false;
     c = vals+cindex;
 
     if (hmym)
       mym = c->m;
   }
-  
+
   t_sent = zeroTime();
 
   return ret & (sz == 5U+cur_size);
 }
+
+}  // namespace libbyzea

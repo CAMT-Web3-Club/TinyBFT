@@ -5,6 +5,8 @@
 #include "Replica.h"
 #include "th_assert.h"
 
+namespace libbyzea {
+
 Query_stable::Query_stable()
     : Message(Query_stable_tag, sizeof(Query_stable_rep) + node->auth_size()) {
   rep().id = node->id();
@@ -33,3 +35,5 @@ bool Query_stable::convert(Message *m1, Query_stable *&m2) {
   m2 = (Query_stable *)m1;
   return true;
 }
+
+}  // namespace libbyzea

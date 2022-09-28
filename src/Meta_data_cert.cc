@@ -4,6 +4,8 @@
 #include "Meta_data_d.h"
 #include "Node.h"
 
+namespace libbyzea {
+
 Meta_data_cert::Meta_data_cert() {
   last_mdds = new Meta_data_d*[node->n()];
   last_stables = new Seqno[node->n()];
@@ -126,3 +128,5 @@ bool Meta_data_cert::add(Meta_data_d* m, bool mine) {
   delete m;
   return false;
 }
+
+}  // namespace libbyzea

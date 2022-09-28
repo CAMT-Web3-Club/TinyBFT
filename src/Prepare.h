@@ -4,6 +4,9 @@
 #include "Digest.h"
 #include "Message.h"
 #include "types.h"
+
+namespace libbyzea {
+
 class Principal;
 
 //
@@ -85,5 +88,7 @@ inline bool Prepare::match(const Prepare *p) const {
   th_assert(view() == p->view() && seqno() == p->seqno(), "Invalid argument");
   return digest() == p->digest();
 }
+
+}  // namespace libbyzea
 
 #endif  // _Prepare_h

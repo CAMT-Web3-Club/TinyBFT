@@ -7,6 +7,8 @@
 #include "Principal.h"
 #include "th_assert.h"
 
+namespace libbyzea {
+
 Status::Status(View v, Seqno ls, Seqno le, bool hnvi, bool hnvm)
     : Message(Status_tag, Max_message_size) {
   rep().extra = (hnvi) ? 1 : 0;
@@ -132,3 +134,5 @@ bool Status::BRS_iter::get(Seqno& n, BR_map& mreqs) {
 
   return false;
 }
+
+}  // namespace libbyzea

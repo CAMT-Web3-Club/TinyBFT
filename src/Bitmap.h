@@ -6,6 +6,8 @@
 #include "bits.h"
 #include "th_assert.h"
 
+namespace libbyzea {
+
 typedef unsigned long Chunk;
 const unsigned long ChunkBits = sizeof(Chunk) * byte_bits;
 
@@ -284,5 +286,7 @@ static inline bool Bits_test(char* bmap, int i) {
   char* byte = bmap + (i / byte_bits);
   return (*byte & (1 << (i % byte_bits))) ? true : false;
 }
+
+}  // namespace libbyzea
 
 #endif  // Bitmap.h

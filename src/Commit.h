@@ -3,6 +3,9 @@
 
 #include "Message.h"
 #include "types.h"
+
+namespace libbyzea {
+
 class Principal;
 
 //
@@ -87,5 +90,7 @@ inline bool Commit::match(const Commit *c) const {
   th_assert(view() == c->view() && seqno() == c->seqno(), "Invalid argument");
   return true;
 }
+
+}  // namespace libbyzea
 
 #endif  // _Commit_h

@@ -20,6 +20,8 @@
 
 #define BH_TEMPLATE template <class ELEM, class SET, class GEN>
 
+namespace libbyzea {
+
 BH_TEMPLATE class BHashGenerator;
 
 BH_TEMPLATE class BHash {
@@ -180,5 +182,7 @@ BH_TEMPLATE class BHashGenerator {
   int slot;
   GEN gen;
 };
+
+}  // namespace libbyzea
 
 #endif /* _BHASH_H */

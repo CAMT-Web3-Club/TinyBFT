@@ -5,6 +5,8 @@
 #include "Principal.h"
 #include "th_assert.h"
 
+namespace libbyzea {
+
 View_change_ack::View_change_ack(View v, int id, int vcid, Digest const &vcd)
     : Message(View_change_ack_tag, sizeof(View_change_ack_rep) + MAC_size) {
   rep().v = v;
@@ -52,3 +54,5 @@ bool View_change_ack::convert(Message *m1, View_change_ack *&m2) {
   m2->trim();
   return true;
 }
+
+}  // namespace libbyzea

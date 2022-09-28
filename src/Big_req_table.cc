@@ -7,6 +7,8 @@
 #include "bhash.t"
 #include "buckets.t"
 
+namespace libbyzea {
+
 struct Waiting_pp {
   Seqno n;
   int i;
@@ -211,3 +213,5 @@ void Big_req_table::view_change(View v) {
     }
   }
 }
+
+}  // namespace libbyzea

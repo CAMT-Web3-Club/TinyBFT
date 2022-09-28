@@ -11,6 +11,8 @@
 #include "parameters.h"
 #include "types.h"
 
+namespace libbyzea {
+
 class Prepared_cert {
  public:
   Prepared_cert();
@@ -191,5 +193,7 @@ inline void Prepared_cert::clear() {
   pc.clear();
   primary = false;
 }
+
+}  // namespace libbyzea
 
 #endif  // Prepared_cert_h

@@ -1,6 +1,8 @@
 #ifndef _parameters_h
 #define _parameters_h 1
 
+namespace libbyzea {
+
 const int Max_num_replicas = 32;
 
 // Interval in sequence space between "checkpoint" states, i.e.,
@@ -14,5 +16,7 @@ const int checkpoint_interval = 128;
 // max_out > checkpoint_interval. Otherwise, the algorithm will be
 // unable to make progress.
 const int max_out = 256;
+
+}  // namespace libbyzea
 
 #endif  // _parameters_h

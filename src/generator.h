@@ -5,6 +5,8 @@
 
 #include "basic.h"
 
+namespace libbyzea {
+
 template <class T>
 class Generator {
  public:
@@ -12,5 +14,7 @@ class Generator {
   virtual bool get(T&) = 0;
   virtual ~Generator(){};
 };
+
+}  // namespace libbyzea
 
 #endif /* _GENERATOR_H */

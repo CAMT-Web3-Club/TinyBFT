@@ -6,6 +6,8 @@
 #include <sys/time.h>
 #include <unistd.h>
 
+namespace libbyzea {
+
 inline float diff_time(struct timeval &t0, struct timeval &t1) {
   return (t1.tv_sec - t0.tv_sec) + (t1.tv_usec - t0.tv_usec) / 1e6;
   // preserved significant digits by subtracting separately
@@ -55,5 +57,7 @@ class Timer {
   float accumulated;
   bool running;
 };
+
+}  // namespace libbyzea
 
 #endif /* _TIMER_H */

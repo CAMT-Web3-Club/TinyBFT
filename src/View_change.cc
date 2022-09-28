@@ -7,6 +7,8 @@
 #include "Replica.h"
 #include "th_assert.h"
 
+namespace libbyzea {
+
 View_change::View_change(View v, Seqno ls, int id)
     : Message(View_change_tag, Max_message_size) {
   rep().v = v;
@@ -189,3 +191,5 @@ bool View_change::convert(Message *m1, View_change *&m2) {
   m2 = (View_change *)m1;
   return true;
 }
+
+}  // namespace libbyzea

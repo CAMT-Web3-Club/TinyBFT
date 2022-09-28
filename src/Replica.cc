@@ -38,22 +38,35 @@
 #include "View_change_ack.h"
 #include "th_assert.h"
 
+// TODO check if includes are necessary at their positions or can be moved to
+// regular includes.
+
+namespace libbyzea {
 // Global replica object.
 Replica *replica;
+}  // namespace libbyzea
 
 // Force template instantiation
 #include "Certificate.t"
+namespace libbyzea {
 template class Certificate<Commit>;
 template class Certificate<Checkpoint>;
 template class Certificate<Reply>;
+}  // namespace libbyzea
 
 #include "Log.t"
+namespace libbyzea {
 template class Log<Prepared_cert>;
 template class Log<Certificate<Commit> >;
 template class Log<Certificate<Checkpoint> >;
+}  // namespace libbyzea
 
 #include "Set.t"
+namespace libbyzea {
 template class Set<Checkpoint>;
+}  // namespace libbyzea
+
+namespace libbyzea {
 
 template <class T>
 void Replica::retransmit(T *m, Time &cur, Time *tsent, Principal *p) {
@@ -1967,3 +1980,5 @@ void Replica::try_end_recovery() {
 #ifndef NO_STATE_TRANSLATION
 char *Replica::get_cached_obj(int i) { return state.get_cached_obj(i); }
 #endif
+
+}  // namespace libbyzea

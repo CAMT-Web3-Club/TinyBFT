@@ -2,6 +2,9 @@
 
 #include "Certificate.t"
 #include "Node.h"
+
+namespace libbyzea {
+
 template class Certificate<Prepare>;
 
 Prepared_cert::Prepared_cert() : pc(node->f() * 2), primary(false) {}
@@ -78,3 +81,5 @@ bool Prepared_cert::decode(FILE* i) {
 bool Prepared_cert::is_empty() const {
   return pi.pre_prepare() == 0 && pc.is_empty();
 }
+
+}  // namespace libbyzea

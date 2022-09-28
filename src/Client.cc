@@ -15,6 +15,8 @@
 
 //#define ADJUST_RTIMEOUT 1
 
+namespace libbyzea {
+
 Client::Client(FILE *config_file, const std::string &private_key_file,
                short port)
     : Node(config_file, private_key_file, port),
@@ -190,3 +192,5 @@ void Client::send_new_key() {
   t_reps.clear();
   c_reps.clear();
 }
+
+}  // namespace libbyzea
