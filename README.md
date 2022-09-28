@@ -20,7 +20,7 @@ algorithms in the future to reduce keysizes and to improve performance.
 The following dependencies need to be installed in order to build the library:
 
 * CMake >= v3.18.4
-* MbedTLS >= v3.2.1
+* MbedTLS >= v2.18.1 and < v3.0.0
 
 ## Building
 

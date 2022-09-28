@@ -34,7 +34,8 @@ int RsaPublicKey::encrypt(const std::string &plaintext, uint8_t *dest,
   }
 
   int err = mbedtls_rsa_pkcs1_encrypt(
-      ctx_, mbedtls_ctr_drbg_random, rng_ctx_, plaintext.length(),
+      ctx_, mbedtls_ctr_drbg_random, rng_ctx_, MBEDTLS_RSA_PUBLIC,
+      plaintext.length(),
       reinterpret_cast<const unsigned char *>(plaintext.c_str()), dest);
 
   return err;
@@ -49,7 +50,8 @@ bool RsaPublicKey::verify(const std::string &msg, const uint8_t *signature,
 
   // TODO: use hash instead of the whole raw message
   int err = mbedtls_rsa_pkcs1_verify(
-      ctx_, MBEDTLS_MD_NONE, msg.length(),
+      ctx_, mbedtls_ctr_drbg_random, rng_ctx_, MBEDTLS_RSA_PUBLIC,
+      MBEDTLS_MD_NONE, msg.length(),
       reinterpret_cast<const unsigned char *>(msg.c_str()), signature);
   printf("verify: %d\n", err);
   return err == 0;
