@@ -99,7 +99,7 @@ class Log_allocator {
 inline char *Log_allocator::malloc(int sz) {
   th_assert(sz > 0 && sz < chunk_size, "Invalid argument");
   th_assert(ALIGNED_SIZE(sz), "Invalid argument");
-  register char *next;
+  char *next;
 
   while (1) {
     next = cur->next;
