@@ -1,14 +1,12 @@
+#include "State.h"
+
 #include <limits.h>
+#include <mbedtls/bignum.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>
 #include <sys/mman.h>
 #include <unistd.h>
-
-//! JC: got rid of extern C to help compile
-// extern "C" {
-#include "gmp.h"
-//}
 
 #include "Array.h"
 #include "Data.h"
@@ -18,7 +16,6 @@
 #include "Meta_data_cert.h"
 #include "Meta_data_d.h"
 #include "Replica.h"
-#include "State.h"
 #include "State_defs.h"
 #include "Statistics.h"
 #include "map.h"
@@ -432,22 +429,31 @@ void Page_mapping::print() {
 //
 struct DSum {
   static const int nbits = 256;
-  static const int mp_limb_bits = sizeof(mp_limb_t) * 8;
+  static const int mp_limb_bits = sizeof(mbedtls_mpi_uint) * 8;
   static const int nlimbs = (nbits + mp_limb_bits - 1) / mp_limb_bits;
-  static const int nbytes = nlimbs * sizeof(mp_limb_t);
+  static const int nbytes = nlimbs * sizeof(mbedtls_mpi_uint);
   static DSum* M;  // Modulus for sums must be at most nbits-1 long.
 
-  mp_limb_t sum[nlimbs];
+  mbedtls_mpi sum;
   //  char dummy[56];
 
-  inline DSum() { bzero(sum, nbytes); }
+  inline DSum() {
+    mbedtls_mpi_init(&sum);
+    mbedtls_mpi_grow(&sum, nlimbs);
+  }
   // Effects: Creates a new sum object with value 0
 
-  inline DSum(DSum const& other) { memcpy(sum, other.sum, nbytes); }
+  inline DSum(DSum const& other) { mbedtls_mpi_copy(&sum, &other.sum); }
+
+  inline ~DSum() { mbedtls_mpi_free(&sum); }
 
   inline DSum& operator=(DSum const& other) {
-    if (this == &other) return *this;
-    memcpy(sum, other.sum, nbytes);
+    if (this == &other) {
+      return *this;
+    }
+
+    mbedtls_mpi_copy(&sum, &other.sum);
+
     return *this;
   }
 
@@ -649,36 +655,37 @@ void PageCache::print() {
 DSum* DSum::M = 0;
 
 inline void DSum::add(Digest& d) {
-  mp_limb_t ret =
-      mpn_add((mp_ptr)sum, (mp_srcptr)sum, nlimbs, (mp_srcptr)d.udigest(),
-              sizeof(d) / sizeof(mp_limb_t));
-  th_assert(ret == 0, "sum and d should be such that there is no carry");
+  mbedtls_mpi digest;
+  mbedtls_mpi_init(&digest);
+  const uint8_t* buf = reinterpret_cast<const uint8_t*>(d.udigest());
+  int ret = mbedtls_mpi_read_binary(&digest, buf, sizeof(d));
+  th_assert(ret == 0, "failed to copy digest to multi-precision structure");
 
-  if (mpn_cmp(sum, M->sum, nlimbs) >= 0) {
-    mpn_sub((mp_ptr)sum, (mp_srcptr)sum, nlimbs, (mp_srcptr)M->sum, nlimbs);
+  ret = mbedtls_mpi_add_mpi(&sum, &sum, &digest);
+  th_assert(ret == 0, "failed to add sum and digest");
+  if (mbedtls_mpi_cmp_mpi(&sum, &M->sum) > 0) {
+    mbedtls_mpi_sub_mpi(&sum, &sum, &M->sum);
   }
+  th_assert(mbedtls_mpi_size(&sum) <= nbytes, "digest sum is too large");
+
+  mbedtls_mpi_free(&digest);
 }
 
 void DSum::sub(Digest& d) {
-  int dlimbs = sizeof(d) / sizeof(mp_limb_t);
-  bool gt = false;
-  for (int i = nlimbs - 1; i >= dlimbs; i--) {
-    if (sum[i] != 0) {
-      gt = true;
-      break;
-    }
-  }
+  mbedtls_mpi digest;
+  mbedtls_mpi_init(&digest);
+  const uint8_t* buf = reinterpret_cast<const uint8_t*>(d.udigest());
+  int ret = mbedtls_mpi_read_binary(&digest, buf, sizeof(d));
+  th_assert(ret == 0, "failed to copy digest to multi-precision structure");
 
-  mp_limb_t ret;
-  if (!gt && mpn_cmp(&sum[dlimbs - 1], (mp_limb_t*)d.udigest(), dlimbs) < 0) {
-    ret =
-        mpn_add((mp_ptr)sum, (mp_srcptr)sum, nlimbs, (mp_srcptr)M->sum, nlimbs);
-    th_assert(ret == 0, "There should be no carry");
+  if (mbedtls_mpi_cmp_mpi(&sum, &digest) < 0) {
+    mbedtls_mpi_add_mpi(&sum, &sum, &M->sum);
   }
+  ret = mbedtls_mpi_sub_mpi(&sum, &sum, &digest);
+  th_assert(ret == 0, "failed to subtract digest from digest sum");
+  th_assert(mbedtls_mpi_cmp_int(&sum, -1) > 0, "sum should be positive");
 
-  ret = mpn_sub((mp_ptr)sum, (mp_srcptr)sum, nlimbs, (mp_srcptr)d.udigest(),
-                sizeof(d) / sizeof(mp_limb_t));
-  th_assert(ret == 0, "sum and d should be such that there is no borrow");
+  mbedtls_mpi_free(&digest);
 }
 
 //
@@ -727,12 +734,11 @@ State::State(Replica* rep, char* memory, int num_bytes)
 
   // The random modulus for computing sums in AdHASH.
   DSum::M = new DSum;
-  mpn_set_str(DSum::M->sum,
-    (unsigned char*)"d2a10a09a80bc599b4d60bbec06c05d5e9f9c369954940145b63a1e2",
-	      DSum::nbytes, 16);
-
-  if (sizeof(Digest) % sizeof(mp_limb_t) != 0)
-    th_fail("Invalid assumption: sizeof(Digest)%sizeof(mp_limb_t)");
+  mbedtls_mpi_read_string(
+      &DSum::M->sum, 16,
+      "d2a10a09a80bc599b4d60bbec06c05d5e9f9c369954940145b63a1e2");
+  static_assert(sizeof(Digest) % sizeof(mbedtls_mpi_uint) == 0,
+                "Invalid assumption: sizeof(Digest)%sizeof(mp_limb_t)");
 
   for (int i = 0; i < PLevels - 1; i++) {
     stree[i] = new DSum[PLevelSize[i]];
@@ -854,6 +860,7 @@ void State::digest(Digest& d, int i, Seqno lm, char* data, int size) {
 
 inline int State::digest(Digest& d, int l, int i) {
   char* data;
+  uint8_t raw_sum[DSum::nbytes];
   int size;
 
 #ifndef NO_STATE_TRANSLATION
@@ -885,8 +892,11 @@ inline int State::digest(Digest& d, int l, int i) {
     }
 #endif
   } else {
-    data = (char*)(stree[l][i].sum);
-    size = DSum::nbytes;
+    int ret =
+        mbedtls_mpi_write_binary(&stree[l][i].sum, raw_sum, sizeof(raw_sum));
+    th_assert(ret == 0, "sum is too large or failed to copy sum to buffer");
+    data = reinterpret_cast<char*>(raw_sum);
+    size = mbedtls_mpi_size(&stree[l][i].sum);
   }
 
   digest(d, i, ptree[l][i].lm, data, size);
@@ -1589,7 +1599,13 @@ bool State::check_digest(Digest& d, Meta_data* m) {
       sum.add(dp);
     }
   }
-  digest(dp, i, m->last_mod(), (char*)(sum.sum), DSum::nbytes);
+
+  char raw_sum[DSum::nbytes];
+  int ret = mbedtls_mpi_write_binary(
+      &sum.sum, reinterpret_cast<uint8_t*>(raw_sum), sizeof(raw_sum));
+  th_assert(ret == 0,
+            "sum is too large or an error occurred while copying sum");
+  digest(dp, i, m->last_mod(), raw_sum, sizeof(raw_sum));
   return d == dp;
 }
 
