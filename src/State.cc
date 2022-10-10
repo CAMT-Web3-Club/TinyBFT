@@ -164,11 +164,9 @@ class PartKey {
  public:
   inline PartKey() {}
   inline PartKey(int l, int i) : level(l), index(i) {}
+  inline PartKey(const PartKey& x) = default;
 
-  inline void operator=(PartKey const& x) {
-    level = x.level;
-    index = x.index;
-  }
+  inline PartKey& operator=(const PartKey& x) = default;
 
   inline int hash() const { return index << (PLevelSize[PLevels - 1] + level); }
 

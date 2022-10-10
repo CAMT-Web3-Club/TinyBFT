@@ -146,6 +146,8 @@ struct HashPair {
  public:
   HashPair() {}  // needed for generators
   HashPair(KEY k, VALUE v) : key_(k), value_(v) {}
+  HashPair(const HashPair &hp) : key_(hp.key_), value_(hp.value_){};
+
   ~HashPair() {}
   KEY key() { return key_; }
   VALUE value() { return value_; }

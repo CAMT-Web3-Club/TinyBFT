@@ -26,7 +26,9 @@
    public:                                                                        \
     CLASS() {} /* need this for use with generators, annoyingly	*/                \
     CLASS(T a) : val(a) {}                                                        \
-    void operator=(CLASS const &x) { val = x.val; }                               \
+    CLASS(const CLASS &x) = default;                                              \
+                                                                                  \
+    void operator=(const CLASS &x) { val = x.val; }                               \
     int hash() const { return HASH(val); }                                        \
     bool operator==(CLASS const &x) { return (x.val == val) ? true : false; }     \
     T val;                                                                        \
