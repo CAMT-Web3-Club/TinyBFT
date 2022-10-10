@@ -945,7 +945,7 @@ void State::update_ptree(Seqno n) {
 
   for (int l = PLevels - 1; l > 0; l--) {
     Bitmap::Iter iter(mods[l]);
-    unsigned int i;
+    unsigned int i = 0;
     while (iter.get(i)) {
       Part& p = ptree[l][i];
       DSum& psum = stree[l - 1][i / PSize[l]];
