@@ -604,7 +604,7 @@ void Replica::handle(Checkpoint *m) {
       // fetch the state.
       bool late = m->stable() && last_executed < ms;
       if (clog.within_range(last_executed)) {
-        Time *t;
+        Time *t = nullptr;
         clog.fetch(last_executed).mine(&t);
         late &= diffTime(currentTime(), *t) > 200000;
       }

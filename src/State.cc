@@ -1821,7 +1821,7 @@ void State::done_with_level() {
           Checkpoint_rec& cr = clog.fetch(lc);
           Checkpoint_rec::Iter g(&cr);
           int pl, pi;
-          Part* p;
+          Part* p = nullptr;
           while (g.get(pl, pi, p)) {
             pr.appendr(pl, pi, p);
           }
@@ -1983,7 +1983,7 @@ bool State::shutdown(FILE* o, Seqno ls) {
 
         Checkpoint_rec::Iter g(&rec);
         int l, i;
-        Part* p;
+        Part* p = nullptr;
 
         while (g.get(l, i, p)) {
           wb += fwrite(&l, sizeof(int), 1, o);

@@ -124,7 +124,7 @@ bool Big_req_table::check_pcerts(BR_entry* bre) {
 bool Big_req_table::add_request(Request* r, bool verified) {
   th_assert(r->size() > Request::big_req_thresh && !r->is_read_only(),
             "Invalid Argument");
-  BR_entry* bre;
+  BR_entry* bre = nullptr;
   Digest rd = r->digest();
   if (breqs.find(rd, bre)) {
     if (bre->r == 0 &&
