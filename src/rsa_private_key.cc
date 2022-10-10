@@ -15,7 +15,8 @@ RsaPrivateKey::RsaPrivateKey(const std::string &key_filename,
   mbedtls_pk_init(&ctx);
 
   // TODO: we might want to encrypt these.
-  int err = mbedtls_pk_parse_keyfile(&ctx, key_filename.c_str(), nullptr);
+  int err = mbedtls_pk_parse_keyfile(&ctx, key_filename.c_str(), nullptr,
+                                     mbedtls_ctr_drbg_random, rng_ctx);
   if (err) {
     th_fail("error while reading PEM encoded public key");
   }
@@ -38,9 +39,8 @@ int RsaPrivateKey::decrypt(const uint8_t *ciphertext, size_t len, char *dest,
   }
 
   return mbedtls_rsa_pkcs1_decrypt(
-      ctx_, mbedtls_ctr_drbg_random, rng_ctx_, MBEDTLS_RSA_PRIVATE,
-      plaintext_len, ciphertext, reinterpret_cast<unsigned char *>(dest),
-      dest_len);
+      ctx_, mbedtls_ctr_drbg_random, rng_ctx_, plaintext_len, ciphertext,
+      reinterpret_cast<unsigned char *>(dest), dest_len);
 }
 
 int RsaPrivateKey::sign(const std::string &msg, uint8_t *signature,
@@ -51,8 +51,7 @@ int RsaPrivateKey::sign(const std::string &msg, uint8_t *signature,
 
   // TODO: use hash instead of the whole raw message
   return mbedtls_rsa_pkcs1_sign(
-      ctx_, mbedtls_ctr_drbg_random, rng_ctx_, MBEDTLS_RSA_PRIVATE,
-      MBEDTLS_MD_NONE, msg.length(),
+      ctx_, mbedtls_ctr_drbg_random, rng_ctx_, MBEDTLS_MD_NONE, msg.length(),
       reinterpret_cast<const unsigned char *>(msg.c_str()), signature);
 }
 
