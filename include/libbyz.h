@@ -34,7 +34,7 @@ typedef struct _Byz_buffer Byz_rep;
  * Client
  */
 
-int Byz_init_client(char *conf, char *conf_priv, short port);
+int Byz_init_client(const char *conf, const char *conf_priv, short port);
 /* Effects: Initializes a libbyz client process using the information in the
    file named by "conf" and the private key in the file named by "conf_priv". If
    port is 0 the library will select the first line matching this host in
@@ -98,7 +98,8 @@ int Byz_invoke(Byz_req *req, Byz_rep *rep, bool ro);
 
 #ifndef NO_STATE_TRANSLATION
 
-int Byz_init_replica(char *conf, char *conf_priv, unsigned int num_objs,
+int Byz_init_replica(const char *conf, const char *conf_priv,
+                     unsigned int num_objs,
                      int (*exec)(Byz_req *, Byz_rep *, Byz_buffer *, int, bool),
                      void (*comp_ndet)(Seqno, Byz_buffer *), int ndet_max_len,
                      bool (*check_ndet)(Byz_buffer *),
@@ -209,7 +210,8 @@ void Byz_modify(int npages, int *pages);
 
 #else  // ifndef NO_STATE_TRANSLATION
 
-int Byz_init_replica(char *conf, char *conf_priv, char *mem, unsigned int size,
+int Byz_init_replica(const char *conf, const char *conf_priv, char *mem,
+                     unsigned int size,
                      int (*exec)(Byz_req *, Byz_rep *, Byz_buffer *, int, bool),
                      void (*comp_ndet)(Seqno, Byz_buffer *), int ndet_max_len);
 /* Requires: "mem" is vm page aligned and "size" is a multiple of the vm page
