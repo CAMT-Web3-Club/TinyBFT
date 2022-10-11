@@ -15,20 +15,7 @@
 #include "State_defs.h"
 #include "Statistics.h"
 
-static void wait_chld([[maybe_unused]] int sig) {
-  // Get rid of zombies created by sfs code.
-  while (waitpid(-1, 0, WNOHANG) > 0)
-    ;
-}
-
 int Byz_init_client(const char *conf, const char *conf_priv, short port) {
-  // signal handler to get rid of zombies
-  struct sigaction act;
-  act.sa_handler = wait_chld;
-  sigemptyset(&act.sa_mask);
-  act.sa_flags = 0;
-  sigaction(SIGCHLD, &act, NULL);
-
   FILE *config_file = fopen(conf, "r");
   if (config_file == 0) {
     fprintf(stderr, "libbyz: Invalid configuration file %s \n", conf);
@@ -110,13 +97,6 @@ int Byz_init_replica(const char *conf, const char *conf_priv,
                      void (*put)(int, int *, int *, char **),
                      void (*shutdown_proc)(FILE *o),
                      void (*restart_proc)(FILE *i), short port) {
-  // signal handler to get rid of zombies
-  struct sigaction act;
-  act.sa_handler = wait_chld;
-  sigemptyset(&act.sa_mask);
-  act.sa_flags = 0;
-  sigaction(SIGCHLD, &act, NULL);
-
   FILE *config_file = fopen(conf, "r");
   if (config_file == 0) {
     fprintf(stderr, "libbyz: Invalid configuration file %s \n", conf);
@@ -157,13 +137,6 @@ int Byz_init_replica(const char *conf, const char *conf_priv, char *mem,
                      unsigned int size,
                      int (*exec)(Byz_req *, Byz_rep *, Byz_buffer *, int, bool),
                      void (*comp_ndet)(Seqno, Byz_buffer *), int ndet_max_len) {
-  // signal handler to get rid of zombies
-  struct sigaction act;
-  act.sa_handler = wait_chld;
-  sigemptyset(&act.sa_mask);
-  act.sa_flags = 0;
-  sigaction(SIGCHLD, &act, NULL);
-
   FILE *config_file = fopen(conf, "r");
   if (config_file == 0) {
     fprintf(stderr, "libbyz: Invalid configuration file %s \n", conf);
