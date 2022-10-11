@@ -1499,7 +1499,7 @@ static void uhash_init(uhash_ctx_t ahc, INT8 *prf_key) {
 
 /* ---------------------------------------------------------------------- */
 
-uhash_ctx_t uhash_alloc(char key[]) {
+uhash_ctx_t uhash_alloc(char key[16]) {
   /* Allocate memory and force to a 16-byte boundary. */
   uhash_ctx_t ctx;
   char bytes_to_add;
