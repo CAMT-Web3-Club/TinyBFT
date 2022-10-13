@@ -23,6 +23,8 @@ if(DEFINED MBEDTLS_INCLUDE_PATH)
 endif()
 
 message("${INCLUDE_DIRECTORIES}")
+target_compile_options(byzea PRIVATE "-Wall" "-Werror=all" "-Wextra" "-Wno-unused-function")
+
 target_sources(byzea PRIVATE
     src/Client.cc
     src/Replica.cc
