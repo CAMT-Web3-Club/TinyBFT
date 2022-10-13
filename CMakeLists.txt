@@ -22,7 +22,6 @@ if(DEFINED MBEDTLS_INCLUDE_PATH)
     target_include_directories(byzea PRIVATE ${MBEDTLS_INCLUDE_PATH})
 endif()
 
-message("${INCLUDE_DIRECTORIES}")
 target_compile_options(byzea PRIVATE "-Wall" "-Werror=all" "-Wextra" "-Wno-unused-function")
 
 target_sources(byzea PRIVATE
