@@ -28,8 +28,8 @@ typedef int16_t Bits16;
 typedef int32_t Bits32;
 typedef int64_t Bits64;
 
-#define INT_BITS (sizeof(int) * byte_bits)
-#define LONG_BITS (sizeof(long) * byte_bits)
+#define INT_BITS (int)(sizeof(int) * byte_bits)
+#define LONG_BITS (int)(sizeof(long) * byte_bits)
 
 #define INT_SIGN_BIT_MASK (0x1 << (IN_BITS - 1))
 #define LONG_SIGN_BIT_MASK (0x1 << (LONG_BITS - 1))
