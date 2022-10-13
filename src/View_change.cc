@@ -114,7 +114,7 @@ View View_change::req(Seqno n, Digest &d) {
   return ri.v;
 }
 
-void View_change::re_authenticate(Principal *p) {
+void View_change::re_authenticate([[maybe_unused]] Principal *p) {
   th_assert(rep().n_reqs >= 0 && rep().n_reqs <= max_out && view() > 0,
             "Invalid state");
   th_assert(

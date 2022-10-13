@@ -19,7 +19,7 @@ Commit::Commit(View v, Seqno s)
 
 Commit::Commit(Commit_rep *contents) : Message(contents) {}
 
-void Commit::re_authenticate(Principal *p) {
+void Commit::re_authenticate([[maybe_unused]] Principal *p) {
   node->gen_auth_out(contents(), sizeof(Commit_rep));
 }
 

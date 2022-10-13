@@ -1197,7 +1197,8 @@ Part& State::get_meta_data(Seqno c, int l, int i) {
   return p;  // never reached
 }
 
-void State::start_fetch(Seqno le, Seqno c, Digest* cd, bool stable) {
+void State::start_fetch(Seqno le, Seqno c, Digest* cd,
+                        [[maybe_unused]] bool stable) {
   START_CC(fetch_cycles);
 
   if (!fetching) {

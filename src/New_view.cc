@@ -48,7 +48,7 @@ void New_view::pick(int id, Seqno n) {
   picked()[n - min()] = id;
 }
 
-void New_view::re_authenticate(Principal *p) {
+void New_view::re_authenticate([[maybe_unused]] Principal *p) {
   int old_size =
       sizeof(New_view_rep) + sizeof(VC_info) * node->n() + max() - min();
 

@@ -14,7 +14,7 @@ Query_stable::Query_stable()
   node->gen_auth_out(contents(), sizeof(Query_stable_rep));
 }
 
-void Query_stable::re_authenticate(Principal *p) {
+void Query_stable::re_authenticate([[maybe_unused]] Principal *p) {
   node->gen_auth_out(contents(), sizeof(Query_stable_rep));
 }
 

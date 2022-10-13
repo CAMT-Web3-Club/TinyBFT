@@ -108,7 +108,7 @@ Pre_prepare *Pre_prepare::clone(View v) const {
   return ret;
 }
 
-void Pre_prepare::re_authenticate(Principal *p) {
+void Pre_prepare::re_authenticate([[maybe_unused]] Principal *p) {
 #ifndef USE_PKEY
   node->gen_auth_out(contents(), sizeof(Pre_prepare_rep),
                      non_det_choices() + rep().non_det_size);

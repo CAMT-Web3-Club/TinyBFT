@@ -44,7 +44,7 @@ int Byz_init_client(const char *conf, const char *conf_priv, short port) {
 
 void Byz_reset_client() { ((libbyzea::Client *)libbyzea::node)->reset(); }
 
-int Byz_alloc_request(Byz_req *req, int size) {
+int Byz_alloc_request(Byz_req *req, [[maybe_unused]] int size) {
   libbyzea::Request *request = new libbyzea::Request((Request_id)0);
   if (request == 0) return -1;
 

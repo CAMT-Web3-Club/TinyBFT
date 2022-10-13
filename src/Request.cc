@@ -64,7 +64,7 @@ void Request::authenticate(int act_len, bool read_only) {
   node->gen_auth_in(contents(), sizeof(Request_rep), contents() + old_size);
 }
 
-void Request::re_authenticate(bool change, Principal *p) {
+void Request::re_authenticate(bool change, [[maybe_unused]] Principal *p) {
   if (change) {
     rep().extra &= ~1;
   }

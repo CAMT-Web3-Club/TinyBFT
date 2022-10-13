@@ -7,7 +7,8 @@
 
 namespace libbyzea {
 
-View_change_ack::View_change_ack(View v, int id, int vcid, Digest const &vcd)
+View_change_ack::View_change_ack(View v, [[maybe_unused]] int id, int vcid,
+                                 Digest const &vcd)
     : Message(View_change_ack_tag, sizeof(View_change_ack_rep) + MAC_size) {
   rep().v = v;
   rep().id = node->id();

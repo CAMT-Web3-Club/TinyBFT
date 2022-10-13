@@ -30,7 +30,7 @@ Fetch::Fetch(Request_id rid, Seqno lu, int level, int index,
   node->gen_auth_in(contents(), sizeof(Fetch_rep));
 }
 
-void Fetch::re_authenticate(Principal *p) {
+void Fetch::re_authenticate([[maybe_unused]] Principal *p) {
   node->gen_auth_in(contents(), sizeof(Fetch_rep));
 }
 

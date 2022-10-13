@@ -28,7 +28,7 @@ Checkpoint::Checkpoint(Seqno s, Digest &d, bool stable)
 #endif
 }
 
-void Checkpoint::re_authenticate(Principal *p, bool stable) {
+void Checkpoint::re_authenticate([[maybe_unused]] Principal *p, bool stable) {
 #ifndef USE_PKEY
   if (stable) rep().extra = 1;
   node->gen_auth_out(contents(), sizeof(Checkpoint_rep));
