@@ -56,7 +56,7 @@ extern long long clock_mhz;
 extern void init_clock_mhz();
 // Effects: Initialize "clock_mhz".
 
-static inline Time currentTime() { return rdtsc(); }
+static inline Time currentTime() { return platform::cycle_count(); }
 
 static inline Time zeroTime() { return 0; }
 

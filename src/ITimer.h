@@ -49,7 +49,7 @@ class ITimer {
   // Effects: Calls handlers for ITimer instances that have expired.
 #else
   inline static void handle_timeouts() {
-    Time current = rdtsc();
+    Time current = platform::cycle_count();
     if (current < min_deadline) return;
     _handle_timeouts(current);
   }

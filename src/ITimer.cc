@@ -60,7 +60,7 @@ void ITimer::restart() {
   deadline.tv_sec += deadline.tv_usec / 1000000;
   deadline.tv_usec = deadline.tv_usec % 1000000;
 #else
-  deadline = rdtsc();
+  deadline = platform::cycle_count();
   deadline += period;
 
   if (deadline < min_deadline) min_deadline = deadline;

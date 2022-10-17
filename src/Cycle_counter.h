@@ -1,20 +1,7 @@
 #ifndef _Cycle_counter_h
 #define _Cycle_counter_h 1
 
-static inline long long rdtsc(void) {
-  union {
-    struct {
-      unsigned int l; /* least significant word */
-      unsigned int h; /* most significant word */
-    } w32;
-    unsigned long long w64;
-  } v;
-
-  __asm __volatile(".byte 0xf; .byte 0x31     # RDTSC instruction"
-                   : "=a"(v.w32.l), "=d"(v.w32.h)
-                   :);
-  return v.w64;
-}
+#include "platform.h"
 
 namespace libbyzea {
 
@@ -65,14 +52,17 @@ inline Cycle_counter::Cycle_counter() { reset(); }
 inline void Cycle_counter::start() {
   if (!running) {
     running = true;
-    c0 = rdtsc();
+    c0 = platform::cycle_count();
   }
 }
 
 inline void Cycle_counter::stop() {
   if (running) {
     running = false;
-    c1 = rdtsc();
+    c1 = platform::cycle_count();
+    if (c1 < c0) {
+      c1 += platform::MAX_CYCLE_COUNT - c0;
+    }
     long long incr = c1 - c0 - calibration;
     if (incr > max_incr) max_incr = incr;
     accumulated += incr;
@@ -81,7 +71,10 @@ inline void Cycle_counter::stop() {
 
 inline long long Cycle_counter::elapsed() {
   if (running) {
-    c1 = rdtsc();
+    c1 = platform::cycle_count();
+    if (c1 < c0) {
+      c1 += platform::MAX_CYCLE_COUNT - c0;
+    }
     return (accumulated + c1 - c0 - calibration);
   } else {
     return accumulated;

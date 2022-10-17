@@ -20,6 +20,7 @@
 #include "Principal.h"
 #include "Time.h"
 #include "parameters.h"
+#include "platform.h"
 #include "th_assert.h"
 
 #define NO_IP_MULTICAST
@@ -60,6 +61,9 @@ Node::Node(FILE *config_file, const std::string &private_key_file,
   if (err) {
     th_fail("Failed to seed random number generator");
   }
+
+  // Initialize Hardware Platform
+  platform::initialize();
 
   // Compute clock frequency.
   init_clock_mhz();
