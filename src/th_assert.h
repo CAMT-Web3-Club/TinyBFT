@@ -106,6 +106,20 @@ extern void __assert(char *, char *, int);
 
 #endif /* defined(__STDC__) || defined(__cplusplus) */
 
+#elif defined(ESP_PLATFORM)
+
+#ifndef NDEBUG
+#define th_assert(expr, msg)      \
+  (__builtin_expect(!!(expr), 1)) \
+      ? (void)0                   \
+      : __assert_func(__FILENAME__, __LINE__, __ASSERT_FUNC, #expr)
+#else
+#define th_assert(expr, msg)
+#endif
+#define th_fail(msg) __assert_func(__FILENAME__, __LINE__, __ASSERT_FUNC, #msg)
+#define th_fail_str(buf) \
+  __assert_func(__FILENAME__, __LINE__, __ASSERT_FUNC, buf)
+
 #else
 
 #error Unknown operating system, underlying assert call not known.
