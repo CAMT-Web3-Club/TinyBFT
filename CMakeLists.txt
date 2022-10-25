@@ -26,6 +26,10 @@ if (DEFINED MAX_MESSAGE_SIZE)
     target_compile_definitions(byzea PUBLIC MAX_MESSAGE_SIZE=${MAX_MESSAGE_SIZE})
 endif()
 
+if (DEFINED WINDOW_SIZE)
+    target_compile_definitions(byzea PUBLIC WINDOW_SIZE=${WINDOW_SIZE})
+endif()
+
 target_compile_options(byzea PRIVATE "-Wall" "-Werror=all" "-Wextra" "-Wno-unused-function")
 
 target_sources(byzea PRIVATE
