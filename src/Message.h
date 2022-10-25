@@ -9,10 +9,14 @@
 #include "th_assert.h"
 #include "types.h"
 
+#ifndef MAX_MESSAGE_SIZE
+#define MAX_MESSAGE_SIZE 9000
+#endif  // MAX_MESSAGE_SIZE
+
 namespace libbyzea {
 
 // Maximum message size. Must verify ALIGNED_SIZE.
-const size_t Max_message_size = 9000;
+const size_t Max_message_size = MAX_MESSAGE_SIZE;
 
 //
 // All messages have the following format:

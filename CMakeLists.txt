@@ -22,6 +22,10 @@ if(DEFINED MBEDTLS_INCLUDE_PATH)
     target_include_directories(byzea PRIVATE ${MBEDTLS_INCLUDE_PATH})
 endif()
 
+if (DEFINED MAX_MESSAGE_SIZE)
+    target_compile_definitions(byzea PUBLIC MAX_MESSAGE_SIZE=${MAX_MESSAGE_SIZE})
+endif()
+
 target_compile_options(byzea PRIVATE "-Wall" "-Werror=all" "-Wextra" "-Wno-unused-function")
 
 target_sources(byzea PRIVATE
