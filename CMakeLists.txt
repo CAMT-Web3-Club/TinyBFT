@@ -30,6 +30,14 @@ if (DEFINED WINDOW_SIZE)
     target_compile_definitions(byzea PUBLIC WINDOW_SIZE=${WINDOW_SIZE})
 endif()
 
+if (DEFINED LOG_CHUNK_SIZE)
+    target_compile_definitions(byzea PUBLIC LOG_CHUNK_SIZE=${LOG_CHUNK_SIZE})
+endif()
+
+if (DEFINED LOG_NUM_CHUNKS)
+    target_compile_definitions(byzea PUBLIC LOG_NUM_CHUNKS=${LOG_NUM_CHUNKS})
+endif()
+
 target_compile_options(byzea PRIVATE "-Wall" "-Werror=all" "-Wextra" "-Wno-unused-function")
 
 target_sources(byzea PRIVATE

@@ -27,6 +27,14 @@
 #define ALIGNED_SIZE(sz) \
   ((ALIGNED(sz)) ? (sz) : (sz) - (sz) % ALIGNMENT + ALIGNMENT)
 
+#ifndef LOG_CHUNK_SIZE
+#define LOG_CHUNK_SIZE 65536
+#endif  // LOG_CHUNK_SIZE
+
+#ifndef LOG_NUM_CHUNKS
+#define LOG_NUM_CHUNKS 8
+#endif  // LOG_NUM_CHUNKS
+
 #ifndef NDEBUG
 #define DEBUG_ALLOC 1
 #endif
@@ -42,7 +50,7 @@ class Log_allocator {
   // truncated.
 
  public:
-  Log_allocator(int csz = 65536, int nc = 8);
+  Log_allocator(int csz = LOG_CHUNK_SIZE, int nc = LOG_NUM_CHUNKS);
   // Requires: "csz" is a multiple of the operating system vm page size.
   // Effects: Creates an allocator object with chunks of size "csz" and
   // an area for allocating chunks that can hold up to "nc" chunks.
