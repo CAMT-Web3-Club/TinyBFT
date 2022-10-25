@@ -5,9 +5,13 @@
 #define WINDOW_SIZE 256
 #endif  // WINDOW_SIZE
 
+#ifndef MAX_NUM_REPLICAS
+#define MAX_NUM_REPLICAS 32
+#endif  // MAX_NUM_REPLICAS
+
 namespace libbyzea {
 
-const int Max_num_replicas = 32;
+constexpr int Max_num_replicas = MAX_NUM_REPLICAS;
 
 // Interval in sequence space between "checkpoint" states, i.e.,
 // states that are checkpointed and for which Checkpoint messages are
