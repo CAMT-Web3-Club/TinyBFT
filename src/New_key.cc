@@ -62,9 +62,7 @@ bool New_key::verify() {
 
     if (i == node->id()) {
       // found my key
-      printf("Decrypting stuff\n");
       int ksize = node->decrypt(dst, dst_len, (char *)k, Nonce_size);
-      printf("%d != %d?\n", ksize, Nonce_size);
       if (ksize != Nonce_size) return false;
     }
 

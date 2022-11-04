@@ -121,7 +121,6 @@ bool Principal::verify_signature(const char *src, unsigned src_len,
   INCR_OP(num_sig_ver);
   START_CC(sig_ver_cycles);
 
-  printf("Verifying signature...\n");
   size_t signature_len;
   memcpy(&signature_len, sig, sizeof(signature_len));
   sig += sizeof(signature_len);
@@ -134,7 +133,6 @@ bool Principal::verify_signature(const char *src, unsigned src_len,
   const std::string msg(src, src_len);
   bool ret =
       pkey->verify(msg, reinterpret_cast<const uint8_t *>(sig), signature_len);
-  printf("ret = %d\n", ret);
 
   STOP_CC(sig_ver_cycles);
   return ret;
