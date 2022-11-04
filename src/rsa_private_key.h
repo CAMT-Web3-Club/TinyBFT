@@ -1,5 +1,5 @@
 #ifndef LIBBYZ_RSA_PRIVATE_KEY_H_
-#define LIBBYZ_RSA_PUBLIC_KEY_H_
+#define LIBBYZ_RSA_PRIVATE_KEY_H_
 
 #include <mbedtls/ctr_drbg.h>
 #include <mbedtls/rsa.h>
