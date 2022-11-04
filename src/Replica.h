@@ -12,10 +12,10 @@
 #include "Req_queue.h"
 #include "Set.h"
 #include "Stable_estimator.h"
-#include "State.h"
 #include "State_defs.h"
 #include "View_info.h"
 #include "libbyz.h"
+#include "trivial_state.h"
 #include "types.h"
 
 namespace libbyzea {
@@ -349,7 +349,7 @@ class Replica : public Node {
   Rep_info replies;
 
   // State abstraction manages state checkpointing and digesting
-  State state;
+  TrivialState state;
 
   ITimer *stimer;    // Timer to send status messages periodically.
   Time last_status;  // Time when last status message was sent

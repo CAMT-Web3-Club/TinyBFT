@@ -7,6 +7,7 @@
 #include "NV_info.h"
 #include "Node.h"
 #include "Pre_prepare.h"
+#include "trivial_state.h"
 #include "types.h"
 
 namespace libbyzea {
@@ -56,7 +57,7 @@ class View_info {
   // Effects: Returns true iff "this" logs that this replica sent a
   // prepare with digest "d" for sequence number "n".
 
-  void view_change(View v, Seqno le, State* state);
+  void view_change(View v, Seqno le, TrivialState* state);
   // Requires: All Pre_prepare messages in complete certificates for views
   // less than "view()" have been added to "this".
   // Effects: Moves this to view "v", discards messages for views less

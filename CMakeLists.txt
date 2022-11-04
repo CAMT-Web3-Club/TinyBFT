@@ -67,7 +67,7 @@ target_sources(byzea PRIVATE
     src/Data.cc
     src/Fetch.cc
     src/Meta_data_cert.cc
-    src/State.cc
+    src/trivial_state.cc
     src/libbyz.cc
     src/View_change.cc
     src/New_view.cc
