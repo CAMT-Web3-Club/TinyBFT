@@ -45,6 +45,7 @@ endif()
 target_compile_options(byzea PRIVATE "-Wall" "-Werror=all" "-Wextra" "-Wno-unused-function")
 
 target_sources(byzea PRIVATE
+    src/checkpoint_record.cc
     src/Client.cc
     src/Replica.cc
     src/New_key.cc
