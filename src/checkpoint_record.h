@@ -3,28 +3,30 @@
 
 #include <stdlib.h>
 
+#include <cstdint>
+
 #include "Digest.h"
 
 namespace libbyzea {
 class CheckpointRecord {
  public:
   CheckpointRecord();
-  CheckpointRecord(uint8_t* data, size_t len);
+  CheckpointRecord(uint8_t *data, size_t len);
 
-  CheckpointRecord(const CheckpointRecord&) = delete;
-  CheckpointRecord(CheckpointRecord&&) = delete;
+  CheckpointRecord(const CheckpointRecord &) = delete;
+  CheckpointRecord(CheckpointRecord &&) = delete;
 
-  CheckpointRecord& operator=(const CheckpointRecord&) = delete;
-  CheckpointRecord& operator=(CheckpointRecord&&) = delete;
+  CheckpointRecord &operator=(const CheckpointRecord &) = delete;
+  CheckpointRecord &operator=(CheckpointRecord &&) = delete;
 
   ~CheckpointRecord();
 
-  void digest(Digest& digest) const;
+  void digest(Digest &digest) const;
 
-  void snapshot(const uint8_t* data, size_t len);
+  void snapshot(const uint8_t *data, size_t len);
 
   /// @brief Copy this checkpoint to the data.
-  void copy(uint8_t* data, size_t len);
+  void copy(uint8_t *data, size_t len);
 
   bool is_cleared() const;
   void clear();
@@ -32,7 +34,7 @@ class CheckpointRecord {
   void print();
 
  private:
-  uint8_t* data_;
+  uint8_t *data_;
   size_t len_;
   Digest digest_;
 };

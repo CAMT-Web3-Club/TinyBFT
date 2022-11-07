@@ -51,6 +51,6 @@ void CheckpointRecord::clear() {
 
 void CheckpointRecord::print() {
   printf("Checkpoint record: %lu bytes\n", len_);
-  printf("    Digest: 0x%x\n", digest_);
+  printf("    Digest: %s\n", digest_.digest());
 }
 }  // namespace libbyzea
