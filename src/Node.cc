@@ -272,7 +272,10 @@ Message *Node::recv() {
     START_CC(recvfrom_cycles);
 
     int ret = recvfrom(sock, m->contents(), m->msize(), 0, 0, 0);
-
+    if (size_t(m->size()) > Max_message_size) {
+      printf("[ERROR]: %d > %lu!\n", m->size(), Max_message_size);
+      th_fail("Message size is larger than maximum message size!");
+    }
     STOP_CC(recvfrom_cycles);
 
 #ifdef LOOSE_MESSAGES
