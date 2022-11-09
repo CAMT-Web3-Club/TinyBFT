@@ -10,6 +10,10 @@
 #include "Time.h"
 #include "types.h"
 
+#ifndef MAX_REPLY_SIZE
+#define MAX_REPLY_SIZE 8192
+#endif
+
 namespace libbyzea {
 
 class Req_queue;
@@ -97,7 +101,7 @@ class Rep_info {
   int nps;
   char *mem;
   Array<Reply *> reps;  // Array of replies indexed by principal id.
-  static const int Max_rep_size = 8192;
+  static const int Max_rep_size = MAX_REPLY_SIZE;
 
   struct Rinfo {
     bool tentative;  // True if last reply is tentative and was not committed.

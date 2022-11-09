@@ -26,6 +26,10 @@ if (DEFINED MAX_MESSAGE_SIZE)
     target_compile_definitions(byzea PUBLIC MAX_MESSAGE_SIZE=${MAX_MESSAGE_SIZE})
 endif()
 
+if (DEFINED MAX_REPLY_SIZE)
+    target_compile_definitions(byzea PUBLIC MAX_REPLY_SIZE=${MAX_REPLY_SIZE})
+endif()
+
 if (DEFINED MAX_NUM_REPLICAS)
     target_compile_definitions(byzea PUBLIC MAX_NUM_REPLICAS=${MAX_NUM_REPLICAS})
 endif()
