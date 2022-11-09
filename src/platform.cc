@@ -52,6 +52,9 @@ void initialize() {
   mode.bits.saturation_control =
       static_cast<uint32_t>(saturation_control::WRAP_AROUND);
   write_csr(csr::MPCMR, mode.value);
+
+  // Reset counter to zero once.
+  write_csr(csr::MPCCR, 0);
 }
 
 #else

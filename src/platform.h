@@ -3,6 +3,10 @@
 
 #include <stdint.h>
 
+#ifdef ESP_PLATFORM
+#include "esp_timer.h"
+#endif
+
 #if !defined(__i386__) && !defined(__x86_64__) && \
     (!defined(ESP_PLATFORM) || !defined(__riscv))
 #error "Unsupported Hardware Platform"
@@ -59,6 +63,28 @@ inline uint64_t cycle_count() {
 #endif
 
   return count.value;
+}
+
+/**
+ * @brief Delay execution for an number of seconds.
+ *
+ * Delay execution for a number of seconds in such a way that the cycle counter
+ * register still counts clock cycles.
+ *
+ * @param seconds the number of seconds to delay execution.
+ */
+inline void delay(unsigned seconds) {
+#if defined(ESP_PLATFORM) && defined(__riscv)
+  // XXX: The clock cycle count register does not increase during sleep on the
+  // ESP32c3, so we have to use a busy loop here.
+  int64_t time = esp_timer_get_time();
+  int64_t delay = seconds * 1000 * 1000 + time;
+  while (time < delay) {
+    time = esp_timer_get_time();
+  }
+#else
+  sleep(seconds);
+#endif
 }
 
 }  // namespace platform
