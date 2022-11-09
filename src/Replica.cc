@@ -668,7 +668,7 @@ void Replica::handle(Checkpoint *m) {
 }
 
 void Replica::handle(New_key *m) {
-  if (!m->verify()) {
+  if (m->id() != node_id && !m->verify()) {
     fprintf(stderr, "BAD NKEY from %d\n", m->id());
   }
   delete m;
