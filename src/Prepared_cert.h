@@ -189,7 +189,7 @@ inline void Prepared_cert::mark_stale() {
 
 inline void Prepared_cert::clear() {
   pi.clear();
-  t_sent = 0;
+  t_sent = zeroTime();
   pc.clear();
   primary = false;
 }

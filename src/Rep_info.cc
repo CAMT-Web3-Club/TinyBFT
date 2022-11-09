@@ -117,7 +117,7 @@ void Rep_info::send_reply(int pid, View v, int id, bool tentative) {
 
   Time cur;
   Time& lsent = ireps[pid].lsent;
-  if (lsent != 0) {
+  if (!equalTime(lsent, zeroTime())) {
     cur = currentTime();
     if (diffTime(cur, lsent) <= 10000) return;
 

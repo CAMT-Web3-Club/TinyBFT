@@ -513,7 +513,7 @@ void NV_info::summarize_reqs(View_change* vc) {
 void NV_info::make_new_view() {
   th_assert(node->primary(v) == node->id(), "Invalid state");
   th_assert(is_complete, "Invalid state");
-  th_assert(nv_sent == zeroTime(), "Invalid state");
+  th_assert(equalTime(nv_sent, zeroTime()), "Invalid state");
 
   nv->set_min(min);
 

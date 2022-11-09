@@ -136,7 +136,7 @@ Replica::Replica(FILE *config_file, const std::string &private_key_file,
   last_executed = 0;
   last_tentative_execute = 0;
 
-  last_status = 0;
+  last_status = zeroTime();
 
   limbo = false;
   has_nv_state = true;

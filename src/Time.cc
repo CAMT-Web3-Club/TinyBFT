@@ -5,7 +5,6 @@ namespace libbyzea {
 long long clock_mhz = 0;
 
 void init_clock_mhz() {
-#ifndef USE_GETTIMEOFDAY
   struct timeval t0, t1;
 
   long long c0 = platform::cycle_count();
@@ -19,7 +18,6 @@ void init_clock_mhz() {
 
   clock_mhz =
       (c1 - c0) / ((t1.tv_sec - t0.tv_sec) * 1000000 + t1.tv_usec - t0.tv_usec);
-#endif
 }
 
 }  // namespace libbyzea

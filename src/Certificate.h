@@ -199,7 +199,7 @@ inline void Certificate<T>::clear() {
   bmap.clear();
   c = 0;
   mym = 0;
-  t_sent = 0;
+  t_sent = zeroTime();
   cur_size = 0;
 }
 

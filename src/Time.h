@@ -16,29 +16,39 @@
 namespace libbyzea {
 
 typedef struct timeval Time;
-static inline Time currentTime() {
+
+extern long long clock_mhz;
+
+inline Time currentTime() {
   Time t;
   int ret = gettimeofday(&t, 0);
   th_assert(ret == 0, "gettimeofday failed");
   return t;
 }
 
-static inline Time zeroTime() {
+inline Time zeroTime() {
   Time t;
   t.tv_sec = 0;
-  t.tv_usec = 0 return t;
+  t.tv_usec = 0;
+  return t;
 }
 
-static inline long long diffTime(Time t1, Time t2) {
+inline bool equalTime(Time t1, Time t2) {
+  return (t1.tv_sec == t2.tv_sec && t1.tv_usec == t2.tv_usec);
+}
+
+inline long long diffTime(Time t1, Time t2) {
   // t1-t2 in microseconds.
   return (((unsigned long long)(t1.tv_sec - t2.tv_sec)) << 20) +
          (t1.tv_usec - t2.tv_usec);
 }
 
-static inline bool lessThanTime(Time t1, Time t2) {
+inline bool lessThanTime(Time t1, Time t2) {
   return t1.tv_sec < t2.tv_sec ||
          (t1.tv_sec == t2.tv_sec && t1.tv_usec < t2.tv_usec);
 }
+
+void init_clock_mhz();
 
 }  // namespace libbyzea
 
@@ -53,21 +63,21 @@ typedef long long Time;
 extern long long clock_mhz;
 // Clock frequency in MHz
 
-extern void init_clock_mhz();
+void init_clock_mhz();
 // Effects: Initialize "clock_mhz".
 
-static inline Time currentTime() { return platform::cycle_count(); }
+inline Time currentTime() { return platform::cycle_count(); }
 
-static inline Time zeroTime() { return 0; }
+inline Time zeroTime() { return 0; }
 
-static inline long long diffTime(Time t1, Time t2) {
-  return (t1 - t2) / clock_mhz;
-}
+inline long long diffTime(Time t1, Time t2) { return (t1 - t2) / clock_mhz; }
 
-static inline bool lessThanTime(Time t1, Time t2) { return t1 < t2; }
+inline bool lessThanTime(Time t1, Time t2) { return t1 < t2; }
 
-#endif
+inline bool equalTime(Time t1, Time t2) { return (t1 == t2); }
 
 }  // namespace libbyzea
+
+#endif
 
 #endif  // _Time_h

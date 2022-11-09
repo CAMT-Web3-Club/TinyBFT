@@ -13,7 +13,10 @@
 namespace libbyzea {
 
 Array<ITimer *> ITimer::timers;
+
+#ifndef USE_GETTIMEOFDAY
 Time ITimer::min_deadline = Long_max;
+#endif
 
 ITimer::ITimer(int t, void (*h)()) {
   state = stopped;
