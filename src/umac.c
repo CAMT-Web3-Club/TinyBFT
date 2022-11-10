@@ -157,7 +157,7 @@ typedef UINT32 LARGE_UWORD;
 /* For this implementation to behave correctly, __LITTLE_ENDIAN__ must    */
 /* be set true if the host computer is little-endian.                     */
 
-#if __i386__ || __alpha__ || _M_IX86 || __LITTLE_ENDIAN
+#if __i386__ || __alpha__ || _M_IX86 || __riscv || __LITTLE_ENDIAN
 #define __LITTLE_ENDIAN__ 1
 #else
 #define __LITTLE_ENDIAN__ 0
