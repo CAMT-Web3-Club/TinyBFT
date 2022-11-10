@@ -11,6 +11,8 @@
 #include <sys/time.h>
 #include <unistd.h>
 
+#include "th_assert.h"
+
 #ifdef USE_GETTIMEOFDAY
 
 namespace libbyzea {
