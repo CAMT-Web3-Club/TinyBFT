@@ -51,7 +51,6 @@ bool RsaPublicKey::verify(const std::string &msg, const uint8_t *signature,
   int err = mbedtls_rsa_pkcs1_verify(
       ctx_, MBEDTLS_MD_NONE, msg.length(),
       reinterpret_cast<const unsigned char *>(msg.c_str()), signature);
-  printf("verify: %d\n", err);
   return err == 0;
 }
 
