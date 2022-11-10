@@ -131,7 +131,7 @@ class Principal {
   // always returns false if "this->id == node->id()"; otherwise,
   // returns true if signature is valid.
 
-  unsigned encrypt(const char *src, unsigned src_len, char *dst,
+  unsigned encrypt(const char *src, uint32_t src_len, char *dst,
                    unsigned dst_len);
   // Effects: Encrypts "src_len" bytes starting at "src" using this
   // principal's public-key and places up to "dst_len" of the result in "dst".

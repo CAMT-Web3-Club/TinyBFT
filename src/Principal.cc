@@ -121,7 +121,7 @@ bool Principal::verify_signature(const char *src, unsigned src_len,
   INCR_OP(num_sig_ver);
   START_CC(sig_ver_cycles);
 
-  size_t signature_len;
+  uint32_t signature_len;
   memcpy(&signature_len, sig, sizeof(signature_len));
   sig += sizeof(signature_len);
   if (signature_len + sizeof(signature_len) > sig_size()) {
@@ -138,9 +138,9 @@ bool Principal::verify_signature(const char *src, unsigned src_len,
   return ret;
 }
 
-unsigned Principal::encrypt(const char *src, unsigned src_len, char *dst,
+unsigned Principal::encrypt(const char *src, uint32_t src_len, char *dst,
                             unsigned dst_len) {
-  unsigned ciphertext_len = pkey->size();
+  uint32_t ciphertext_len = pkey->size();
   unsigned total_len =
       ciphertext_len + sizeof(src_len) + sizeof(ciphertext_len);
   if (dst_len < total_len) {

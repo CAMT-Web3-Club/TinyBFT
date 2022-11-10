@@ -374,7 +374,7 @@ void Node::gen_signature(const char *src, unsigned src_len, char *sig) {
   INCR_OP(num_sig_gen);
   START_CC(sig_gen_cycles);
 
-  size_t key_size = priv_key->size();
+  uint32_t key_size = priv_key->size();
   if (key_size + sizeof(key_size) > sig_size()) {
     th_fail("Signature is too big");
   }
@@ -394,10 +394,11 @@ unsigned Node::decrypt(char *src, unsigned src_len, char *dst,
                        unsigned dst_len) {
   if (src_len < 2 * sizeof(unsigned)) return 0;
 
-  unsigned ciphertext_len;
-  unsigned plaintext_len;
+  uint32_t plaintext_len;
   memcpy((char *)&plaintext_len, src, sizeof(unsigned));
   src += sizeof(plaintext_len);
+
+  uint32_t ciphertext_len;
   memcpy((char *)&ciphertext_len, src, sizeof(unsigned));
   src += sizeof(ciphertext_len);
   src_len -= (sizeof(plaintext_len) + sizeof(ciphertext_len));
