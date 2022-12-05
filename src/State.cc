@@ -894,7 +894,7 @@ inline int State::digest(Digest& d, int l, int i) {
         mbedtls_mpi_write_binary(&stree[l][i].sum, raw_sum, sizeof(raw_sum));
     th_assert(ret == 0, "sum is too large or failed to copy sum to buffer");
     data = reinterpret_cast<char*>(raw_sum);
-    size = mbedtls_mpi_size(&stree[l][i].sum);
+    size = sizeof(raw_sum);
   }
 
   digest(d, i, ptree[l][i].lm, data, size);
