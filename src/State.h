@@ -7,9 +7,9 @@
 #include "Partition.h"
 #include "State_defs.h"
 #include "Time.h"
+#include "dsum.h"
 #include "th_assert.h"
 #include "types.h"
-
 namespace libbyzea {
 
 //
@@ -31,7 +31,6 @@ class Fetch;
 class Replica;
 class Meta_data_cert;
 class PageCache;
-struct DSum;
 
 class State {
  public:

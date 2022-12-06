@@ -57,6 +57,7 @@ target_sources(byzea PRIVATE
     src/Message.cc
     src/Reply.cc
     src/Digest.cc
+    src/dsum.cc
     src/Node.cc
     src/Request.cc
     src/Checkpoint.cc
@@ -72,6 +73,7 @@ target_sources(byzea PRIVATE
     src/Data.cc
     src/Fetch.cc
     src/Meta_data_cert.cc
+    src/State.cc
     src/trivial_state.cc
     src/libbyz.cc
     src/View_change.cc

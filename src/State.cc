@@ -1,7 +1,6 @@
 #include "State.h"
 
 #include <limits.h>
-#include <mbedtls/bignum.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>
@@ -423,46 +422,6 @@ void Page_mapping::print() {
 #endif
 
 //
-// Sums of digests modulo a large integer
-//
-struct DSum {
-  static const int nbits = 256;
-  static const int mp_limb_bits = sizeof(mbedtls_mpi_uint) * 8;
-  static const int nlimbs = (nbits + mp_limb_bits - 1) / mp_limb_bits;
-  static const int nbytes = nlimbs * sizeof(mbedtls_mpi_uint);
-  static DSum* M;  // Modulus for sums must be at most nbits-1 long.
-
-  mbedtls_mpi sum;
-  //  char dummy[56];
-
-  inline DSum() {
-    mbedtls_mpi_init(&sum);
-    mbedtls_mpi_grow(&sum, nlimbs);
-  }
-  // Effects: Creates a new sum object with value 0
-
-  inline DSum(DSum const& other) { mbedtls_mpi_copy(&sum, &other.sum); }
-
-  inline ~DSum() { mbedtls_mpi_free(&sum); }
-
-  inline DSum& operator=(DSum const& other) {
-    if (this == &other) {
-      return *this;
-    }
-
-    mbedtls_mpi_copy(&sum, &other.sum);
-
-    return *this;
-  }
-
-  void add(Digest& d);
-  // Effects: adds "d" to this
-
-  void sub(Digest& d);
-  // Effects: subtracts "d" from this.
-};
-
-//
 // PageCache: LRU cache of copies of objects at the last checkpoint taken
 //            after the object was modified.
 //
@@ -650,42 +609,6 @@ void PageCache::print() {
   }
 }
 
-DSum* DSum::M = 0;
-
-inline void DSum::add(Digest& d) {
-  mbedtls_mpi digest;
-  mbedtls_mpi_init(&digest);
-  const uint8_t* buf = reinterpret_cast<const uint8_t*>(d.udigest());
-  int ret = mbedtls_mpi_read_binary(&digest, buf, sizeof(d));
-  th_assert(ret == 0, "failed to copy digest to multi-precision structure");
-
-  ret = mbedtls_mpi_add_mpi(&sum, &sum, &digest);
-  th_assert(ret == 0, "failed to add sum and digest");
-  if (mbedtls_mpi_cmp_mpi(&sum, &M->sum) > 0) {
-    mbedtls_mpi_sub_mpi(&sum, &sum, &M->sum);
-  }
-  th_assert(mbedtls_mpi_size(&sum) <= nbytes, "digest sum is too large");
-
-  mbedtls_mpi_free(&digest);
-}
-
-void DSum::sub(Digest& d) {
-  mbedtls_mpi digest;
-  mbedtls_mpi_init(&digest);
-  const uint8_t* buf = reinterpret_cast<const uint8_t*>(d.udigest());
-  int ret = mbedtls_mpi_read_binary(&digest, buf, sizeof(d));
-  th_assert(ret == 0, "failed to copy digest to multi-precision structure");
-
-  if (mbedtls_mpi_cmp_mpi(&sum, &digest) < 0) {
-    mbedtls_mpi_add_mpi(&sum, &sum, &M->sum);
-  }
-  ret = mbedtls_mpi_sub_mpi(&sum, &sum, &digest);
-  th_assert(ret == 0, "failed to subtract digest from digest sum");
-  th_assert(mbedtls_mpi_cmp_int(&sum, -1) > 0, "sum should be positive");
-
-  mbedtls_mpi_free(&digest);
-}
-
 //
 // State methods:
 //
@@ -731,12 +654,7 @@ State::State(Replica* rep, char* memory, int num_bytes)
   }
 
   // The random modulus for computing sums in AdHASH.
-  DSum::M = new DSum;
-  mbedtls_mpi_read_string(
-      &DSum::M->sum, 16,
-      "d2a10a09a80bc599b4d60bbec06c05d5e9f9c369954940145b63a1e2");
-  static_assert(sizeof(Digest) % sizeof(mbedtls_mpi_uint) == 0,
-                "Invalid assumption: sizeof(Digest)%sizeof(mp_limb_t)");
+  DSum::init("d2a10a09a80bc599b4d60bbec06c05d5e9f9c369954940145b63a1e2");
 
   for (int i = 0; i < PLevels - 1; i++) {
     stree[i] = new DSum[PLevelSize[i]];
