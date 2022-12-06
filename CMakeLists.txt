@@ -108,4 +108,19 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
+add_executable(
+  dsum_test
+  test/dsum_test.cc
+)
+target_include_directories(dsum_test PUBLIC include)
+target_include_directories(dsum_test PRIVATE src)
+
+target_link_libraries(
+  dsum_test
+  byzea
+  mbedcrypto
+  GTest::gtest_main
+)
+
 include(GoogleTest)
+gtest_discover_tests(dsum_test)
