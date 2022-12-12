@@ -6,6 +6,7 @@
 
 #include "Log_allocator.h"
 #include "Message_tags.h"
+#include "simple_log_allocator.h"
 #include "th_assert.h"
 #include "types.h"
 
@@ -132,7 +133,7 @@ class Message {
   //
   // Message-specific memory management
   //
-  static Log_allocator *a;
+  static SimpleLogAllocator *a;
 };
 
 // Methods inlined for speed

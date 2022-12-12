@@ -7,7 +7,7 @@
 
 namespace libbyzea {
 
-Log_allocator *Message::a = 0;
+SimpleLogAllocator *Message::a = nullptr;
 
 Message::Message(unsigned sz) : msg(0), max_size(ALIGNED_SIZE(sz)) {
   if (sz != 0) {
@@ -92,7 +92,7 @@ bool Message::decode(FILE *i) {
   return sz == 2U + csize;
 }
 
-void Message::init() { a = new Log_allocator(); }
+void Message::init() { a = new SimpleLogAllocator(); }
 
 const char *Message::stag() {
   static const char *string_tags[] = {
