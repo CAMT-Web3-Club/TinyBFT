@@ -42,6 +42,10 @@ if (DEFINED WINDOW_SIZE)
     target_compile_definitions(byzea PUBLIC WINDOW_SIZE=${WINDOW_SIZE})
 endif()
 
+if (DEFINED CHECKPOINT_INTERVAL)
+    target_compile_definitions(byzea PUBLIC CHECKPOINT_INTERVAL=${CHECKPOINT_INTERVAL})
+endif()
+
 if (DEFINED LOG_CHUNK_SIZE)
     target_compile_definitions(byzea PUBLIC LOG_CHUNK_SIZE=${LOG_CHUNK_SIZE})
 endif()

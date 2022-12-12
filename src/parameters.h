@@ -9,6 +9,10 @@
 #define MAX_NUM_REPLICAS 32
 #endif  // MAX_NUM_REPLICAS
 
+#ifndef CHECKPOINT_INTERVAL
+#define CHECKPOINT_INTERVAL 2
+#endif  // CHECKPOINT_INTERVAL
+
 namespace libbyzea {
 
 constexpr int Max_num_replicas = MAX_NUM_REPLICAS;
@@ -16,9 +20,9 @@ constexpr int Max_num_replicas = MAX_NUM_REPLICAS;
 // Interval in sequence space between "checkpoint" states, i.e.,
 // states that are checkpointed and for which Checkpoint messages are
 // sent.
-constexpr int checkpoint_interval = (WINDOW_SIZE / 2);
+constexpr int checkpoint_interval = (WINDOW_SIZE / CHECKPOINT_INTERVAL);
 static_assert(checkpoint_interval > 0,
-               "Invalid window size causes checkpoint interval to be 0");
+              "Combination of window size and checkpoint interval is invalid");
 
 // Maximum number of messages for which protocol can be
 // simultaneously in progress, i.e., messages with sequence number
