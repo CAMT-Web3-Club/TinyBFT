@@ -13,7 +13,11 @@ typedef unsigned long bool;
 #include <stdio.h>
 
 /* Should be a power of 2 less than or equal to the vm page size */
-static const int Block_size = 4096;
+#ifndef BLOCK_SIZE
+#define BLOCK_SIZE 4096
+#endif  // !BLOCK_SIZE
+static const int Block_size = BLOCK_SIZE;
+_Static_assert(Block_size % 2 == 0, "Block size must be a power of two");
 
 #include "Modify.h"
 #include "types.h"

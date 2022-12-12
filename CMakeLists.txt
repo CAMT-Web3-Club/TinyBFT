@@ -30,6 +30,10 @@ if (DEFINED MAX_REPLY_SIZE)
     target_compile_definitions(byzea PUBLIC MAX_REPLY_SIZE=${MAX_REPLY_SIZE})
 endif()
 
+if (DEFINED BLOCK_SIZE)
+    target_compile_definitions(byzea PUBLIC BLOCK_SIZE=${BLOCK_SIZE})
+endif()
+
 if (DEFINED MAX_NUM_REPLICAS)
     target_compile_definitions(byzea PUBLIC MAX_NUM_REPLICAS=${MAX_NUM_REPLICAS})
 endif()
