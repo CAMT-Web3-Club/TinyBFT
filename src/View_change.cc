@@ -15,8 +15,6 @@ View_change::View_change(View v, Seqno ls, int id)
   rep().ls = ls;
   rep().id = id;
 
-  th_assert(View_change_rep::prepared_size % 2 == 0, "Invalid max_out");
-
   // No checkpoints
   rep().n_ckpts = 0;
   for (int i = 0; i < max_out / checkpoint_interval + 1; i++)

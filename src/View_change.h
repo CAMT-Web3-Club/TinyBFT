@@ -52,8 +52,10 @@ struct View_change_rep : public Message_rep {
   short n_reqs;   // number of entries in req_info
 
   // Bitmap with bits set for requests that are prepared in req_info
-  static const int prepared_size = (max_out + INT_BITS - 1) / INT_BITS;
+  static constexpr int prepared_size = (max_out + INT_BITS - 1) / INT_BITS;
   unsigned prepared[prepared_size];
+
+  static_assert(prepared_size % 2 == 0, "Invalid max_out");
 
   // digest of the entire message (except authenticator) with d zeroed.
   Digest d;
