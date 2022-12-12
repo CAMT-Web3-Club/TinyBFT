@@ -2,6 +2,7 @@
 #define _LIBBYZ_PLATFORM_H_
 
 #include <stdint.h>
+#include <unistd.h>
 
 #ifdef ESP_PLATFORM
 #include "esp_timer.h"

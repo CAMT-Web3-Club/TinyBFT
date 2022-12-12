@@ -86,21 +86,29 @@ class TrivialState {
   bool retrans_fetch(Time cur) const;
 
  private:
+  char *checkpoint_data(Seqno checkpoint, int block);
+
+  void finish_fetch();
+
   Replica *replica_;
 
   bool fetching_;
   int last_replier_;
   Meta_data_cert *meta_data_cert_;
   Time last_fetch_time_;
+  int next_block_;
+  Seqno fetch_checkpoint_id_;
+  Digest fetch_checkpoint_digest_;
+  uint8_t *fetch_state_;
 
   bool checking_;
 
   uint8_t *state_;
   size_t state_len_;
+  ssize_t num_blocks_;
 
   Log<CheckpointRecord> checkpoint_log_;
   Seqno last_checkpoint_id_;
-  bool keep_checkpoints_;
 };
 
 inline bool TrivialState::in_fetch_state() const { return fetching_; }

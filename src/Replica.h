@@ -15,7 +15,11 @@
 #include "State_defs.h"
 #include "View_info.h"
 #include "libbyz.h"
+#if 1
 #include "trivial_state.h"
+#else
+#include "State.h"
+#endif
 #include "types.h"
 
 namespace libbyzea {
@@ -163,6 +167,7 @@ class Replica : public Node {
 
  private:
   friend class State;
+  friend class TrivialState;
 
   //
   // Message handlers:

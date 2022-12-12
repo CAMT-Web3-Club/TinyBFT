@@ -23,10 +23,15 @@ class CheckpointRecord {
 
   void digest(Digest &digest) const;
 
+  Digest &digest();
+
   void snapshot(const uint8_t *data, size_t len);
 
   /// @brief Copy this checkpoint to the data.
   void copy(uint8_t *data, size_t len);
+
+  /// @brief return a pointer to the start of the checkpoint's data.
+  char *fetch();
 
   bool is_cleared() const;
   void clear();
@@ -38,5 +43,8 @@ class CheckpointRecord {
   size_t len_;
   Digest digest_;
 };
+
+inline Digest &CheckpointRecord::digest() { return digest_; }
+
 }  // namespace libbyzea
 #endif  // !_LIBBYZEA_CHECKPOINT_RECORD_H_

@@ -37,6 +37,8 @@ void CheckpointRecord::copy(uint8_t *data, size_t len) {
   std::memcpy(data, data_, len_);
 }
 
+char *CheckpointRecord::fetch() { return reinterpret_cast<char *>(data_); }
+
 bool CheckpointRecord::is_cleared() const { return (data_ == nullptr); }
 
 void CheckpointRecord::clear() {

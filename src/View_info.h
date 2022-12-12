@@ -7,7 +7,11 @@
 #include "NV_info.h"
 #include "Node.h"
 #include "Pre_prepare.h"
+#if 1
 #include "trivial_state.h"
+#else
+#include "State.h"
+#endif
 #include "types.h"
 
 namespace libbyzea {
