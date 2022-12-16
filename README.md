@@ -145,3 +145,12 @@ returned by `mmap(2)` to be aligned to `LOG_CHUNK_SIZE`. This can be problematic
 on architectures that do not have virtual memory (e.g. embedded platforms).
 Therefore, it can be useful to reduce the chunk size and number of chunks
 allocated by a single mmap.
+
+#### Enable Recovery Suppport (ENABLE_RECOVERY)
+
+```sh
+cmake -DENABLE_RECOVERY
+```
+
+Enables PBFT's recovery support, allowing a replica to persist its current
+state to disk and load it on rebooting.

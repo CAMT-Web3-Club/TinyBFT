@@ -54,6 +54,10 @@ if (DEFINED LOG_NUM_CHUNKS)
     target_compile_definitions(byzea PUBLIC LOG_NUM_CHUNKS=${LOG_NUM_CHUNKS})
 endif()
 
+if (DEFINED ENABLE_RECOVERY)
+    target_compile_definitions(byzea PUBLIC RECOVERY=1)
+endif()
+
 target_compile_options(byzea PRIVATE "-Wall" "-Werror=all" "-Wextra" "-Wno-unused-function")
 
 target_sources(byzea PRIVATE

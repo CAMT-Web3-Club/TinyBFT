@@ -67,11 +67,12 @@ class TrivialState {
 
   void check_state();
 
-  bool shutdown(FILE *output, Seqno ls);
+  bool shutdown(FILE *output, Seqno last_stable);
 
-  bool restart(FILE *input, Replica *replica, Seqno ls, Seqno le, bool corrupt);
+  bool restart(FILE *input, Replica *replica, Seqno last_stable,
+               Seqno last_executed, bool corrupt);
 
-  bool enforce_bound(Seqno bound, Seqno known_max_stable, bool corrupt);
+  bool enforce_bound(Seqno bound, Seqno known_stable, bool corrupt);
 
   void handle(Meta_data *m);
   void handle(Meta_data_d *m);

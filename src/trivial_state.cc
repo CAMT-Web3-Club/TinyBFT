@@ -185,21 +185,85 @@ void TrivialState::start_check([[maybe_unused]] Seqno last_exec) {
 
 void TrivialState::check_state() { fprintf(stderr, "CHECK_STATE\n"); }
 
-bool TrivialState::shutdown([[maybe_unused]] FILE *output,
-                            [[maybe_unused]] Seqno ls) {
-  return true;
+bool TrivialState::shutdown(FILE *output, Seqno last_stable) {
+  size_t got_bytes_written = 0;
+  size_t want_bytes_written = 0;
+
+  Digest digest(reinterpret_cast<char *>(state_), state_len_);
+  got_bytes_written += fwrite(&digest, sizeof(digest), 1, output);
+  want_bytes_written += sizeof(digest);
+  got_bytes_written += fwrite(state_, state_len_, 1, output);
+  want_bytes_written += state_len_;
+  got_bytes_written +=
+      fwrite(&last_checkpoint_id_, sizeof(last_checkpoint_id_), 1, output);
+  want_bytes_written += sizeof(last_checkpoint_id_);
+
+  bool ok = true;
+  if (!fetching_) {
+    for (auto i = last_stable; i < last_stable + max_out; i++) {
+      auto &record = checkpoint_log_.fetch(i);
+      if (!record.is_cleared()) {
+        continue;
+      }
+
+      got_bytes_written += fwrite(&i, sizeof(i), 1, output);
+      want_bytes_written += sizeof(i);
+      ok &= record.marshal(output);
+    }
+  }
+  Seqno end = -1;
+  got_bytes_written += fwrite(&end, sizeof(end), 1, output);
+  want_bytes_written += sizeof(end);
+
+  return ok && got_bytes_written == want_bytes_written;
 }
 
-bool TrivialState::restart([[maybe_unused]] FILE *input,
-                           [[maybe_unused]] Replica *replica,
-                           [[maybe_unused]] Seqno ls, [[maybe_unused]] Seqno le,
-                           [[maybe_unused]] bool corrupt) {
-  return true;
+bool TrivialState::restart(FILE *input, Replica *replica, Seqno last_stable,
+                           Seqno last_executed, bool corrupt) {
+  replica_ = replica;
+
+  if (corrupt) {
+    checkpoint_log_.clear(last_stable);
+    last_checkpoint_id_ = -1;
+    return false;
+  }
+
+  size_t got_bytes_read = 0;
+  size_t want_bytes_read = 0;
+  Digest digest;
+  got_bytes_read += fread(&digest, sizeof(digest), 1, input);
+  want_bytes_read += sizeof(digest);
+  got_bytes_read += fread(state_, state_len_, 1, input);
+  want_bytes_read += state_len_;
+  got_bytes_read +=
+      fread(&last_checkpoint_id_, sizeof(last_checkpoint_id_), 1, input);
+  want_bytes_read += sizeof(last_checkpoint_id_);
+
+  Seqno checkpoint;
+  bool ok = true;
+  while (checkpoint >= 0) {
+    got_bytes_read += fread(&checkpoint, sizeof(checkpoint), 1, input);
+    want_bytes_read += sizeof(last_stable);
+    if (checkpoint < last_stable || checkpoint > last_executed) {
+      return false;
+    }
+
+    auto &record = checkpoint_log_.fetch(checkpoint);
+    ok &= record.unmarshal(input, state_len_);
+  }
+
+  return ok && got_bytes_read == want_bytes_read;
 }
 
-bool TrivialState::enforce_bound([[maybe_unused]] Seqno bound,
-                                 [[maybe_unused]] Seqno known_max_stable,
-                                 [[maybe_unused]] bool corrupt) {
+bool TrivialState::enforce_bound(Seqno bound, Seqno known_stable,
+                                 bool corrupt) {
+  // TODO: Check last modified states of all blocks.
+  if (corrupt || checkpoint_log_.head_seqno() >= bound) {
+    last_checkpoint_id_ = -1;
+    checkpoint_log_.clear(known_stable);
+    return false;
+  }
+
   return true;
 }
 

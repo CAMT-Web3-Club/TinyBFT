@@ -1,7 +1,5 @@
 #include "checkpoint_record.h"
 
-#include <stdio.h>
-
 #include <cstring>
 
 #include "th_assert.h"
@@ -27,6 +25,36 @@ void CheckpointRecord::snapshot(const uint8_t *data, size_t len) {
   len_ = len;
   std::memcpy(data_, data, len_);
   digest_ = Digest((char *)(data_), int(len_));
+}
+
+bool CheckpointRecord::marshal(FILE *file) {
+  size_t got_bytes_written;
+  size_t want_bytes_written;
+
+  got_bytes_written = fwrite(&digest_, sizeof(digest_), 1, file);
+  want_bytes_written = sizeof(digest_);
+  got_bytes_written += fwrite(data_, len_, 1, file);
+  want_bytes_written += len_;
+
+  return got_bytes_written == want_bytes_written;
+}
+
+bool CheckpointRecord::unmarshal(FILE *file, size_t len) {
+  size_t got_bytes_read;
+  size_t want_bytes_read;
+
+  clear();
+  data_ = new uint8_t[len];
+  len_ = len;
+
+  Digest digest;
+  got_bytes_read = fread(&digest, sizeof(digest), 1, file);
+  want_bytes_read = sizeof(digest);
+  got_bytes_read += fread(data_, len_, 1, file);
+  want_bytes_read += len;
+  digest_ = Digest((char *)(data_), int(len_));
+
+  return got_bytes_read == want_bytes_read && digest == digest_;
 }
 
 void CheckpointRecord::copy(uint8_t *data, size_t len) {
