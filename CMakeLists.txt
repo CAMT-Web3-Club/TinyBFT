@@ -54,6 +54,14 @@ if (DEFINED LOG_NUM_CHUNKS)
     target_compile_definitions(byzea PUBLIC LOG_NUM_CHUNKS=${LOG_NUM_CHUNKS})
 endif()
 
+if (DEFINED PARTITION_TREE_CHILDREN)
+    target_compile_definitions(byzea PUBLIC PARTITION_TREE_CHILDREN=${PARTITION_TREE_CHILDREN})
+endif()
+
+if (DEFINED PARTITION_TREE_LEVELS)
+    target_compile_definitions(byzea PUBLIC PARTITION_TREE_LEVELS=${PARTITION_TREE_LEVELS})
+endif()
+
 if (DEFINED ENABLE_RECOVERY)
     target_compile_definitions(byzea PUBLIC RECOVERY=1)
 endif()
