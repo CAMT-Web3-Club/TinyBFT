@@ -184,7 +184,7 @@ void View_info::discard_old() {
   }
 }
 
-void View_info::view_change(View vi, Seqno last_executed, TrivialState *state) {
+void View_info::view_change(View vi, Seqno last_executed, State *state) {
   v = vi;
 
   discard_old();

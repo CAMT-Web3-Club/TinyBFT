@@ -354,7 +354,7 @@ class Replica : public Node {
   Rep_info replies;
 
   // State abstraction manages state checkpointing and digesting
-  TrivialState state;
+  State state;
 
   ITimer *stimer;    // Timer to send status messages periodically.
   Time last_status;  // Time when last status message was sent
