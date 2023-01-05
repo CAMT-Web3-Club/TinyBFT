@@ -80,7 +80,7 @@ target_sources(byzea PRIVATE
     src/Prepared_cert.cc
     src/ITimer.cc
     src/Principal.cc
-    src/simple_log_allocator.cc
+    src/Log_allocator.cc
     src/Meta_data.cc
     src/Data.cc
     src/Fetch.cc

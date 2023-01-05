@@ -133,7 +133,7 @@ class Message {
   //
   // Message-specific memory management
   //
-  static SimpleLogAllocator *a;
+  static Log_allocator *a;
 };
 
 // Methods inlined for speed
