@@ -146,6 +146,20 @@ on architectures that do not have virtual memory (e.g. embedded platforms).
 Therefore, it can be useful to reduce the chunk size and number of chunks
 allocated by a single mmap.
 
+#### Tuning the Partition Tree (PARTITION_TREE_LEVELS, PARTITION_TREE_CHILDREN)
+```sh
+camke -DPARTITION_TREE_LEVELS=4 -DPARTITIONS_TREE_CHILDREN=256 ..
+```
+
+The `State` class uses a multi-level partition tree structure in order to track
+changes to the blocks of the application state. The maximum amount of
+application memory depends on `BLOCK_SIZE`, the number of levels, and the number
+of children per node in the partition tree. A larger tree also means more
+memory overhead for allocating tree nodes.  The number of hierarchy levels in
+the partition tree can be altered using `PARTITION_TREE_LEVELS`. Valid values
+are `2`, `3` or `4`. In order to control the number of children per node in the
+partition tree, you can use `PARTITION_TREE_CHILDREN`.
+
 #### Enable Recovery Suppport (ENABLE_RECOVERY)
 
 ```sh

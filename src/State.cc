@@ -1845,8 +1845,8 @@ void State::check_state() {
   int count = 1;
   while (to_check->size() > 0) {
     CPart& cp = to_check->slot(0);
-    int min = cp.index * PBlocks[cp.level];
-    int max = min + PBlocks[cp.level];
+    int min = cp.index * partition_blocks(cp.level);
+    int max = min + partition_blocks(cp.level);
     if (max > nb) max = nb;
 
     if (lchecked < min || lchecked >= max) lchecked = min;
