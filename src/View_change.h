@@ -55,8 +55,6 @@ struct View_change_rep : public Message_rep {
   static constexpr int prepared_size = (max_out + INT_BITS - 1) / INT_BITS;
   unsigned prepared[prepared_size];
 
-  static_assert(prepared_size % 2 == 0, "Invalid max_out");
-
   // digest of the entire message (except authenticator) with d zeroed.
   Digest d;
 
