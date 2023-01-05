@@ -298,7 +298,7 @@ inline bool Status::is_committed(Seqno n) {
 
 inline bool Status::has_vc(int i) {
   th_assert(!has_nv_info(), "Invalid state");
-  th_assert(i >= 0 && i < Status_rep::vcs_size, "Invalid argument");
+  th_assert(i >= 0 && i < Status_rep::vcs_size * 8, "Invalid argument");
   return Bits_test(vcs(), i);
 }
 
