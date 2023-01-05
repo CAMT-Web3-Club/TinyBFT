@@ -77,8 +77,9 @@ bool Status::convert(Message* m1, Status*& m2) {
 }
 
 void Status::mark_vcs(int i) {
+  fprintf(stderr, "m->mark_vcs(%d)\n", i);
   th_assert(!has_nv_info(), "Invalid state");
-  th_assert(i >= 0 && i < Status_rep::vcs_size * 8, "Invalid argument");
+  th_assert(i >= 0 && i < Status_rep::vcs_size * byte_bits, "Invalid argument");
   Bits_set(vcs(), i);
 }
 

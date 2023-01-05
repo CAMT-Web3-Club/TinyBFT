@@ -4,6 +4,7 @@
 #include "Bitmap.h"
 #include "Message.h"
 #include "Pre_prepare.h"
+#include "bits.h"
 #include "parameters.h"
 #include "types.h"
 
@@ -298,7 +299,7 @@ inline bool Status::is_committed(Seqno n) {
 
 inline bool Status::has_vc(int i) {
   th_assert(!has_nv_info(), "Invalid state");
-  th_assert(i >= 0 && i < Status_rep::vcs_size * 8, "Invalid argument");
+  th_assert(i >= 0 && i < Status_rep::vcs_size * byte_bits, "Invalid argument");
   return Bits_test(vcs(), i);
 }
 
