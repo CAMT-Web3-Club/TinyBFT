@@ -8,6 +8,8 @@
 
 namespace libbyzea {
 
+size_t Commit::memory_consumption() { return (sizeof(Commit_rep) + (4 * 16)); }
+
 Commit::Commit(View v, Seqno s)
     : Message(Commit_tag, sizeof(Commit_rep) + node->auth_size()) {
   rep().view = v;

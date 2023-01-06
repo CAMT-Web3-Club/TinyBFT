@@ -7,6 +7,10 @@
 
 namespace libbyzea {
 
+size_t Checkpoint::memory_consumption() {
+  return (sizeof(Checkpoint_rep) + (4 * 16));
+}
+
 Checkpoint::Checkpoint(Seqno s, Digest &d, bool stable)
     :
 #ifndef USE_PKEY

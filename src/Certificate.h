@@ -37,6 +37,8 @@ class Certificate {
   // true if successful and false otherwise.
 
  public:
+  static size_t memory_consumption();
+
   Certificate(int complete = 0);
   // Requires: "complete" >= f+1 or 0
   // Effects: Creates an empty certificate. The certificate is

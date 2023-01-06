@@ -15,6 +15,10 @@
 #include "State_defs.h"
 #include "Statistics.h"
 
+void Byz_print_memory_consumption(const size_t mem_size) {
+  libbyzea::Replica::print_memory_consumption(mem_size);
+}
+
 int Byz_init_client(const char *conf, const char *conf_priv, short port) {
   FILE *config_file = fopen(conf, "r");
   if (config_file == 0) {

@@ -31,6 +31,8 @@ class Reply : public Message {
   // Reply messages
   //
  public:
+  static size_t memory_consumption();
+
   Reply() : Message() {}
 
   Reply(Reply_rep *r);

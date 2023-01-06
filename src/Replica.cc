@@ -90,6 +90,21 @@ void Replica::retransmit(T *m, Time &cur, Time *tsent, Principal *p) {
   }
 }
 
+void Replica::print_memory_consumption(const size_t mem_size) {
+  State::print_memory_consumption(mem_size);
+
+  fprintf(stderr, "Replica: %lu\n", sizeof(Replica));
+  size_t size = Log<Prepared_cert>::memory_consumption(max_out) +
+                sizeof(Log<Prepared_cert>);
+  fprintf(stderr, "Log<Prepared_cert>: %lu\n", size);
+  size = Log<Certificate<Commit>>::memory_consumption(max_out) +
+         sizeof(Log<Certificate<Commit>>);
+  fprintf(stderr, "Log<Certificate<Commit>>: %lu\n", size);
+  size = Log<Certificate<Checkpoint>>::memory_consumption(2 * max_out) +
+         sizeof(Log<Certificate<Checkpoint>>);
+  fprintf(stderr, "Log<Certificate<Checkpoint>>: %lu\n", size);
+}
+
 #ifndef NO_STATE_TRANSLATION
 
 Replica::Replica(FILE *config_file, const std::string &private_key_file,

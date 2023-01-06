@@ -9,6 +9,7 @@
 #include "th_assert.h"
 
 namespace libbyzea {
+size_t Reply::memory_consumption() { return sizeof(Reply_rep); }
 
 Reply::Reply(View view, Request_id req, int replica)
     : Message(Reply_tag, Max_message_size) {

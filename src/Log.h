@@ -15,6 +15,8 @@ class Log {
   // void clear();
 
  public:
+  static size_t memory_consumption(size_t sz);
+
   Log(int sz = max_out, Seqno h = 1);
   // Requires: "sz" is a power of 2 (allows for more efficient implementation).
   // Effects: Creates a log that holds "sz" elements and has

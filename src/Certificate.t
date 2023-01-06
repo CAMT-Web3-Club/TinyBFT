@@ -2,6 +2,11 @@
 #include "Node.h"
 
 namespace libbyzea {
+template <class T>
+size_t Certificate<T>::memory_consumption() {
+  return sizeof(Certificate<T>) + 2 * (sizeof(void *) + sizeof(int)) +
+         ((Max_num_replicas + ChunkBits - 1) / ChunkBits);
+}
 
 template <class T>
 Certificate<T>::Certificate(int comp) : bmap(Max_num_replicas) {

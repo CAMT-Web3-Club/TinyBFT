@@ -6,6 +6,11 @@
 namespace libbyzea {
 
 template <class T>
+size_t Log<T>::memory_consumption(size_t sz) {
+  return (sz * (sizeof(T) + T::memory_consumption()));
+}
+
+template <class T>
 Log<T>::Log(int sz, Seqno h) : head(h), max_size(sz) {
   elems = new T[sz];
   mask = max_size-1;

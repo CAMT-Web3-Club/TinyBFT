@@ -34,6 +34,8 @@ typedef struct _Byz_buffer Byz_buffer;
 typedef struct _Byz_buffer Byz_req;
 typedef struct _Byz_buffer Byz_rep;
 
+void Byz_print_memory_consumption(const size_t mem_size);
+
 /*
  * Client
  */

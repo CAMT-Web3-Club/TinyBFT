@@ -180,6 +180,8 @@ class PartKey {
 // Checkpoint record
 class Checkpoint_rec {
  public:
+  static size_t memory_consumption();
+
   Checkpoint_rec();
   // Effects: Creates an empty checkpoint record.
 
@@ -242,6 +244,13 @@ class Checkpoint_rec {
   // taken and before the next checkpoint.
   Map<PartKey, Part*> parts;
 };
+
+inline size_t Checkpoint_rec::memory_consumption() {
+  return (
+      sizeof(libbyzea::Checkpoint_rec) +
+      (256 * sizeof(libbyzea::Buckets<
+                    libbyzea::HashPair<libbyzea::PartKey, libbyzea::Part*>>)));
+}
 
 inline Checkpoint_rec::Checkpoint_rec() : parts(256) {}
 
@@ -612,6 +621,31 @@ void PageCache::print() {
 //
 // State methods:
 //
+
+void State::print_memory_consumption(const size_t mem_size) {
+  th_assert(mem_size % Block_size == 0,
+            "State size must be multiple of block size");
+  size_t nb = mem_size / Block_size;
+  size_t memory_consumption = sizeof(libbyzea::State);
+  // Size of bitmap
+  memory_consumption +=
+      sizeof(unsigned long) *
+      ((nb + (sizeof(unsigned long) << 3) - 1) / (sizeof(unsigned long) << 3));
+  // Size of clog
+  memory_consumption += Log<Checkpoint_rec>::memory_consumption(max_out * 2);
+  for (int i = 0; i < PLevels - 1; i++) {
+    memory_consumption += sizeof(libbyzea::Part) * PLevelSize[i];
+    memory_consumption += sizeof(libbyzea::DSum) * PLevelSize[i];
+    memory_consumption += sizeof(libbyzea::FPartQueue);
+  }
+  memory_consumption += sizeof(libbyzea::Part) * nb;
+  memory_consumption += sizeof(libbyzea::FPartQueue);
+  memory_consumption += sizeof(libbyzea::Meta_data_cert);
+  memory_consumption += 4 * sizeof(libbyzea::Meta_data_d*);
+  memory_consumption += 4 * sizeof(unsigned long long);
+  memory_consumption += sizeof(libbyzea::CPartQueue);
+  fprintf(stderr, "State: %ld Bytes\n", memory_consumption);
+}
 
 #ifndef NO_STATE_TRANSLATION
 State::State(Replica* rep, int num_objs, int (*gets)(int, char**),

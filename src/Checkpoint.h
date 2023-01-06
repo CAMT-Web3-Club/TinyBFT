@@ -25,6 +25,8 @@ class Checkpoint : public Message {
   //  Checkpoint messages
   //
  public:
+  static size_t memory_consumption();
+
   Checkpoint(Seqno s, Digest &d, bool stable = false);
   // Effects: Creates a new signed Checkpoint message with sequence
   // number "s" and digest "d". "stable" should be true iff the checkpoint

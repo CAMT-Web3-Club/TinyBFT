@@ -51,6 +51,9 @@ extern void ntimer_handler();
 
 class Replica : public Node {
  public:
+  static void print_memory_consumption(const size_t mem_size);
+  // Effects: print dynamic memory consumption after initialization.
+
 #ifndef NO_STATE_TRANSLATION
 
   Replica(FILE *config_file, const std::string &private_key_file, int num_objs,

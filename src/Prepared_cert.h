@@ -15,6 +15,8 @@ namespace libbyzea {
 
 class Prepared_cert {
  public:
+  static size_t memory_consumption();
+
   Prepared_cert();
   // Effects: Creates an empty prepared certificate.
 

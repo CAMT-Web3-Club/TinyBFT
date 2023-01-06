@@ -24,6 +24,8 @@ class Commit : public Message {
   // Commit messages
   //
  public:
+  static size_t memory_consumption();
+
   Commit(View v, Seqno s);
   // Effects: Creates a new Commit message with view number "v"
   // and sequence number "s".

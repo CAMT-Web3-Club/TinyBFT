@@ -7,6 +7,10 @@ namespace libbyzea {
 
 template class Certificate<Prepare>;
 
+size_t Prepared_cert::memory_consumption() {
+  return Certificate<Prepare>::memory_consumption();
+}
+
 Prepared_cert::Prepared_cert() : pc(node->f() * 2), primary(false) {}
 
 Prepared_cert::~Prepared_cert() { pi.clear(); }

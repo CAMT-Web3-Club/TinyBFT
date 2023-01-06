@@ -34,6 +34,8 @@ class PageCache;
 
 class State {
  public:
+  static void print_memory_consumption(const size_t mem_size);
+
 #ifndef NO_STATE_TRANSLATION
   State(Replica *replica, int num_objs, int (*gets)(int, char **),
         void (*puts)(int, int *, int *, char **), void (*shutdown_p)(FILE *o),
