@@ -635,7 +635,7 @@ void State::print_memory_consumption(const size_t mem_size) {
   memory_consumption += Log<Checkpoint_rec>::memory_consumption(max_out * 2);
   for (int i = 0; i < PLevels - 1; i++) {
     memory_consumption += sizeof(libbyzea::Part) * PLevelSize[i];
-    memory_consumption += sizeof(libbyzea::DSum) * PLevelSize[i];
+    memory_consumption += (sizeof(libbyzea::DSum) + 32) * PLevelSize[i];
     memory_consumption += sizeof(libbyzea::FPartQueue);
   }
   memory_consumption += sizeof(libbyzea::Part) * nb;
