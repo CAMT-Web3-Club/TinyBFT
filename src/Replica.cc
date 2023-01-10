@@ -103,6 +103,14 @@ void Replica::print_memory_consumption(const size_t mem_size) {
   size = Log<Certificate<Checkpoint>>::memory_consumption(2 * max_out) +
          sizeof(Log<Certificate<Checkpoint>>);
   fprintf(stderr, "Log<Certificate<Checkpoint>>: %lu\n", size);
+
+  fprintf(stderr, "Pre-Prepare: %lu\n", Max_message_size);
+  fprintf(stderr, "Prepare: %lu\n",
+          sizeof(Prepare) + sizeof(Prepare_rep) + (4 * (MAC_size)));
+  fprintf(stderr, "Commit: %lu\n",
+          sizeof(Commit) + sizeof(Commit_rep) + (4 * (MAC_size)));
+  fprintf(stderr, "Checkpoint: %lu\n",
+          sizeof(Checkpoint) + sizeof(Checkpoint_rep) + (4 * (MAC_size)));
 }
 
 #ifndef NO_STATE_TRANSLATION
