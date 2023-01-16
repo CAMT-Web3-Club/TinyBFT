@@ -57,8 +57,8 @@ template class Certificate<Reply>;
 #include "Log.t"
 namespace libbyzea {
 template class Log<Prepared_cert>;
-template class Log<Certificate<Commit> >;
-template class Log<Certificate<Checkpoint> >;
+template class Log<Certificate<Commit>>;
+template class Log<Certificate<Checkpoint>>;
 }  // namespace libbyzea
 
 #include "Set.t"
