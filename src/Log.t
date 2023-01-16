@@ -1,7 +1,8 @@
 #include <stdlib.h>
+
+#include "Log.h"
 #include "th_assert.h"
 #include "types.h"
-#include "Log.h"
 
 namespace libbyzea {
 
@@ -13,30 +14,26 @@ size_t Log<T>::memory_consumption(size_t sz) {
 template <class T>
 Log<T>::Log(int sz, Seqno h) : head(h), max_size(sz) {
   elems = new T[sz];
-  mask = max_size-1;
+  mask = max_size - 1;
 }
 
 template <class T>
 Log<T>::~Log() {
-  delete [] elems;
+  delete[] elems;
 }
-
 
 template <class T>
 void Log<T>::clear(Seqno h) {
-  for (int i=0; i < max_size; i++)
-    elems[i].clear();
+  for (int i = 0; i < max_size; i++) elems[i].clear();
 
   head = h;
 }
-
 
 template <class T>
 T &Log<T>::fetch(Seqno seqno) {
   th_assert(within_range(seqno), "Invalid argument\n");
   return elems[mod(seqno)];
 }
-
 
 template <class T>
 void Log<T>::truncate(Seqno new_head) {
@@ -56,4 +53,4 @@ void Log<T>::truncate(Seqno new_head) {
   head = new_head;
 }
 
-} // namespace libbyzea
+}  // namespace libbyzea
