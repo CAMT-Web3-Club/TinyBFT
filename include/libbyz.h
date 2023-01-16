@@ -21,7 +21,7 @@ static_assert(Block_size % 2 == 0, "Block size must be a power of two");
 
 #include "Modify.h"
 #include "types.h"
-//#include "Digest.h"
+// #include "Digest.h"
 #include "State_defs.h"
 
 struct _Byz_buffer {
