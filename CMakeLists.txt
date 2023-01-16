@@ -115,7 +115,6 @@ target_sources(byzea PRIVATE
     src/fail.c
     src/umac.c
     src/platform.cc
-    src/new.cc
 )
 
 enable_testing()
