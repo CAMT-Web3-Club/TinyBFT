@@ -1,6 +1,7 @@
 #include <stdlib.h>
 
 #include "Log.h"
+#include "mem_statistics.h"
 #include "th_assert.h"
 #include "types.h"
 
@@ -12,9 +13,11 @@ size_t Log<T>::memory_consumption(size_t sz) {
 }
 
 template <class T>
-Log<T>::Log(int sz, Seqno h) : head(h), max_size(sz) {
+Log<T>::Log(MemoryStatisticsGuard &mem_guard, int sz, Seqno h)
+    : head(h), max_size(sz) {
   elems = new T[sz];
   mask = max_size - 1;
+  mem_guard.pop();
 }
 
 template <class T>

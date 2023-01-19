@@ -21,7 +21,7 @@ class Big_req_table {
   // whose size is greater than Request::big_req_thresh.)
   //
  public:
-  Big_req_table();
+  Big_req_table(MemoryStatisticsGuard& mem_guard);
   // Effects: Creates an empty table.
 
   ~Big_req_table();

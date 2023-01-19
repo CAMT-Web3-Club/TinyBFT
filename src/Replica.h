@@ -20,6 +20,7 @@
 #else
 #include "State.h"
 #endif
+#include "mem_statistics_guard.h"
 #include "types.h"
 
 namespace libbyzea {
@@ -70,8 +71,8 @@ class Replica : public Node {
   // state information are "shutdown_proc" and "restart_proc".
 
 #else
-  Replica(FILE *config_file, const std::string &private_key_file, char *mem,
-          int nbytes);
+  Replica(MemoryStatisticsGuard &mem_guard, FILE *config_file,
+          const std::string &private_key_file, char *mem, int nbytes);
   // Requires: "mem" is vm page aligned and nbytes is a multiple of the
   // vm page size.
   // Effects: Create a new server replica using the information in

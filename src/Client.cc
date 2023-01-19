@@ -13,15 +13,16 @@
 #include "Request.h"
 #include "th_assert.h"
 
-//#define ADJUST_RTIMEOUT 1
+// #define ADJUST_RTIMEOUT 1
 
 namespace libbyzea {
 
-Client::Client(FILE *config_file, const std::string &private_key_file,
-               short port)
-    : Node(config_file, private_key_file, port),
-      t_reps(2 * f() + 1),
-      c_reps(f() + 1) {
+Client::Client(MemoryStatisticsGuard &mem_guard, FILE *config_file,
+               const std::string &private_key_file, short port)
+    : Node(mem_guard.push("Client::Client"), config_file, private_key_file,
+           port),
+      t_reps(mem_guard.push("Certificate<Reply>"), 2 * f() + 1),
+      c_reps(mem_guard.push("Certificate<Reply>"), f() + 1) {
   // Fail if node is is a replica.
   if (is_replica(id())) th_fail("Node is a replica");
 
@@ -34,6 +35,7 @@ Client::Client(FILE *config_file, const std::string &private_key_file,
   // Multicast new key to all replicas.
   send_new_key();
   atimer->start();
+  MEMSTATS_CALL_STACK_POP();
 }
 
 Client::~Client() { delete rtimer; }

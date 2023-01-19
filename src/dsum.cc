@@ -7,11 +7,13 @@ namespace libbyzea {
 DSum* DSum::M = nullptr;
 
 void DSum::init(const std::string& modulus) {
+  MEMSTATS_CALL_STACK_PUSH(DSum::init);
   M = new DSum;
   int err = mbedtls_mpi_read_string(&DSum::M->sum, 16, modulus.c_str());
   th_assert(!err, "failed to initialize digest sum modulus");
   static_assert(sizeof(Digest) % sizeof(mbedtls_mpi_uint) == 0,
                 "Invalid assumption: sizeof(Digest)%sizeof(mp_limb_t)");
+  MEMSTATS_CALL_STACK_POP();
 }
 
 void DSum::add(Digest& d) {

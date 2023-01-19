@@ -3,10 +3,12 @@
 #include "K_max.h"
 #include "Meta_data_d.h"
 #include "Node.h"
+#include "mem_statistics.h"
 
 namespace libbyzea {
 
 Meta_data_cert::Meta_data_cert() {
+  MEMSTATS_CALL_STACK_PUSH(Meta_data_cert::Meta_data_cert);
   last_mdds = new Meta_data_d*[node->n()];
   last_stables = new Seqno[node->n()];
   for (int i = 0; i < node->n(); i++) {
@@ -21,6 +23,7 @@ Meta_data_cert::Meta_data_cert() {
   correct = node->f() + 1;
   c = -1;
   has_my_message = false;
+  MEMSTATS_CALL_STACK_POP();
 }
 
 Meta_data_cert::~Meta_data_cert() {

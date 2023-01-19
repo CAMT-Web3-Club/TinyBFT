@@ -5,6 +5,7 @@
 
 #include "Certificate.h"
 #include "Node.h"
+#include "mem_statistics_guard.h"
 #include "types.h"
 
 namespace libbyzea {
@@ -16,8 +17,8 @@ extern void rtimer_handler();
 
 class Client : public Node {
  public:
-  Client(FILE *config_file, const std::string &priviate_key_file,
-         short port = 0);
+  Client(MemoryStatisticsGuard &mem_guard, FILE *config_file,
+         const std::string &priviate_key_file, short port = 0);
   // Effects: Creates a new Client object using the information in
   // "config_file" and "config_priv". The line of config assigned to
   // this client is the first one with the right host address (if

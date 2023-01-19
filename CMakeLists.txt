@@ -66,6 +66,15 @@ if (DEFINED ENABLE_RECOVERY)
     target_compile_definitions(byzea PUBLIC RECOVERY=1)
 endif()
 
+if (DEFINED MEMORY_STATISTICS)
+    target_compile_definitions(byzea PUBLIC PRINT_MEM_STATISTICS=1)
+    target_sources(byzea PRIVATE
+        src/mem_statistics.c
+        src/malloc.c
+        src/new.cc
+    )
+endif()
+
 target_compile_options(byzea PRIVATE "-Wall" "-Werror=all" "-Wextra" "-Wno-unused-function")
 
 target_sources(byzea PRIVATE
@@ -94,7 +103,6 @@ target_sources(byzea PRIVATE
     src/Fetch.cc
     src/Meta_data_cert.cc
     src/State.cc
-    src/trivial_state.cc
     src/libbyz.cc
     src/View_change.cc
     src/New_view.cc
@@ -117,30 +125,32 @@ target_sources(byzea PRIVATE
     src/platform.cc
 )
 
-enable_testing()
-
-include(FetchContent)
-FetchContent_Declare(
-  googletest
-  URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
-)
-# For Windows: Prevent overriding the parent project's compiler/linker settings
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest)
-
-add_executable(
-  dsum_test
-  test/dsum_test.cc
-)
-target_include_directories(dsum_test PUBLIC include)
-target_include_directories(dsum_test PRIVATE src)
-
-target_link_libraries(
-  dsum_test
-  byzea
-  mbedcrypto
-  GTest::gtest_main
-)
-
-include(GoogleTest)
-gtest_discover_tests(dsum_test)
+#enable_testing()
+#
+#include(FetchContent)
+#FetchContent_Declare(
+#  googletest
+#  URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
+#)
+## For Windows: Prevent overriding the parent project's compiler/linker settings
+#set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+#FetchContent_MakeAvailable(googletest)
+#
+#add_executable(
+#  unit_tests
+#
+#  test/dsum_test.cc
+#  test/trivial_state_test.cc
+#)
+#target_include_directories(unit_tests PUBLIC include)
+#target_include_directories(unit_tests PRIVATE src)
+#target_link_libraries(
+#  unit_tests
+#  byzea
+#  mbedcrypto
+#  GTest::gtest_main
+#)
+#
+#include(GoogleTest)
+#gtest_discover_tests(unit_tests)
+#

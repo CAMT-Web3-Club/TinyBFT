@@ -11,7 +11,10 @@ namespace libbyzea {
 
 Statistics stats;
 
-Statistics::Statistics() : rec_stats(20) { zero_stats(); }
+Statistics::Statistics()
+    : rec_stats(MemoryStatisticsGuard().push("Array<Recovery_stats>"), 20) {
+  zero_stats();
+}
 
 void Statistics::zero_stats() {
 #ifdef PRINT_STATS

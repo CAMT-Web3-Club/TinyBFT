@@ -12,6 +12,7 @@
 #else
 #include "State.h"
 #endif
+#include "mem_statistics_guard.h"
 #include "types.h"
 
 namespace libbyzea {
@@ -27,7 +28,7 @@ class View_info {
   // Holds information for the view-change protocol.
   //
  public:
-  View_info(int id, View v = 0);
+  View_info(MemoryStatisticsGuard& mem_guard, int id, View v = 0);
   // Effects: Create a view-info object for replica "id" with initial
   // view "v".
 
@@ -303,10 +304,12 @@ inline void View_info::add_missing(Prepare* p) {
 }
 
 inline View_info::OReq_info::OReq_info() {
+  MEMSTATS_CALL_STACK_PUSH(View_info::OReq_info::OReq_info);
   m = 0;
   v = -1;
   lv = -1;
   ods = new ODigest_info[node->f() + 2];
+  MEMSTATS_CALL_STACK_POP();
 }
 
 inline View_info::OReq_info::~OReq_info() {

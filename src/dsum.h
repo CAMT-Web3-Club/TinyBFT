@@ -6,6 +6,7 @@
 #include <string>
 
 #include "Digest.h"
+#include "mem_statistics.h"
 
 namespace libbyzea {
 //
@@ -24,15 +25,19 @@ struct DSum {
   static void init(const std::string& modulus);
 
   inline DSum() {
+    MEMSTATS_CALL_STACK_PUSH(DSum::DSum);
     mbedtls_mpi_init(&sum);
     mbedtls_mpi_grow(&sum, nlimbs);
     mbedtls_mpi_lset(&sum, 0);
+    MEMSTATS_CALL_STACK_POP();
   }
   // Effects: Creates a new sum object with value 0
 
   inline DSum(DSum const& other) {
+    MEMSTATS_CALL_STACK_PUSH(DSum::DSum);
     mbedtls_mpi_init(&sum);
     mbedtls_mpi_copy(&sum, &other.sum);
+    MEMSTATS_CALL_STACK_POP();
   }
 
   inline ~DSum() { mbedtls_mpi_free(&sum); }

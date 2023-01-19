@@ -134,14 +134,22 @@ struct FPart {
 #endif
 };
 
-class FPartQueue : public Array<FPart> {};
+class FPartQueue : public Array<FPart> {
+ public:
+  FPartQueue(MemoryStatisticsGuard& mem_guard)
+      : Array<FPart>(mem_guard.push("FPartQueue")) {}
+};
 
 // Information about partitions whose digest is being checked.
 struct CPart {
   int index;
   int level;
 };
-class CPartQueue : public Array<CPart> {};
+class CPartQueue : public Array<CPart> {
+ public:
+  CPartQueue(MemoryStatisticsGuard& mem_guard)
+      : Array<CPart>(mem_guard.push("CPartQueue")) {}
+};
 
 // Copy of leaf partition (used in checkpoint records)
 struct BlockCopy : public Part {
@@ -662,12 +670,13 @@ State::State(Replica* rep, int num_objs, int (*gets)(int, char**),
       restart_proc(restart_p) {
 #else
 
-State::State(Replica* rep, char* memory, int num_bytes)
+State::State(MemoryStatisticsGuard& mem_guard, Replica* rep, char* memory,
+             int num_bytes)
     : replica(rep),
       mem((Block*)memory),
       nb(num_bytes / Block_size),
       cowb(nb),
-      clog(max_out * 2, 0),
+      clog(mem_guard.push("Log<Checkpoint_rec>"), max_out * 2, 0),
       lc(0),
       last_fetch_t(0) {
 #endif
@@ -684,7 +693,7 @@ State::State(Replica* rep, char* memory, int num_bytes)
 
   for (int i = 0; i < PLevels; i++) {
     ptree[i] = new Part[(i != PLevels - 1) ? PLevelSize[i] : nb];
-    stalep[i] = new FPartQueue;
+    stalep[i] = new FPartQueue(mem_guard);
   }
 
   // The random modulus for computing sums in AdHASH.
@@ -702,7 +711,7 @@ State::State(Replica* rep, char* memory, int num_bytes)
   cert = new Meta_data_cert;
   lreplier = 0;
 
-  to_check = new CPartQueue;
+  to_check = new CPartQueue(mem_guard);
   checking = false;
   refetch_level = 0;
 
@@ -712,6 +721,7 @@ State::State(Replica* rep, char* memory, int num_bytes)
   _Byz_cow_bits = cowb.bitvec();
   _Byz_mem = (char*)mem;
 #endif
+  mem_guard.pop();
 }
 
 State::~State() {

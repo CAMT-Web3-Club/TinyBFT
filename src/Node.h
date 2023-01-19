@@ -8,6 +8,7 @@
 #include "ITimer.h"
 #include "Principal.h"
 #include "Statistics.h"
+#include "mem_statistics.h"
 #include "rsa_private_key.h"
 #include "th_assert.h"
 #include "types.h"
@@ -22,7 +23,8 @@ extern void atimer_handler();
 
 class Node {
  public:
-  Node(FILE *config_file, const std::string &private_key_file, short port = 0);
+  Node(MemoryStatisticsGuard &mem_guard, FILE *config_file,
+       const std::string &private_key_file, short port = 0);
   // Effects: Create a new Node object using the information in
   // "config_file" and "config_priv".  If port is 0, use the first
   // line from configuration whose host address matches the address

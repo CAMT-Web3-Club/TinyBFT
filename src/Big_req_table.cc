@@ -27,9 +27,11 @@ class BR_entry {
   View maxv;    // Maximum view in which this entry was marked useful
 };
 
-Big_req_table::Big_req_table()
-    : breqs(max_out), unmatched((Request*)0, node->np()) {
+Big_req_table::Big_req_table(MemoryStatisticsGuard& mem_guard)
+    : breqs(max_out),
+      unmatched(mem_guard.push("Array<Request *>"), (Request*)0, node->np()) {
   max_entries = max_out * Pre_prepare::big_req_max;
+  mem_guard.pop();
 }
 
 Big_req_table::~Big_req_table() {

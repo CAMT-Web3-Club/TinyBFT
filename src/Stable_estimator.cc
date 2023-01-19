@@ -3,13 +3,16 @@
 #include "K_max.h"
 #include "Replica.h"
 #include "Reply_stable.h"
+#include "mem_statistics.h"
 
 namespace libbyzea {
 
 Stable_estimator::Stable_estimator() {
+  MEMSTATS_CALL_STACK_PUSH(Stable_estimator::Stable_estimator);
   nv = node->n();
   vals = new Val[nv];
   est = -1;
+  MEMSTATS_CALL_STACK_POP();
 }
 
 Stable_estimator::~Stable_estimator() { delete[] vals; }

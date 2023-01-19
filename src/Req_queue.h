@@ -2,6 +2,7 @@
 #define _Req_queue_h
 
 #include "Array.h"
+#include "mem_statistics_guard.h"
 #include "types.h"
 
 namespace libbyzea {
@@ -13,7 +14,7 @@ class Req_queue {
   // Implements a bounded queue of requests.
   //
  public:
-  Req_queue();
+  Req_queue(MemoryStatisticsGuard& mem_guard);
   // Effects: Creates an empty queue that can hold one request per principal.
 
   bool append(Request* r);

@@ -4,6 +4,7 @@
 
 #include <cstdio>
 
+#include "mem_statistics.h"
 #include "th_assert.h"
 
 namespace libbyzea {
@@ -11,12 +12,15 @@ namespace libbyzea {
 RsaPrivateKey::RsaPrivateKey(const std::string &key_filename,
                              mbedtls_ctr_drbg_context *rng_ctx)
     : rng_ctx_(rng_ctx) {
+  MEMSTATS_CALL_STACK_PUSH(RsaPrivateKey::RsaPrivateKey);
   mbedtls_pk_context ctx;
   mbedtls_pk_init(&ctx);
 
   // TODO: we might want to encrypt these.
+  MEMSTATS_CALL_STACK_PUSH(mbedtls_pk_parse_keyfile);
   int err = mbedtls_pk_parse_keyfile(&ctx, key_filename.c_str(), nullptr,
                                      mbedtls_ctr_drbg_random, rng_ctx);
+  MEMSTATS_CALL_STACK_POP();
   if (err) {
     th_fail("error while reading PEM encoded public key");
   }
@@ -28,6 +32,7 @@ RsaPrivateKey::RsaPrivateKey(const std::string &key_filename,
   // use v2.1 instead, so OAEP encryption and PSS signatures are used.
   ctx_ = mbedtls_pk_rsa(ctx);
   mbedtls_rsa_set_padding(ctx_, MBEDTLS_RSA_PKCS_V21, MBEDTLS_MD_SHA256);
+  MEMSTATS_CALL_STACK_POP();
 }
 
 RsaPrivateKey::~RsaPrivateKey() { mbedtls_rsa_free(ctx_); }

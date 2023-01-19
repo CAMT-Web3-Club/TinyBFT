@@ -93,9 +93,17 @@ void Replica::retransmit(T *m, Time &cur, Time *tsent, Principal *p) {
 void Replica::print_memory_consumption(const size_t mem_size) {
   State::print_memory_consumption(mem_size);
 
-  fprintf(stderr, "Replica: %lu\n", sizeof(Replica));
-  size_t size = Log<Prepared_cert>::memory_consumption(max_out) +
-                sizeof(Log<Prepared_cert>);
+  size_t size = sizeof(Replica) + 4 * sizeof(ITimer) + 4 * sizeof(View) +
+                4 * sizeof(Checkpoint *);
+  fprintf(stderr, "Replica: %lu\n", size);
+  size = sizeof(Node) + sizeof(RsaPrivateKey) + sizeof(ITimer) +
+         // sizeof(umac_ctx) = 1528
+         6 * (sizeof(Principal) +
+              (sizeof(RsaPublicKey) + sizeof(mbedtls_rsa_context)) + 1528);
+  fprintf(stderr, "Node: %lu\n", size);
+
+  size = Log<Prepared_cert>::memory_consumption(max_out) +
+         sizeof(Log<Prepared_cert>);
   fprintf(stderr, "Log<Prepared_cert>: %lu\n", size);
   size = Log<Certificate<Commit>>::memory_consumption(max_out) +
          sizeof(Log<Certificate<Commit>>);
@@ -111,6 +119,13 @@ void Replica::print_memory_consumption(const size_t mem_size) {
           sizeof(Commit) + sizeof(Commit_rep) + (4 * (MAC_size)));
   fprintf(stderr, "Checkpoint: %lu\n",
           sizeof(Checkpoint) + sizeof(Checkpoint_rep) + (4 * (MAC_size)));
+
+  fprintf(stderr, "\n\n\n");
+  fprintf(stderr, "sizeof(Replica) = %lu\n", sizeof(Replica));
+  fprintf(stderr, "sizeof(Node) = %lu\n", sizeof(Node));
+  fprintf(stderr, "sizeof(Log<Prepared_cert>) = %lu\n",
+          sizeof(Log<Prepared_cert>));
+  fprintf(stderr, "sizeof(Prepared_cert) = %lu\n", sizeof(Prepared_cert));
 }
 
 #ifndef NO_STATE_TRANSLATION
@@ -133,21 +148,22 @@ Replica::Replica(FILE *config_file, const std::string &private_key_file,
       n_mem_blocks(num_objs) {
 #else
 
-Replica::Replica(FILE *config_file, const std::string &private_key_file,
-                 char *mem, int nbytes)
-    : Node(config_file, private_key_file),
-      rqueue(),
-      ro_rqueue(),
-      plog(max_out),
-      clog(max_out),
-      elog(max_out * 2, 0),
+Replica::Replica(MemoryStatisticsGuard &mem_guard, FILE *config_file,
+                 const std::string &private_key_file, char *mem, int nbytes)
+    : Node(mem_guard.push("Replica"), config_file, private_key_file),
+      rqueue(mem_guard.push("Req_queue")),
+      ro_rqueue(mem_guard.push("Req_queue")),
+      plog(mem_guard.push("Log<Prepared_cert>"), max_out),
+      brt(mem_guard.push("Big_req_table")),
+      clog(mem_guard.push("Log<Certificate<Commit>>"), max_out),
+      elog(mem_guard.push("Log<Certificate<Checkpoint>"), max_out * 2, 0),
       sset(n()),
       replies(mem, nbytes, num_principals),
-      state(this, mem, nbytes),
-      vi(node_id, 0) {
+      state(mem_guard.push("State"), this, mem, nbytes),
+      vi(mem_guard.push("View_info"), node_id, 0),
+      rr_reps(mem_guard.push("Certificate<Reply>")) {
 
 #endif
-
   // Fail if node is not a replica.
   if (!is_replica(id())) th_fail("Node is not a replica");
 
@@ -228,6 +244,7 @@ Replica::Replica(FILE *config_file, const std::string &private_key_file,
     exit(1);
   }
 #endif
+  MEMSTATS_CALL_STACK_POP();
 }
 
 void Replica::register_exec(int (*e)(Byz_req *, Byz_rep *, Byz_buffer *, int,
@@ -306,22 +323,18 @@ void Replica::recv() {
     // TODO: This should probably be a jump table.
     switch (m->tag()) {
       case Request_tag:
-        fprintf(stderr, "Request.\n");
         gen_handle<Request>(m);
         break;
 
       case Pre_prepare_tag:
-        fprintf(stderr, "Pre-Prepare.\n");
         gen_handle<Pre_prepare>(m);
         break;
 
       case Prepare_tag:
-        fprintf(stderr, "Prepare.\n");
         gen_handle<Prepare>(m);
         break;
 
       case Commit_tag:
-        fprintf(stderr, "Commit.\n");
         gen_handle<Commit>(m);
         break;
 
@@ -331,7 +344,6 @@ void Replica::recv() {
         break;
 
       case New_key_tag:
-        fprintf(stderr, "New Key.\n");
         gen_handle<New_key>(m);
         break;
 
@@ -341,7 +353,6 @@ void Replica::recv() {
         break;
 
       case Status_tag:
-        fprintf(stderr, "Status.\n");
         gen_handle<Status>(m);
         break;
 
@@ -603,6 +614,7 @@ void Replica::handle(Prepare *m) {
 
 void Replica::handle(Commit *m) {
   const Seqno ms = m->seqno();
+  fprintf(stderr, "Commit(%lld, %d)\n", ms, m->id());
 
   // Only accept messages with the current view.  TODO: change to
   // accept commits from older views as in proof.
@@ -638,6 +650,8 @@ void Replica::handle(Checkpoint *m) {
           // I have enough Checkpoint messages for m->seqno() to make it stable.
           // Truncate logs, discard older stable state versions.
           //	  fprintf(stderr, "CP MSG call MS %qd!!!\n", last_executed);
+          fprintf(stderr, "Marking stable, num correct = %d\n",
+                  cs.num_correct());
           mark_stable(ms, true);
         }
         //	else {
@@ -883,9 +897,11 @@ void Replica::handle(Status *m) {
 }
 
 void Replica::handle(View_change *m) {
-  //  printf("RECV: view change v=%qd from %d\n", m->view(), m->id());
+  printf("RECV: view change v=%qd from %d\n", m->view(), m->id());
   if (m->id() == primary() && m->view() > v) {
+    printf("Received View_change from primary %d\n", m->id());
     if (m->verify()) {
+      printf("Verified\n");
       // "m" was sent by the primary for v and has a view number
       // higher than v: move to the next view.
       send_view_change();
@@ -1262,6 +1278,8 @@ void Replica::execute_committed() {
           Certificate<Checkpoint> &cc = elog.fetch(last_executed);
           cc.add_mine(e);
           if (cc.is_complete()) {
+            fprintf(stderr, "Marking stable, num correct = %d\n",
+                    cc.num_correct());
             mark_stable(last_executed, true);
             //	    fprintf(stderr, "EXEC call MS %qd!!!\n", last_executed);
           }
@@ -1876,7 +1894,8 @@ void Replica::send_null() {
       // Send null request if there is a recovery in progress and there
       // are no outstanding requests.
       seqno++;
-      Req_queue empty;
+      MemoryStatisticsGuard mem_guard("Req_queue");
+      Req_queue empty(mem_guard);
       Pre_prepare *pp = new Pre_prepare(view(), seqno, empty);
       send(pp, All_replicas);
       plog.fetch(seqno).add_mine(pp);

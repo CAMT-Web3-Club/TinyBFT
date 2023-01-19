@@ -8,6 +8,7 @@
 #include "Digest.h"
 #include "Pre_prepare_info.h"
 #include "Time.h"
+#include "mem_statistics_guard.h"
 #include "parameters.h"
 #include "types.h"
 

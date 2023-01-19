@@ -7,8 +7,14 @@
 
 namespace libbyzea {
 
-Req_queue::Req_queue()
-    : reqs(PNode(), node->np()), head(0), tail(0), nelems(0), nbytes(0) {}
+Req_queue::Req_queue(MemoryStatisticsGuard &mem_guard)
+    : reqs(mem_guard.push("Array<Req_queue::PNode>"), PNode(), node->np()),
+      head(0),
+      tail(0),
+      nelems(0),
+      nbytes(0) {
+  mem_guard.pop();
+}
 
 bool Req_queue::append(Request *r) {
   int cid = r->client_id();

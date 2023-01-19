@@ -40,7 +40,12 @@ NV_info::Req_sum::~Req_sum() { pi.zero(); }
 // NV_info methods:
 //
 
-NV_info::NV_info() : v(0), nv(0), vc_target(0), vc_cur(0), vcs(node->n()) {
+NV_info::NV_info()
+    : v(0),
+      nv(0),
+      vc_target(0),
+      vc_cur(0),
+      vcs(MemoryStatisticsGuard().push("Array<NV_info::VC_info>"), node->n()) {
   vcs._enlarge_by(node->n());
   chosen_ckpt = -1;
   max = -1;
@@ -636,6 +641,7 @@ bool NV_info::check_new_view() {
 }
 
 Pre_prepare* NV_info::fetch_request(Seqno n, Digest& d) {
+  MemoryStatisticsGuard mem_guard("NV_info::fetch_request", true);
   th_assert(is_complete, "Invalid state");
   th_assert(n > nv->min() && n < nv->max(), "Invalid arguments");
 
@@ -651,7 +657,7 @@ Pre_prepare* NV_info::fetch_request(Seqno n, Digest& d) {
     th_assert(pp != 0, "Invalid state");
   } else {
     // Null request
-    Req_queue empty;
+    Req_queue empty(mem_guard.push("Req_queue"));
     pp = new Pre_prepare(v, n, empty);
     d = pp->digest();
   }

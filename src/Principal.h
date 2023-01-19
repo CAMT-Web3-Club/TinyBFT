@@ -5,13 +5,14 @@
 #include <sys/time.h>
 
 #include "Time.h"
+#include "mem_statistics_guard.h"
 #include "rsa_public_key.h"
 #include "th_assert.h"
 #include "types.h"
 
 namespace libbyzea {
 
-//#define USE_SECRET_SUFFIX_MD5
+// #define USE_SECRET_SUFFIX_MD5
 #ifdef USE_SECRET_SUFFIX_MD5
 #include "MD5.h"
 #else
@@ -38,8 +39,8 @@ const int Key_size_u = Key_size / sizeof(unsigned);
 
 class Principal {
  public:
-  Principal(int i, Addr a, mbedtls_ctr_drbg_context *dbrg,
-            char *key_filname = nullptr);
+  Principal(MemoryStatisticsGuard &mem_guard, int i, Addr a,
+            mbedtls_ctr_drbg_context *dbrg, char *key_filname = nullptr);
   // Requires: "pkey" points to a file that holds the public key in PEM encoding
   // or is null or is null (in which case no public-key is associated with the
   // principal.) Effects: Creates a new Principal object.

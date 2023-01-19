@@ -46,6 +46,7 @@
 #include <string.h>
 
 #include "bits.h"
+#include "mem_statistics.h"
 
 /* ---------------------------------------------------------------------- */
 /* --- User Switches ---------------------------------------------------- */
@@ -1500,6 +1501,7 @@ static void uhash_init(uhash_ctx_t ahc, INT8 *prf_key) {
 /* ---------------------------------------------------------------------- */
 
 uhash_ctx_t uhash_alloc(char key[16]) {
+  MEMSTATS_CALL_STACK_PUSH(uhash_alloc);
   /* Allocate memory and force to a 16-byte boundary. */
   uhash_ctx_t ctx;
   char bytes_to_add;
@@ -1515,6 +1517,8 @@ uhash_ctx_t uhash_alloc(char key[16]) {
     RC6_SETUP(key, prf_key); /* Intitialize the block-cipher */
     uhash_init(ctx, (INT8 *)prf_key);
   }
+
+  MEMSTATS_CALL_STACK_POP();
   return (ctx);
 }
 
@@ -1741,6 +1745,8 @@ umac_ctx_t umac_new(char key[])
  * generate subkeys from key. Align to 16-byte boundary.
  */
 {
+  MEMSTATS_CALL_STACK_PUSH(umac_new);
+
   umac_ctx_t ctx;
   char bytes_to_add;
   UINT32 prf_key[RC6_TABLE_WORDS];
@@ -1757,6 +1763,7 @@ umac_ctx_t umac_new(char key[])
     uhash_init(&ctx->hash, (INT8 *)prf_key);
   }
 
+  MEMSTATS_CALL_STACK_POP();
   return (ctx);
 }
 

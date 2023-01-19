@@ -8,6 +8,7 @@
 #include "State_defs.h"
 #include "Time.h"
 #include "dsum.h"
+#include "mem_statistics_guard.h"
 #include "th_assert.h"
 #include "types.h"
 namespace libbyzea {
@@ -48,7 +49,8 @@ class State {
   // and restore extra state information are "shutdown_p" and "restart_p".
 
 #else  // ifndef NO_STATE_TRANSLATION
-  State(Replica *replica, char *memory, int num_bytes);
+  State(MemoryStatisticsGuard &mem_guard, Replica *replica, char *memory,
+        int num_bytes);
   // Requires: mem is Block aligned and contains an integral number of
   // Blocks.
   // Effects: Creates an object that handles state digesting and

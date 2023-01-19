@@ -5,6 +5,7 @@
 
 #include "Bitmap.h"
 #include "Time.h"
+#include "mem_statistics_guard.h"
 #include "parameters.h"
 #include "types.h"
 
@@ -40,6 +41,7 @@ class Certificate {
   static size_t memory_consumption();
 
   Certificate(int complete = 0);
+  Certificate(MemoryStatisticsGuard &mem_guard, int complete = 0);
   // Requires: "complete" >= f+1 or 0
   // Effects: Creates an empty certificate. The certificate is
   // complete when it contains at least "complete" matching messages

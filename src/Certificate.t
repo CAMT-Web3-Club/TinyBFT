@@ -9,7 +9,12 @@ size_t Certificate<T>::memory_consumption() {
 }
 
 template <class T>
-Certificate<T>::Certificate(int comp) : bmap(Max_num_replicas) {
+Certificate<T>::Certificate(int comp)
+    : Certificate<T>(MemoryStatisticsGuard().push("Certificate<T>"), comp) {}
+
+template <class T>
+Certificate<T>::Certificate(MemoryStatisticsGuard &mem_guard, int comp)
+    : bmap(Max_num_replicas) {
   max_size = node->f() + 1;
   vals = new Message_val[max_size];
   cur_size = 0;
@@ -17,6 +22,7 @@ Certificate<T>::Certificate(int comp) : bmap(Max_num_replicas) {
   complete = (comp == 0) ? node->f() * 2 + 1 : comp;
   c = 0;
   mym = 0;
+  mem_guard.pop();
 }
 
 template <class T>

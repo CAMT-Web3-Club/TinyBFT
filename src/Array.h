@@ -131,6 +131,7 @@ void _enlarge_by(int n);
 #ifndef _Array_h
 #define _Array_h 1
 
+#include "mem_statistics_guard.h"
 #include "th_assert.h"
 
 namespace libbyzea {
@@ -139,11 +140,14 @@ template <class T>
 class Array {
  public:
   /* Constructors */
-  Array();              /* Empty array */
-  Array(int predict);   /* Empty array with size predict */
-  Array(T const*, int); /* Initialized with C array */
-  Array(Array const&);  /* Initialized with another Array */
-  Array(T, int);        /* Fill with n copies of T */
+  Array();
+  Array(MemoryStatisticsGuard& mem_guard); /* Empty array */
+  Array(MemoryStatisticsGuard& mem_guard,
+        int predict); /* Empty array with size predict */
+  Array(MemoryStatisticsGuard& mem_guard, T const*,
+        int);          /* Initialized with C array */
+  Array(Array const&); /* Initialized with another Array */
+  Array(MemoryStatisticsGuard& mem_guard, T, int); /* Fill with n copies of T */
 
   /* Destructor */
   ~Array();
@@ -182,10 +186,14 @@ class Array {
 };
 
 template <class T>
-inline Array<T>::Array() {
+inline Array<T>::Array() : Array<T>(MemoryStatisticsGuard().push("Array<T>")) {}
+
+template <class T>
+inline Array<T>::Array(MemoryStatisticsGuard& mem_guard) {
   alloc_ = 0;
   size_ = 0;
   store_ = 0;
+  mem_guard.pop();
 }
 
 template <class T>

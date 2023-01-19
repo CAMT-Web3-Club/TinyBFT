@@ -167,7 +167,7 @@ struct Statistics {
 
 extern Statistics stats;
 
-//#define PRINT_STATS
+// #define PRINT_STATS
 #ifdef PRINT_STATS
 #define START_CC(x) stats.##x##.start()
 #define STOP_CC(x) stats.##x##.stop()

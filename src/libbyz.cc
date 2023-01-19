@@ -14,12 +14,14 @@
 #include "Request.h"
 #include "State_defs.h"
 #include "Statistics.h"
+#include "mem_statistics_guard.h"
 
 void Byz_print_memory_consumption(const size_t mem_size) {
   libbyzea::Replica::print_memory_consumption(mem_size);
 }
 
 int Byz_init_client(const char *conf, const char *conf_priv, short port) {
+  libbyzea::MemoryStatisticsGuard mem_guard("Byz_init_client", true);
   FILE *config_file = fopen(conf, "r");
   if (config_file == 0) {
     fprintf(stderr, "libbyz: Invalid configuration file %s \n", conf);
@@ -40,8 +42,8 @@ int Byz_init_client(const char *conf, const char *conf_priv, short port) {
   srand48(getpid());
 
   const std::string private_key_file(conf_priv, std::strlen(conf_priv));
-  libbyzea::Client *client =
-      new libbyzea::Client(config_file, private_key_file, port);
+  libbyzea::Client *client = new libbyzea::Client(
+      mem_guard.push("Client"), config_file, private_key_file, port);
   libbyzea::node = client;
   return 0;
 }
@@ -141,6 +143,7 @@ int Byz_init_replica(const char *conf, const char *conf_priv, char *mem,
                      unsigned int size,
                      int (*exec)(Byz_req *, Byz_rep *, Byz_buffer *, int, bool),
                      void (*comp_ndet)(Seqno, Byz_buffer *), int ndet_max_len) {
+  libbyzea::MemoryStatisticsGuard mem_guard("Byz_init_replica", true);
   FILE *config_file = fopen(conf, "r");
   if (config_file == 0) {
     fprintf(stderr, "libbyz: Invalid configuration file %s \n", conf);
@@ -161,13 +164,14 @@ int Byz_init_replica(const char *conf, const char *conf_priv, char *mem,
   srand48(getpid());
 
   const std::string private_key_file(conf_priv, std::strlen(conf_priv));
-  libbyzea::replica =
-      new libbyzea::Replica(config_file, private_key_file, mem, size);
+  libbyzea::replica = new libbyzea::Replica(mem_guard, config_file,
+                                            private_key_file, mem, size);
   libbyzea::node = libbyzea::replica;
 
   // Register service-specific functions.
   libbyzea::replica->register_exec(exec);
   libbyzea::replica->register_nondet_choices(comp_ndet, ndet_max_len);
+
   return libbyzea::replica->used_state_bytes();
 }
 

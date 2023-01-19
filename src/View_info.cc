@@ -11,12 +11,15 @@
 #include "Status.h"
 #include "View_change.h"
 #include "View_change_ack.h"
+#include "mem_statistics_guard.h"
 #include "th_assert.h"
 
 namespace libbyzea {
 
 View_info::VCA_info::VCA_info()
-    : v(0), vacks((View_change_ack *)0, node->n()) {}
+    : v(0),
+      vacks(MemoryStatisticsGuard().push("Array<View_change_ack*>"),
+            (View_change_ack *)nullptr, node->n()) {}
 
 void View_info::VCA_info::clear() {
   for (int i = 0; i < node->n(); i++) {
@@ -26,18 +29,21 @@ void View_info::VCA_info::clear() {
   v = 0;
 }
 
-View_info::View_info(int ident, View vi)
+View_info::View_info(MemoryStatisticsGuard &mem_guard, int ident, View vi)
     : v(vi),
       id(ident),
       last_stable(0),
-      oplog(max_out),
-      last_views((View)0, node->n()),
-      last_vcs((View_change *)0, node->n()),
-      my_vacks((View_change_ack *)0, node->n()),
-      vacks(node->n()),
-      last_nvs(node->n()) {
+      oplog(mem_guard.push("Log<View_info::OReq_info>"), max_out),
+      last_views(mem_guard.push("Array<View>"), (View) nullptr, node->n()),
+      last_vcs(mem_guard.push("Array<View_change *>"), (View_change *)nullptr,
+               node->n()),
+      my_vacks(mem_guard.push("Array<View_change_ack *>"),
+               (View_change_ack *)nullptr, node->n()),
+      vacks(mem_guard.push("Array<View_info::VCA_info>"), node->n()),
+      last_nvs(mem_guard.push("Array<NV_info>"), node->n()) {
   vacks._enlarge_by(node->n());
   last_nvs._enlarge_by(node->n());
+  mem_guard.pop();
 }
 
 View_info::~View_info() {
