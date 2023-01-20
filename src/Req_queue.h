@@ -14,7 +14,7 @@ class Req_queue {
   // Implements a bounded queue of requests.
   //
  public:
-  Req_queue(MemoryStatisticsGuard& mem_guard);
+  Req_queue(MEM_STATS_REF);
   // Effects: Creates an empty queue that can hold one request per principal.
 
   bool append(Request* r);

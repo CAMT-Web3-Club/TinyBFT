@@ -18,7 +18,7 @@ class Log {
  public:
   static size_t memory_consumption(size_t sz);
 
-  Log(MemoryStatisticsGuard &mem_guard, int sz = max_out, Seqno h = 1);
+  Log(MEM_STATS_PARAM int sz = max_out, Seqno h = 1);
   // Requires: "sz" is a power of 2 (allows for more efficient implementation).
   // Effects: Creates a log that holds "sz" elements and has
   // head equal to "h". The log only maintains elements with sequence

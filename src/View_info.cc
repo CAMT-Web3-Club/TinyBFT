@@ -18,7 +18,7 @@ namespace libbyzea {
 
 View_info::VCA_info::VCA_info()
     : v(0),
-      vacks(MemoryStatisticsGuard().push("Array<View_change_ack*>"),
+      vacks(MEM_STATS_ARG_INIT_PUSH(Array<View_change_ack *>)
             (View_change_ack *)nullptr, node->n()) {}
 
 void View_info::VCA_info::clear() {
@@ -29,21 +29,22 @@ void View_info::VCA_info::clear() {
   v = 0;
 }
 
-View_info::View_info(MemoryStatisticsGuard &mem_guard, int ident, View vi)
+View_info::View_info(MEM_STATS_PARAM int ident, View vi)
     : v(vi),
       id(ident),
       last_stable(0),
-      oplog(mem_guard.push("Log<View_info::OReq_info>"), max_out),
-      last_views(mem_guard.push("Array<View>"), (View) nullptr, node->n()),
-      last_vcs(mem_guard.push("Array<View_change *>"), (View_change *)nullptr,
+      oplog(MEM_STATS_ARG_PUSH(Log<View_info::OReq_info>) max_out),
+      last_views(MEM_STATS_ARG_PUSH(Array<View>)(View) nullptr, node->n()),
+      last_vcs(MEM_STATS_ARG_PUSH(Array<View_change *>)(View_change *) nullptr,
                node->n()),
-      my_vacks(mem_guard.push("Array<View_change_ack *>"),
-               (View_change_ack *)nullptr, node->n()),
-      vacks(mem_guard.push("Array<View_info::VCA_info>"), node->n()),
-      last_nvs(mem_guard.push("Array<NV_info>"), node->n()) {
+      my_vacks(MEM_STATS_ARG_PUSH(Array<View_change_ack *>)(
+                   View_change_ack *) nullptr,
+               node->n()),
+      vacks(MEM_STATS_ARG_PUSH(Array<View_info::VCA_info>) node->n()),
+      last_nvs(MEM_STATS_ARG_PUSH(Array<NV_info>) node->n()) {
   vacks._enlarge_by(node->n());
   last_nvs._enlarge_by(node->n());
-  mem_guard.pop();
+  MEM_STATS_GUARD_POP();
 }
 
 View_info::~View_info() {

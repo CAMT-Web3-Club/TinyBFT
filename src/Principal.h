@@ -39,8 +39,8 @@ const int Key_size_u = Key_size / sizeof(unsigned);
 
 class Principal {
  public:
-  Principal(MemoryStatisticsGuard &mem_guard, int i, Addr a,
-            mbedtls_ctr_drbg_context *dbrg, char *key_filname = nullptr);
+  Principal(MEM_STATS_PARAM int i, Addr a, mbedtls_ctr_drbg_context *dbrg,
+            char *key_filname = nullptr);
   // Requires: "pkey" points to a file that holds the public key in PEM encoding
   // or is null or is null (in which case no public-key is associated with the
   // principal.) Effects: Creates a new Principal object.

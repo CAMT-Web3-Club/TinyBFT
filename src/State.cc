@@ -136,8 +136,7 @@ struct FPart {
 
 class FPartQueue : public Array<FPart> {
  public:
-  FPartQueue(MemoryStatisticsGuard& mem_guard)
-      : Array<FPart>(mem_guard.push("FPartQueue")) {}
+  FPartQueue(MEM_STATS_REF) : Array<FPart>(MEM_STATS_GUARD_PUSH(FPartQueue)) {}
 };
 
 // Information about partitions whose digest is being checked.
@@ -147,8 +146,7 @@ struct CPart {
 };
 class CPartQueue : public Array<CPart> {
  public:
-  CPartQueue(MemoryStatisticsGuard& mem_guard)
-      : Array<CPart>(mem_guard.push("CPartQueue")) {}
+  CPartQueue(MEM_STATS_REF) : Array<CPart>(MEM_STATS_GUARD_PUSH(CPartQueue)) {}
 };
 
 // Copy of leaf partition (used in checkpoint records)
@@ -670,13 +668,12 @@ State::State(Replica* rep, int num_objs, int (*gets)(int, char**),
       restart_proc(restart_p) {
 #else
 
-State::State(MemoryStatisticsGuard& mem_guard, Replica* rep, char* memory,
-             int num_bytes)
+State::State(MEM_STATS_PARAM Replica* rep, char* memory, int num_bytes)
     : replica(rep),
       mem((Block*)memory),
       nb(num_bytes / Block_size),
       cowb(nb),
-      clog(mem_guard.push("Log<Checkpoint_rec>"), max_out * 2, 0),
+      clog(MEM_STATS_ARG_PUSH(Log<Checkpoint_rec>) max_out * 2, 0),
       lc(0),
       last_fetch_t(0) {
 #endif
@@ -693,7 +690,7 @@ State::State(MemoryStatisticsGuard& mem_guard, Replica* rep, char* memory,
 
   for (int i = 0; i < PLevels; i++) {
     ptree[i] = new Part[(i != PLevels - 1) ? PLevelSize[i] : nb];
-    stalep[i] = new FPartQueue(mem_guard);
+    stalep[i] = new FPartQueue(MEM_STATS_ARG);
   }
 
   // The random modulus for computing sums in AdHASH.
@@ -711,7 +708,7 @@ State::State(MemoryStatisticsGuard& mem_guard, Replica* rep, char* memory,
   cert = new Meta_data_cert;
   lreplier = 0;
 
-  to_check = new CPartQueue(mem_guard);
+  to_check = new CPartQueue(MEM_STATS_ARG);
   checking = false;
   refetch_level = 0;
 
@@ -721,7 +718,7 @@ State::State(MemoryStatisticsGuard& mem_guard, Replica* rep, char* memory,
   _Byz_cow_bits = cowb.bitvec();
   _Byz_mem = (char*)mem;
 #endif
-  mem_guard.pop();
+  MEM_STATS_GUARD_POP();
 }
 
 State::~State() {

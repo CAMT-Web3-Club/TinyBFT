@@ -39,9 +39,10 @@ class Certificate {
 
  public:
   static size_t memory_consumption();
-
+#ifdef PRINT_MEM_STATISTICS
   Certificate(int complete = 0);
-  Certificate(MemoryStatisticsGuard &mem_guard, int complete = 0);
+#endif
+  Certificate(MEM_STATS_PARAM int complete = 0);
   // Requires: "complete" >= f+1 or 0
   // Effects: Creates an empty certificate. The certificate is
   // complete when it contains at least "complete" matching messages

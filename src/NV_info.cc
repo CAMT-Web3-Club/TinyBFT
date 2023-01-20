@@ -45,7 +45,7 @@ NV_info::NV_info()
       nv(0),
       vc_target(0),
       vc_cur(0),
-      vcs(MemoryStatisticsGuard().push("Array<NV_info::VC_info>"), node->n()) {
+      vcs(MEM_STATS_ARG_INIT_PUSH(Array<NV_info::VC_info>) node->n()) {
   vcs._enlarge_by(node->n());
   chosen_ckpt = -1;
   max = -1;
@@ -641,7 +641,7 @@ bool NV_info::check_new_view() {
 }
 
 Pre_prepare* NV_info::fetch_request(Seqno n, Digest& d) {
-  MemoryStatisticsGuard mem_guard("NV_info::fetch_request", true);
+  MEM_STATS_INIT(NV_info::fetch_request, true);
   th_assert(is_complete, "Invalid state");
   th_assert(n > nv->min() && n < nv->max(), "Invalid arguments");
 
@@ -657,7 +657,11 @@ Pre_prepare* NV_info::fetch_request(Seqno n, Digest& d) {
     th_assert(pp != 0, "Invalid state");
   } else {
     // Null request
-    Req_queue empty(mem_guard.push("Req_queue"));
+#ifdef PRINT_MEM_STATISTICS
+    Req_queue empty(MEM_STATS_GUARD_PUSH(Req_queue));
+#else
+    Req_queue empty;
+#endif
     pp = new Pre_prepare(v, n, empty);
     d = pp->digest();
   }

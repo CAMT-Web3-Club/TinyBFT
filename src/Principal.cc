@@ -11,7 +11,7 @@
 
 namespace libbyzea {
 
-Principal::Principal(MemoryStatisticsGuard &mem_guard, int i, Addr a,
+Principal::Principal(MEM_STATS_PARAM int i, Addr a,
                      mbedtls_ctr_drbg_context *drbg, char *key_filename) {
   id = i;
   addr = a;
@@ -36,7 +36,7 @@ Principal::Principal(MemoryStatisticsGuard &mem_guard, int i, Addr a,
 
   tstamp = 0;
   my_tstamp = zeroTime();
-  mem_guard.pop();
+  MEM_STATS_GUARD_POP();
 }
 
 Principal::~Principal() { delete pkey; }

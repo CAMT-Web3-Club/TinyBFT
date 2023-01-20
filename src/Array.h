@@ -140,14 +140,14 @@ template <class T>
 class Array {
  public:
   /* Constructors */
+#ifdef PRINT_MEM_STATISTICS
   Array();
-  Array(MemoryStatisticsGuard& mem_guard); /* Empty array */
-  Array(MemoryStatisticsGuard& mem_guard,
-        int predict); /* Empty array with size predict */
-  Array(MemoryStatisticsGuard& mem_guard, T const*,
-        int);          /* Initialized with C array */
-  Array(Array const&); /* Initialized with another Array */
-  Array(MemoryStatisticsGuard& mem_guard, T, int); /* Fill with n copies of T */
+#endif
+  Array(MEM_STATS_REF);                 /* Empty array */
+  Array(MEM_STATS_PARAM int predict);   /* Empty array with size predict */
+  Array(MEM_STATS_PARAM T const*, int); /* Initialized with C array */
+  Array(Array const&);                  /* Initialized with another Array */
+  Array(MEM_STATS_PARAM T, int);        /* Fill with n copies of T */
 
   /* Destructor */
   ~Array();
@@ -185,15 +185,17 @@ class Array {
   void enlarge_to(int s);            /* Enlarge to s if necessary */
 };
 
+#ifdef PRINT_MEM_STATISTICS
 template <class T>
 inline Array<T>::Array() : Array<T>(MemoryStatisticsGuard().push("Array<T>")) {}
+#endif
 
 template <class T>
-inline Array<T>::Array(MemoryStatisticsGuard& mem_guard) {
+inline Array<T>::Array(MEM_STATS_REF) {
   alloc_ = 0;
   size_ = 0;
   store_ = 0;
-  mem_guard.pop();
+  MEM_STATS_GUARD_POP();
 }
 
 template <class T>

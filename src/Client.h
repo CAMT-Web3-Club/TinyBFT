@@ -17,7 +17,7 @@ extern void rtimer_handler();
 
 class Client : public Node {
  public:
-  Client(MemoryStatisticsGuard &mem_guard, FILE *config_file,
+  Client(MEM_STATS_PARAM FILE *config_file,
          const std::string &priviate_key_file, short port = 0);
   // Effects: Creates a new Client object using the information in
   // "config_file" and "config_priv". The line of config assigned to

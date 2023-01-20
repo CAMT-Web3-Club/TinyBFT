@@ -28,7 +28,7 @@ class View_info {
   // Holds information for the view-change protocol.
   //
  public:
-  View_info(MemoryStatisticsGuard& mem_guard, int id, View v = 0);
+  View_info(MEM_STATS_PARAM int id, View v = 0);
   // Effects: Create a view-info object for replica "id" with initial
   // view "v".
 

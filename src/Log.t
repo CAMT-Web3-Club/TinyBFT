@@ -13,11 +13,10 @@ size_t Log<T>::memory_consumption(size_t sz) {
 }
 
 template <class T>
-Log<T>::Log(MemoryStatisticsGuard &mem_guard, int sz, Seqno h)
-    : head(h), max_size(sz) {
+Log<T>::Log(MEM_STATS_PARAM int sz, Seqno h) : head(h), max_size(sz) {
   elems = new T[sz];
   mask = max_size - 1;
-  mem_guard.pop();
+  MEM_STATS_GUARD_POP();
 }
 
 template <class T>

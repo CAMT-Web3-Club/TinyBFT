@@ -12,7 +12,11 @@
 
 namespace libbyzea {
 
+#ifdef PRINT_MEM_STATISTICS
 Array<ITimer *> ITimer::timers(MemoryStatisticsGuard().push("Array<ITimer *>"));
+#else
+Array<ITimer *> ITimer::timers;
+#endif
 
 #ifndef USE_GETTIMEOFDAY
 Time ITimer::min_deadline = Long_max;

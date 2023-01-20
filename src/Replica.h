@@ -71,7 +71,7 @@ class Replica : public Node {
   // state information are "shutdown_proc" and "restart_proc".
 
 #else
-  Replica(MemoryStatisticsGuard &mem_guard, FILE *config_file,
+  Replica(MEM_STATS_PARAM FILE *config_file,
           const std::string &private_key_file, char *mem, int nbytes);
   // Requires: "mem" is vm page aligned and nbytes is a multiple of the
   // vm page size.

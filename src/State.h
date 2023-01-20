@@ -49,8 +49,7 @@ class State {
   // and restore extra state information are "shutdown_p" and "restart_p".
 
 #else  // ifndef NO_STATE_TRANSLATION
-  State(MemoryStatisticsGuard &mem_guard, Replica *replica, char *memory,
-        int num_bytes);
+  State(MEM_STATS_PARAM Replica *replica, char *memory, int num_bytes);
   // Requires: mem is Block aligned and contains an integral number of
   // Blocks.
   // Effects: Creates an object that handles state digesting and

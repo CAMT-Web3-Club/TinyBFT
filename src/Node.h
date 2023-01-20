@@ -23,8 +23,8 @@ extern void atimer_handler();
 
 class Node {
  public:
-  Node(MemoryStatisticsGuard &mem_guard, FILE *config_file,
-       const std::string &private_key_file, short port = 0);
+  Node(MEM_STATS_PARAM FILE *config_file, const std::string &private_key_file,
+       short port = 0);
   // Effects: Create a new Node object using the information in
   // "config_file" and "config_priv".  If port is 0, use the first
   // line from configuration whose host address matches the address

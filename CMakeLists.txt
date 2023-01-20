@@ -66,8 +66,8 @@ if (DEFINED ENABLE_RECOVERY)
     target_compile_definitions(byzea PUBLIC RECOVERY=1)
 endif()
 
-if (DEFINED MEMORY_STATISTICS)
-    target_compile_definitions(byzea PUBLIC PRINT_MEM_STATISTICS=1)
+if (DEFINED PRINT_MEM_STATISTICS)
+    target_compile_definitions(byzea PUBLIC PRINT_MEM_STATISTICS=${PRINT_MEM_STATISTICS})
     target_sources(byzea PRIVATE
         src/mem_statistics.c
         src/malloc.c

@@ -17,12 +17,11 @@
 
 namespace libbyzea {
 
-Client::Client(MemoryStatisticsGuard &mem_guard, FILE *config_file,
+Client::Client(MEM_STATS_PARAM FILE *config_file,
                const std::string &private_key_file, short port)
-    : Node(mem_guard.push("Client::Client"), config_file, private_key_file,
-           port),
-      t_reps(mem_guard.push("Certificate<Reply>"), 2 * f() + 1),
-      c_reps(mem_guard.push("Certificate<Reply>"), f() + 1) {
+    : Node(MEM_STATS_ARG_PUSH(Node) config_file, private_key_file, port),
+      t_reps(MEM_STATS_ARG_PUSH(Certificate<Reply>) 2 * f() + 1),
+      c_reps(MEM_STATS_ARG_PUSH(Certificate<Reply>) f() + 1) {
   // Fail if node is is a replica.
   if (is_replica(id())) th_fail("Node is a replica");
 
@@ -35,7 +34,7 @@ Client::Client(MemoryStatisticsGuard &mem_guard, FILE *config_file,
   // Multicast new key to all replicas.
   send_new_key();
   atimer->start();
-  MEMSTATS_CALL_STACK_POP();
+  MEM_STATS_GUARD_POP();
 }
 
 Client::~Client() { delete rtimer; }

@@ -12,7 +12,7 @@ namespace libbyzea {
 Statistics stats;
 
 Statistics::Statistics()
-    : rec_stats(MemoryStatisticsGuard().push("Array<Recovery_stats>"), 20) {
+    : rec_stats(MEM_STATS_ARG_INIT_PUSH(Array<Recovery_stats>) 20) {
   zero_stats();
 }
 

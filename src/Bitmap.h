@@ -121,7 +121,7 @@ class Bitmap {
 };
 
 inline Bitmap::Bitmap(Uint sz, bool value) {
-  MemoryStatisticsGuard mem_guard("Bitmap::Bitmap", true);
+  MEM_STATS_INIT(Bitmap::Bitmap, true);
   num = sz;
   nc = (sz + ChunkBits - 1) / ChunkBits;
   chunks = new Chunk[nc];
@@ -131,7 +131,7 @@ inline Bitmap::Bitmap(Uint sz, bool value) {
 }
 
 inline Bitmap::Bitmap(Bitmap const& other) {
-  MemoryStatisticsGuard mem_guard("Bitmap::Bitmap", true);
+  MEM_STATS_INIT(Bitmap::Bitmap, true);
   num = other.num;
   chunks = new Chunk[nc];
   for (Uint i = 0; i < nc; i++) {
@@ -140,7 +140,7 @@ inline Bitmap::Bitmap(Bitmap const& other) {
 }
 
 inline Bitmap& Bitmap::operator=(Bitmap const& other) {
-  MemoryStatisticsGuard mem_guard("Bitmap::operator==", true);
+  MEM_STATS_INIT(Bitmap::operator==, true);
   if (this == &other) return *this;
   if (nc != other.nc) {
     delete[] chunks;

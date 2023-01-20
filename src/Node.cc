@@ -43,9 +43,8 @@ namespace libbyzea {
 static const char *DRBG_PERSONALIZATION_STRING =
     static_cast<const char *>("libbyz");
 
-Node::Node(MemoryStatisticsGuard &mem_guard, FILE *config_file,
+Node::Node(MEM_STATS_PARAM FILE *config_file,
            const std::string &private_key_file, short req_port) {
-  mem_guard.push("Node::Node");
   node = this;
 
 #ifdef NO_IP_MULTICAST
@@ -53,14 +52,14 @@ Node::Node(MemoryStatisticsGuard &mem_guard, FILE *config_file,
 #endif
 
   // Intialize random number generator
-  MEMSTATS_CALL_STACK_PUSH(mbedtls);
+  MEM_STATS_GUARD_PUSH(mbedtls);
   mbedtls_entropy_init(&entropy);
   mbedtls_ctr_drbg_init(&ctr_drbg_ctx);
   int err = mbedtls_ctr_drbg_seed(
       &ctr_drbg_ctx, mbedtls_entropy_func, &entropy,
       reinterpret_cast<const unsigned char *>(DRBG_PERSONALIZATION_STRING),
       std::strlen(DRBG_PERSONALIZATION_STRING));
-  MEMSTATS_CALL_STACK_POP();
+  MEM_STATS_GUARD_POP();
   if (err) {
     th_fail("Failed to seed random number generator");
   }
@@ -106,7 +105,7 @@ Node::Node(MemoryStatisticsGuard &mem_guard, FILE *config_file,
   a.sin_family = AF_INET;
   a.sin_addr.s_addr = inet_addr(addr_buff);
   a.sin_port = htons(port);
-  group = new Principal(mem_guard.push("Principal"), num_principals + 1, a,
+  group = new Principal(MEM_STATS_ARG_PUSH(Principal) num_principals + 1, a,
                         &ctr_drbg_ctx);
 
   // read in remaining principals' addresses and figure out my principal
@@ -116,9 +115,9 @@ Node::Node(MemoryStatisticsGuard &mem_guard, FILE *config_file,
     exit(1);
   }
 
-  MEMSTATS_CALL_STACK_PUSH(gehostbyname);
+  MEM_STATS_GUARD_PUSH(gehostbyname);
   struct hostent *hent = gethostbyname(host_name);
-  MEMSTATS_CALL_STACK_POP();
+  MEM_STATS_GUARD_POP();
   if (hent == 0) th_fail("Could not get hostent");
   struct in_addr my_address = *((in_addr *)hent->h_addr_list[0]);
   node_id = -1;
@@ -129,7 +128,7 @@ Node::Node(MemoryStatisticsGuard &mem_guard, FILE *config_file,
            public_keyfile);
     a.sin_addr.s_addr = inet_addr(addr_buff);
     a.sin_port = htons(port);
-    principals[i] = new Principal(mem_guard.push("Principal"), i, a,
+    principals[i] = new Principal(MEM_STATS_ARG_PUSH(Principal) i, a,
                                   &ctr_drbg_ctx, public_keyfile);
     if (my_address.s_addr == a.sin_addr.s_addr && node_id == -1 &&
         (req_port == 0 || req_port == port)) {
@@ -201,7 +200,7 @@ Node::Node(MemoryStatisticsGuard &mem_guard, FILE *config_file,
 
   last_new_key = 0;
   atimer = new ITimer(at, atimer_handler);
-  mem_guard.pop();
+  MEM_STATS_GUARD_POP();
 }
 
 Node::~Node() {

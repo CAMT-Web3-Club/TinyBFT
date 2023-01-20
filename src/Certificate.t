@@ -8,13 +8,14 @@ size_t Certificate<T>::memory_consumption() {
          ((Max_num_replicas + ChunkBits - 1) / ChunkBits);
 }
 
+#ifdef PRINT_MEM_STATISTICS
 template <class T>
 Certificate<T>::Certificate(int comp)
-    : Certificate<T>(MemoryStatisticsGuard().push("Certificate<T>"), comp) {}
+    : Certificate<T>(MEM_STATS_ARG_INIT_PUSH(Certificate<T>) comp) {}
+#endif
 
 template <class T>
-Certificate<T>::Certificate(MemoryStatisticsGuard &mem_guard, int comp)
-    : bmap(Max_num_replicas) {
+Certificate<T>::Certificate(MEM_STATS_PARAM int comp) : bmap(Max_num_replicas) {
   max_size = node->f() + 1;
   vals = new Message_val[max_size];
   cur_size = 0;
@@ -22,7 +23,7 @@ Certificate<T>::Certificate(MemoryStatisticsGuard &mem_guard, int comp)
   complete = (comp == 0) ? node->f() * 2 + 1 : comp;
   c = 0;
   mym = 0;
-  mem_guard.pop();
+  MEM_STATS_GUARD_POP();
 }
 
 template <class T>

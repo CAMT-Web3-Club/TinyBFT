@@ -90,7 +90,8 @@ void Replica::retransmit(T *m, Time &cur, Time *tsent, Principal *p) {
   }
 }
 
-void Replica::print_memory_consumption(const size_t mem_size) {
+void Replica::print_memory_consumption([[maybe_unused]] const size_t mem_size) {
+#if 0
   State::print_memory_consumption(mem_size);
 
   size_t size = sizeof(Replica) + 4 * sizeof(ITimer) + 4 * sizeof(View) +
@@ -119,13 +120,22 @@ void Replica::print_memory_consumption(const size_t mem_size) {
           sizeof(Commit) + sizeof(Commit_rep) + (4 * (MAC_size)));
   fprintf(stderr, "Checkpoint: %lu\n",
           sizeof(Checkpoint) + sizeof(Checkpoint_rep) + (4 * (MAC_size)));
+#endif
 
   fprintf(stderr, "\n\n\n");
   fprintf(stderr, "sizeof(Replica) = %lu\n", sizeof(Replica));
   fprintf(stderr, "sizeof(Node) = %lu\n", sizeof(Node));
+  fprintf(stderr, "sizeof(Prepared_cert) = %lu\n", sizeof(Prepared_cert));
   fprintf(stderr, "sizeof(Log<Prepared_cert>) = %lu\n",
           sizeof(Log<Prepared_cert>));
-  fprintf(stderr, "sizeof(Prepared_cert) = %lu\n", sizeof(Prepared_cert));
+  fprintf(stderr, "sizeof(Certificate<Commit>) = %lu\n",
+          sizeof(Certificate<Commit>));
+  fprintf(stderr, "sizeof(Log<Certificate<Commit>>) = %lu\n",
+          sizeof(Log<Certificate<Commit>>));
+  fprintf(stderr, "sizeof(Certificate<Checkpoint>) = %lu\n",
+          sizeof(Certificate<Checkpoint>));
+  fprintf(stderr, "sizeof(Log<Certificate<Checkpoint>>) = %lu\n",
+          sizeof(Log<Certificate<Checkpoint>>));
 }
 
 #ifndef NO_STATE_TRANSLATION
@@ -148,20 +158,20 @@ Replica::Replica(FILE *config_file, const std::string &private_key_file,
       n_mem_blocks(num_objs) {
 #else
 
-Replica::Replica(MemoryStatisticsGuard &mem_guard, FILE *config_file,
+Replica::Replica(MEM_STATS_PARAM FILE *config_file,
                  const std::string &private_key_file, char *mem, int nbytes)
-    : Node(mem_guard.push("Replica"), config_file, private_key_file),
-      rqueue(mem_guard.push("Req_queue")),
-      ro_rqueue(mem_guard.push("Req_queue")),
-      plog(mem_guard.push("Log<Prepared_cert>"), max_out),
-      brt(mem_guard.push("Big_req_table")),
-      clog(mem_guard.push("Log<Certificate<Commit>>"), max_out),
-      elog(mem_guard.push("Log<Certificate<Checkpoint>"), max_out * 2, 0),
+    : Node(MEM_STATS_ARG_PUSH(Node) config_file, private_key_file),
+      rqueue(MEM_STATS_GUARD_PUSH(Req_queue)),
+      ro_rqueue(MEM_STATS_GUARD_PUSH(Req_queue)),
+      plog(MEM_STATS_ARG_PUSH(Log<Prepared_cert>) max_out),
+      brt(MEM_STATS_GUARD_PUSH(Big_req_table)),
+      clog(MEM_STATS_ARG_PUSH(Log<Certificate<Commit>>) max_out),
+      elog(MEM_STATS_ARG_PUSH(Log < Certificate<Checkpoint>) max_out * 2, 0),
       sset(n()),
       replies(mem, nbytes, num_principals),
-      state(mem_guard.push("State"), this, mem, nbytes),
-      vi(mem_guard.push("View_info"), node_id, 0),
-      rr_reps(mem_guard.push("Certificate<Reply>")) {
+      state(MEM_STATS_ARG_PUSH(State) this, mem, nbytes),
+      vi(MEM_STATS_ARG_PUSH(View_info) node_id, 0),
+      rr_reps(MEM_STATS_GUARD_PUSH(Certificate<Reply>)) {
 
 #endif
   // Fail if node is not a replica.
@@ -244,7 +254,7 @@ Replica::Replica(MemoryStatisticsGuard &mem_guard, FILE *config_file,
     exit(1);
   }
 #endif
-  MEMSTATS_CALL_STACK_POP();
+  MEM_STATS_GUARD_POP();
 }
 
 void Replica::register_exec(int (*e)(Byz_req *, Byz_rep *, Byz_buffer *, int,
@@ -1894,8 +1904,12 @@ void Replica::send_null() {
       // Send null request if there is a recovery in progress and there
       // are no outstanding requests.
       seqno++;
-      MemoryStatisticsGuard mem_guard("Req_queue");
-      Req_queue empty(mem_guard);
+      MEM_STATS_INIT(Replica::send_null, true);
+#ifdef PRINT_MEM_STATISTICS
+      Req_queue empty(MEM_STATS_GUARD_PUSH(Req_queue));
+#else
+      Req_queue empty;
+#endif
       Pre_prepare *pp = new Pre_prepare(view(), seqno, empty);
       send(pp, All_replicas);
       plog.fetch(seqno).add_mine(pp);

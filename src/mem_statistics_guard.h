@@ -3,6 +3,31 @@
 
 #include "mem_statistics.h"
 
+#ifdef PRINT_MEM_STATISTICS
+
+#define MEM_STATS_INIT(push, pop_on_destruction) \
+  MemoryStatisticsGuard mem_guard(#push, pop_on_destruction)
+#define MEM_STATS_ARG mem_guard
+#define MEM_STATS_ARG_INIT_PUSH(x) MemoryStatisticsGuard().push(#x),
+#define MEM_STATS_GUARD_PUSH(x) mem_guard.push(#x)
+#define MEM_STATS_GUARD_POP() mem_guard.pop()
+#define MEM_STATS_REF MemoryStatisticsGuard& mem_guard
+#define MEM_STATS_PARAM MEM_STATS_REF,
+#define MEM_STATS_ARG_PUSH(x) MEM_STATS_GUARD_PUSH(x),
+
+#else  // !PRINT_MEM_STATISTICS
+
+#define MEM_STATS_INIT(push, pop_on_destruction)
+#define MEM_STATS_ARG
+#define MEM_STATS_ARG_INIT_PUSH(x)
+#define MEM_STATS_GUARD_PUSH(x)
+#define MEM_STATS_GUARD_POP()
+#define MEM_STATS_REF
+#define MEM_STATS_PARAM
+#define MEM_STATS_ARG_PUSH(x)
+
+#endif  // PRINT_MEM_STATISTICS
+
 namespace libbyzea {
 /**
  * Class allowing pushing to the mem statistics call stack trace, before

@@ -7,13 +7,13 @@
 
 namespace libbyzea {
 
-Req_queue::Req_queue(MemoryStatisticsGuard &mem_guard)
-    : reqs(mem_guard.push("Array<Req_queue::PNode>"), PNode(), node->np()),
+Req_queue::Req_queue(MEM_STATS_REF)
+    : reqs(MEM_STATS_ARG_PUSH(Array<Req_queue::PNode>) PNode(), node->np()),
       head(0),
       tail(0),
       nelems(0),
       nbytes(0) {
-  mem_guard.pop();
+  MEM_STATS_GUARD_POP();
 }
 
 bool Req_queue::append(Request *r) {

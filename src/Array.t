@@ -3,14 +3,14 @@
 namespace libbyzea {
 
 template <class T>
-Array<T>::Array(MemoryStatisticsGuard& mem_guard, int predict) {
+Array<T>::Array(MEM_STATS_PARAM int predict) {
   th_assert(predict >= 0, "negative count supplied to array operation");
   alloc_ = 0;
   size_ = 0;
   store_ = 0;
   enlarge_to(predict);
   size_ = 0;
-  mem_guard.pop();
+  MEM_STATS_GUARD_POP();
 }
 
 template <class T>
@@ -19,14 +19,14 @@ Array<T>::~Array() {
 }
 
 template <class T>
-Array<T>::Array(MemoryStatisticsGuard& mem_guard, T const* src, int s) {
+Array<T>::Array(MEM_STATS_PARAM T const* src, int s) {
   th_assert(s >= 0, "negative count supplied to array operation");
   alloc_ = 0;
   size_ = 0;
   store_ = 0;
   enlarge_to(s);
   for (int i = 0; i < s; i++) store_[i] = src[i];
-  mem_guard.pop();
+  MEM_STATS_GUARD_POP();
 }
 
 template <class T>
@@ -39,14 +39,14 @@ Array<T>::Array(Array const& d) {
 }
 
 template <class T>
-Array<T>::Array(MemoryStatisticsGuard& mem_guard, T element, int num) {
+Array<T>::Array(MEM_STATS_PARAM T element, int num) {
   th_assert(num >= 0, "negative count supplied to array operation");
   alloc_ = 0;
   size_ = 0;
   store_ = 0;
   enlarge_to(num);
   for (int i = 0; i < num; i++) store_[i] = element;
-  mem_guard.pop();
+  MEM_STATS_GUARD_POP();
 }
 
 template <class T>
