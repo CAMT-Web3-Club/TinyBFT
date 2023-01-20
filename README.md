@@ -168,3 +168,40 @@ cmake -DENABLE_RECOVERY
 
 Enables PBFT's recovery support, allowing a replica to persist its current
 state to disk and load it on rebooting.
+
+#### Enable Memory Demand Statistics (PRINT_MEM_STATISTICS)
+
+```sh
+camke -DPRINT_MEM_STATISTICS=1 ..
+```
+
+Enables the (dynamic) memory demand benchmark. This compiles a custom
+`malloc(3)` implementation into the library which tracks all memory allocations.
+The memory demand during initialization is then printed per component. The
+output printed is of the form:
+
+```
+sizeof(Replica) = 2704
+sizeof(Node) = 1736
+sizeof(Prepared_cert) = 120
+sizeof(Log<Prepared_cert>) = 32
+sizeof(Certificate<Commit>) = 80
+sizeof(Log<Certificate<Commit>>) = 32
+sizeof(Certificate<Checkpoint>) = 80
+sizeof(Log<Certificate<Checkpoint>>) = 32
+Byz_init_replica->Replica->Node->RsaPrivateKey::RsaPrivateKey->mbedtls_pk_parse_keyfile: 1496
+Byz_init_replica->Replica->Node->RsaPrivateKey::RsaPrivateKey: 1496
+Byz_init_replica->Replica->Node->Principal->umac_new: 1528
+Byz_init_replica->Replica->Node->Principal: 1648
+...
+Byz_init_replica->Replica->State: 6347224
+...
+Byz_init_replica->Replica: 6574346
+Byz_init_replica: 6574818
+max_total = 6651390
+```
+
+The memory consumed by a component always also includes the memory allocated by
+the components it calls. If `Replica` calls the `State` constructor during
+initialization for example, the memory allocated by `State`'s constructor is also
+added to `Replica`'s memory demand.
