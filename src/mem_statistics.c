@@ -52,6 +52,10 @@ void call_stack_pop(void) {
   call_stack_size--;
   if (call_stack_size == 0) {
     fprintf(stderr, "max_total = %lld\n", max_total);
-    max_total = 0;
   }
+}
+
+void reset_mem_stats(void) {
+  total = 0;
+  max_total = 0;
 }

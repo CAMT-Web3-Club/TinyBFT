@@ -27,11 +27,17 @@
     track_memory_change(x);      \
   } while (0)
 
+#define MEMSTATS_RESET() \
+  do {                   \
+    reset_mem_stats();   \
+  } while(0)
+
 #else /* PRINT_MEM_STATISTICS */
 
 #define MEMSTATS_CALL_STACK_PUSH(x)
 #define MEMSTATS_CALL_STACK_POP()
 #define MEMSTATS_TRACK_CHANGE(x)
+#define MEMSTATS_RESET()
 
 #endif /* !PRINT_MEM_STATISTICS */
 
@@ -44,6 +50,8 @@ void call_stack_push(const char *name);
 void track_memory_change(long size);
 
 void call_stack_pop(void);
+
+void reset_mem_stats(void);
 
 #ifdef __cplusplus
 }
