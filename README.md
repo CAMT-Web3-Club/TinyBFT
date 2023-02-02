@@ -115,18 +115,14 @@ size can drastically reduce the library's memory consumption. Its **minimum valu
 #### Change Checkpoint Interval (CHECKPOINT_INTERVAL)
 
 ```sh
-cmake -DCHECKPOINT_INTERVAL=2 ..
+cmake -DCHECKPOINT_INTERVAL=128 ..
 ```
 
-The checkpoint interval defines how many checkpoints are created during a
-certain _message window_. Its value is relative to the `WINDOW_SIZE`. A value of
-2 means that during a window a checkpoint is made twice.
-
-The sequence numbers in a window where checkpoints are made are exactly those
-where `SEQUENCE_NUMBER mod (WINDOW_SIZE / CHECKPOINT_INTERVAL) == 0`.  For
-example if `WINDOW_SIZE` is set to 64 and `CHECKPOINT_INTERVAL` is set to 2,
-then a checkpoint is created every time the sequence number of the last request
-executed modulo 32 is 0.
+The checkpoint interval defines at which sequence numbers checkpoints are created.
+A checkpoint is created after a executing requests with a sequence number divisible by
+the checkpoint interval, that is `<sequence_number> % CHECKPOINT_INTERVAL == 0`.
+If the checkpoint interval is set to 32 for example, then a checkpoint is created every time
+the sequence number of the last request executed modulo 32 is 0.
 
 Note that a larger amount of checkpoints means that potentially more memory has
 to be allocated to safe checkpoint state if there exist many checkpoints that
