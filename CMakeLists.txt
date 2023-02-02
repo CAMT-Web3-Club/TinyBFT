@@ -75,6 +75,13 @@ if (DEFINED PRINT_MEM_STATISTICS)
     )
 endif()
 
+if(DEFINED LOW_MEMORY_DEMAND)
+    target_compile_definitions(byzea PUBLIC ALTERNATIVE_CHECKPOINT_LOG=1)
+    target_sources(byzea PRIVATE
+        src/checkpoint_log.cc
+    )
+endif()
+
 target_compile_options(byzea PRIVATE "-Wall" "-Werror=all" "-Wextra" "-Wno-unused-function")
 
 target_sources(byzea PRIVATE

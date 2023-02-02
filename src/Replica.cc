@@ -136,6 +136,7 @@ void Replica::print_memory_consumption([[maybe_unused]] const size_t mem_size) {
           sizeof(Certificate<Checkpoint>));
   fprintf(stderr, "sizeof(Log<Certificate<Checkpoint>>) = %lu\n",
           sizeof(Log<Certificate<Checkpoint>>));
+  fprintf(stderr, "sizeof(CheckpointLog) = %u\n", sizeof(CheckpointLog));
 }
 
 #ifndef NO_STATE_TRANSLATION
@@ -166,7 +167,11 @@ Replica::Replica(MEM_STATS_PARAM FILE *config_file,
       plog(MEM_STATS_ARG_PUSH(Log<Prepared_cert>) max_out),
       brt(MEM_STATS_GUARD_PUSH(Big_req_table)),
       clog(MEM_STATS_ARG_PUSH(Log<Certificate<Commit>>) max_out),
+#ifdef ALTERNATIVE_CHECKPOINT_LOG
+      elog(MEM_STATS_GUARD_PUSH(CheckpointLog)),
+#else
       elog(MEM_STATS_ARG_PUSH(Log < Certificate<Checkpoint>) max_out * 2, 0),
+#endif
       sset(n()),
       replies(mem, nbytes, num_principals),
       state(MEM_STATS_ARG_PUSH(State) this, mem, nbytes),

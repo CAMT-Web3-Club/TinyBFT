@@ -14,6 +14,7 @@
 #include "Stable_estimator.h"
 #include "State_defs.h"
 #include "View_info.h"
+#include "checkpoint_log.h"
 #include "libbyz.h"
 #if 1
 #include "trivial_state.h"
@@ -349,7 +350,11 @@ class Replica : public Node {
   friend class Big_req_table;
 
   Log<Certificate<Commit> > clog;
+#ifdef ALTERNATIVE_CHECKPOINT_LOG
+  CheckpointLog elog;
+#else
   Log<Certificate<Checkpoint> > elog;
+#endif
 
   // Set of stable checkpoint messages above my window.
   Set<Checkpoint> sset;
