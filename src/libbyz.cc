@@ -148,14 +148,17 @@ int Byz_init_replica(const char *conf, const char *conf_priv, char *mem,
 #ifdef PRINT_MEM_STATISTICS
   libbyzea::MemoryStatisticsGuard mem_guard("Byz_init_replica", true);
 #endif
+  MEM_STATS_GUARD_PUSH(fopen);
   FILE *config_file = fopen(conf, "r");
   if (config_file == 0) {
     fprintf(stderr, "libbyz: Invalid configuration file %s \n", conf);
     return -1;
   }
+  MEM_STATS_GUARD_POP();
 
   // FIXME: we should make sure that replica initialization was successful in
   // the constructor, by adding a is_valid method or something similar.
+  MEM_STATS_GUARD_PUSH(fopen);
   FILE *config_priv_file = fopen(conf_priv, "r");
   if (config_priv_file == 0) {
     fprintf(stderr, "libbyz: Invalid private configuration file %s \n",
@@ -163,6 +166,7 @@ int Byz_init_replica(const char *conf, const char *conf_priv, char *mem,
     return -1;
   }
   fclose(config_priv_file);
+  MEM_STATS_GUARD_POP();
 
   // Initialize random number generator
   srand48(getpid());
@@ -184,6 +188,9 @@ void Byz_modify(char *mem, int size) { libbyzea::replica->modify(mem, size); }
 #endif
 
 void Byz_replica_run() {
+#ifdef PRINT_MEM_STATISTICS
+  libbyzea::MemoryStatisticsGuard mem_guard("Byz_replica_run", true);
+#endif
   libbyzea::stats.zero_stats();
   libbyzea::replica->recv();
 }
