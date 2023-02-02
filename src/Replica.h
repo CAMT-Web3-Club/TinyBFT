@@ -12,15 +12,11 @@
 #include "Req_queue.h"
 #include "Set.h"
 #include "Stable_estimator.h"
+#include "State.h"
 #include "State_defs.h"
 #include "View_info.h"
 #include "checkpoint_log.h"
 #include "libbyz.h"
-#if 1
-#include "trivial_state.h"
-#else
-#include "State.h"
-#endif
 #include "mem_statistics_guard.h"
 #include "types.h"
 
@@ -172,7 +168,6 @@ class Replica : public Node {
 
  private:
   friend class State;
-  friend class TrivialState;
 
   //
   // Message handlers:
