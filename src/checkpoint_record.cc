@@ -5,82 +5,149 @@
 #include "th_assert.h"
 
 namespace libbyzea {
-CheckpointRecord::CheckpointRecord() : data_(nullptr), len_(0), digest_() {}
 
-CheckpointRecord::CheckpointRecord(uint8_t *data, size_t len)
-    : data_(new uint8_t[len]),
-      len_(len),
-      digest_(reinterpret_cast<char *>(data), unsigned(len)) {
-  std::memcpy(this->data_, data, len);
+size_t CheckpointRecord::memory_consumption() {
+  return sizeof(CheckpointRecord);
 }
 
-CheckpointRecord::~CheckpointRecord() { delete data_; }
+CheckpointRecord::CheckpointRecord()
+    : partitions_(nullptr),
+      blocks_(nullptr),
+      num_partitions_(),
+      num_entries_(0) {}
 
-void CheckpointRecord::digest(Digest &digest) const { digest = digest_; }
+CheckpointRecord::CheckpointRecord(MEM_STATS_PARAM int num_state_blocks)
+    : partitions_(new Part[num_meta_partitions_for_blocks(num_state_blocks)]),
+      blocks_(new BlockCopy[num_state_blocks]),
+      num_partitions_(),
+      num_entries_(0) {
+  init_num_partitions(num_state_blocks);
 
-void CheckpointRecord::snapshot(const uint8_t *data, size_t len) {
-  th_assert(data_ == nullptr, "checkpoint is already in use");
+  int partitions = num_meta_partitions_for_blocks(num_state_blocks);
+  for (int i = 0; i < partitions; i++) {
+    partitions_[i].lm = -1;
+  }
 
-  data_ = new uint8_t[len];
-  len_ = len;
-  std::memcpy(data_, data, len_);
-  digest_ = Digest((char *)(data_), int(len_));
+  for (int i = 0; i < num_state_blocks; i++) {
+    blocks_[i].lm = -1;
+  }
+  MEM_STATS_GUARD_POP();
 }
 
-bool CheckpointRecord::marshal(FILE *file) {
-  size_t got_bytes_written;
-  size_t want_bytes_written;
-
-  got_bytes_written = fwrite(&digest_, sizeof(digest_), 1, file);
-  want_bytes_written = sizeof(digest_);
-  got_bytes_written += fwrite(data_, len_, 1, file);
-  want_bytes_written += len_;
-
-  return got_bytes_written == want_bytes_written;
+CheckpointRecord::~CheckpointRecord() {
+  delete partitions_;
+  delete blocks_;
 }
 
-bool CheckpointRecord::unmarshal(FILE *file, size_t len) {
-  size_t got_bytes_read;
-  size_t want_bytes_read;
+void CheckpointRecord::init(MEM_STATS_PARAM int num_state_blocks) {
+  if (partitions_ != nullptr) {
+    delete partitions_;
+  }
+  if (blocks_ != nullptr) {
+    delete blocks_;
+  }
 
+  init_num_partitions(num_state_blocks);
+
+  partitions_ = new Part[num_meta_partitions_for_blocks(num_state_blocks)];
+  blocks_ = new BlockCopy[num_state_blocks];
+  num_entries_ = 1;
   clear();
-  data_ = new uint8_t[len];
-  len_ = len;
-
-  Digest digest;
-  got_bytes_read = fread(&digest, sizeof(digest), 1, file);
-  want_bytes_read = sizeof(digest);
-  got_bytes_read += fread(data_, len_, 1, file);
-  want_bytes_read += len;
-  digest_ = Digest((char *)(data_), int(len_));
-
-  return got_bytes_read == want_bytes_read && digest == digest_;
+  MEM_STATS_GUARD_POP();
 }
-
-void CheckpointRecord::copy(uint8_t *data, size_t len) {
-  th_assert(data != nullptr && data_ != nullptr,
-            "checkpoint or receiving data pointer is null");
-  th_assert(len >= len_, "buffer is too small to receive checkpoint state");
-
-  std::memcpy(data, data_, len_);
-}
-
-char *CheckpointRecord::fetch() { return reinterpret_cast<char *>(data_); }
-
-bool CheckpointRecord::is_cleared() const { return (data_ == nullptr); }
 
 void CheckpointRecord::clear() {
-  if (data_ == nullptr) {
+  if (num_entries_ == 0) {
     return;
   }
 
-  delete data_;
-  data_ = nullptr;
-  len_ = 0;
+  int partition = 0;
+  for (int level = 0; level < PLevels - 1; level++) {
+    for (int i = 0; i < num_partitions_[level]; i++) {
+      partitions_[partition].lm = -1;
+      partition++;
+    }
+  }
+  for (int i = 0; i < num_partitions_[PLevels - 1]; i++) {
+    blocks_[i].lm = -1;
+  }
+
+  num_entries_ = 0;
+  sd.zero();
 }
 
-void CheckpointRecord::print() {
-  printf("Checkpoint record: %lu bytes\n", len_);
-  printf("    Digest: %s\n", digest_.digest());
+void CheckpointRecord::append(int l, int i, Part &p) {
+  auto &partition = find_partition(l, i);
+  th_assert(partition.lm == -1, "Invalid state");
+
+  partition.lm = p.lm;
+  partition.d = p.d;
+  num_entries_++;
 }
+
+void CheckpointRecord::append(int i, Seqno lm, Digest &digest, Block &block) {
+  th_assert(blocks_[i].lm == -1, "Invalid state");
+
+  blocks_[i].lm = lm;
+  blocks_[i].d = digest;
+  blocks_[i].data = block;
+  num_entries_++;
+}
+
+void CheckpointRecord::appendr(int l, int i, Part &p) {
+  auto &partition = find_partition(l, i);
+  if (partition.lm != -1) {
+    return;
+  }
+
+  partition.lm = p.lm;
+  partition.d = p.d;
+  num_entries_++;
+}
+
+void CheckpointRecord::appendr(int i, Seqno lm, Digest &digest, Block &block) {
+  if (blocks_[i].lm != -1) {
+    return;
+  }
+
+  blocks_[i].lm = lm;
+  blocks_[i].d = digest;
+  blocks_[i].data = block;
+  num_entries_++;
+}
+
+Part *CheckpointRecord::fetch(int l, int i) {
+  if (l == (PLevels - 1)) {
+    if (blocks_[i].lm == -1) {
+      return nullptr;
+    }
+    return (Part *)&blocks_[i];
+  }
+
+  auto &part = find_partition(l, i);
+  if (part.lm == -1) {
+    return nullptr;
+  }
+
+  return &part;
+}
+
+void CheckpointRecord::init_num_partitions(int num_blocks) {
+  num_partitions_[PLevels - 1] = num_blocks;
+  int num_partitions = num_blocks;
+  for (int i = PLevels - 2; i >= 0; i--) {
+    num_partitions = (num_partitions + PChildren - 1) / PChildren;
+    num_partitions_[i] = num_partitions;
+  }
+}
+
+Part &CheckpointRecord::find_partition(int level, int index) {
+  int partition = 0;
+  for (int i = 0; i < level; i++) {
+    partition += num_partitions_[i];
+  }
+  partition += index;
+  return partitions_[partition];
+}
+
 }  // namespace libbyzea

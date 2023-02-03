@@ -36,6 +36,8 @@
 #include "Status.h"
 #include "View_change.h"
 #include "View_change_ack.h"
+#include "checkpoint_record.h"
+#include "checkpoint_record_log.h"
 #include "th_assert.h"
 
 // TODO check if includes are necessary at their positions or can be moved to
@@ -123,18 +125,23 @@ void Replica::print_memory_consumption([[maybe_unused]] const size_t mem_size) {
 #endif
 
   fprintf(stderr, "\n\n\n");
-  fprintf(stderr, "sizeof(Replica) = %lu\n", sizeof(Replica));
-  fprintf(stderr, "sizeof(Node) = %lu\n", sizeof(Node));
-  fprintf(stderr, "sizeof(Prepared_cert) = %lu\n", sizeof(Prepared_cert));
-  fprintf(stderr, "sizeof(Log<Prepared_cert>) = %lu\n",
+  fprintf(stderr, "sizeof(Replica) = %u\n", sizeof(Replica));
+  fprintf(stderr, "sizeof(Node) = %u\n", sizeof(Node));
+  fprintf(stderr, "sizeof(Prepared_cert) = %u\n", sizeof(Prepared_cert));
+  fprintf(stderr, "sizeof(State) = %u\n", sizeof(State));
+  fprintf(stderr, "sizeof(View_info) = %u\n", sizeof(View_info));
+  fprintf(stderr, "sizeof(CheckpointRecordLog) = %u\n",
+          sizeof(CheckpointRecordLog));
+  fprintf(stderr, "sizeof(CheckpointRecord) = %u\n", sizeof(CheckpointRecord));
+  fprintf(stderr, "sizeof(Log<Prepared_cert>) = %u\n",
           sizeof(Log<Prepared_cert>));
-  fprintf(stderr, "sizeof(Certificate<Commit>) = %lu\n",
+  fprintf(stderr, "sizeof(Certificate<Commit>) = %u\n",
           sizeof(Certificate<Commit>));
-  fprintf(stderr, "sizeof(Log<Certificate<Commit>>) = %lu\n",
+  fprintf(stderr, "sizeof(Log<Certificate<Commit>>) = %u\n",
           sizeof(Log<Certificate<Commit>>));
-  fprintf(stderr, "sizeof(Certificate<Checkpoint>) = %lu\n",
+  fprintf(stderr, "sizeof(Certificate<Checkpoint>) = %u\n",
           sizeof(Certificate<Checkpoint>));
-  fprintf(stderr, "sizeof(Log<Certificate<Checkpoint>>) = %lu\n",
+  fprintf(stderr, "sizeof(Log<Certificate<Checkpoint>>) = %u\n",
           sizeof(Log<Certificate<Checkpoint>>));
   fprintf(stderr, "sizeof(CheckpointLog) = %u\n", sizeof(CheckpointLog));
 }

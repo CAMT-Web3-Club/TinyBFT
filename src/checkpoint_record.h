@@ -7,66 +7,145 @@
 #include <cstdint>
 
 #include "Digest.h"
+#include "Part.h"
+#include "Partition.h"
+#include "mem_statistics_guard.h"
 
 namespace libbyzea {
+
 class CheckpointRecord {
  public:
+  static size_t memory_consumption();
+
   CheckpointRecord();
-  CheckpointRecord(uint8_t *data, size_t len);
 
-  CheckpointRecord(const CheckpointRecord &) = delete;
-  CheckpointRecord(CheckpointRecord &&) = delete;
-
-  CheckpointRecord &operator=(const CheckpointRecord &) = delete;
-  CheckpointRecord &operator=(CheckpointRecord &&) = delete;
+  CheckpointRecord(MEM_STATS_PARAM int num_state_blocks);
+  // Effects: Creates an empty checkpoint record.
 
   ~CheckpointRecord();
+  // Effects: Deletes record an all parts it contains
 
-  void digest(Digest &digest) const;
+  void init(MEM_STATS_PARAM int num_state_blocks);
+  // Effects: (Re-)initializes a checkpoint record to a certain number of
+  // blocks.
 
-  Digest &digest();
-
-  /// @brief Set this checkpoint to the state of data.
-  void snapshot(const uint8_t *data, size_t len);
-
-  /**
-   * @brief Write the checkpoint's state to a file.
-   *
-   * Marshal this checkpoint's state and write it to the given file.
-   *
-   * @return true if the checkpoint has been written to the file, false
-   * otherwise.
-   */
-  bool marshal(FILE *file);
-
-  /** @brief Unmarshal a checkpoint's state from a file.
-   *
-   * Unmarshal and store the data from file as the state of this checkpoint
-   * record.
-   *
-   * @return true if the checkpoint has been loaded successfully, false
-   * otherwise.
-   */
-  bool unmarshal(FILE *file, size_t len);
-
-  /// @brief Copy this checkpoint to the data.
-  void copy(uint8_t *data, size_t len);
-
-  /// @brief return a pointer to the start of the checkpoint's data.
-  char *fetch();
+  void clear();
+  // Effects: Deletes all parts in record and removes them.
 
   bool is_cleared() const;
-  void clear();
+  // Effects: Returns true iff Checkpoint record is not in use.
+
+  void append(int l, int i, Part &p);
+  // Requires: fetch(l, i) == 0
+  // Effects: Appends partition index "i" at level "l" with value "p"
+  // to the record.
+
+  void append(int i, Seqno lm, Digest &digest, Block &block);
+
+  void appendr(int l, int i, Part &p);
+  // Effects: Like append but without the requires clause. If fetch(l,
+  // i) != 0 it retains the old mapping.
+
+  void appendr(int i, Seqno lm, Digest &digest, Block &block);
+
+  Part *fetch(int l, int i);
+  // Effects: If there is a partition with index "i" from level "l" in
+  // this, returns a pointer to its information. Otherwise, returns 0.
+
+  Part &partition(int l, int i);
+
+  BlockCopy &block(int i);
+
+  int num_entries() const;
+  // Effects: Returns the number of entries in the record.
+
+  class Iter {
+   public:
+    inline Iter(CheckpointRecord *r) : level_(0), index_(0), record_(r) {}
+    // Effects: Return an iterator for the partitions in r.
+
+    inline bool get(int &level, int &index, Part *&p) {
+      // Effects: Modifies "level", "index" and "p" to contain
+      // information for the next partition in "r" and returns
+      // true. Unless there are no more partitions in "r" in which case
+      // it returns false.
+      find_next();
+      if (level_ >= PLevels) {
+        return false;
+      }
+
+      if (level_ < PLevels - 1) {
+        auto &part = record_->find_partition(level_, index_);
+        p = &part;
+      } else {
+        p = (Part *)&record_->blocks_[index_];
+      }
+      level = level_;
+      index = index_;
+      index_++;
+
+      return true;
+    }
+
+   private:
+    inline void find_next() {
+      if (level_ >= PLevels) {
+        return;
+      }
+
+      for (int l = level_; l < PLevels - 1; l++) {
+        for (int i = index_; i < record_->num_partitions_[l]; i++) {
+          auto &part = record_->find_partition(l, i);
+          if (part.lm >= 0) {
+            level_ = l;
+            index_ = i;
+            return;
+          }
+        }
+
+        index_ = 0;
+        level_ = l + 1;
+      }
+
+      for (int i = index_; i < record_->num_partitions_[level_]; i++) {
+        if (record_->blocks_[i].lm >= 0) {
+          index_ = i;
+          return;
+        }
+      }
+      level_++;
+    }
+
+    int level_;
+    int index_;
+    CheckpointRecord *record_;
+  };
+  friend class Iter;
 
   void print();
+  // Effects: Prints description of this to stdout
+
+  Digest sd;  // State digest at the time the checkpoint was taken.
 
  private:
-  uint8_t *data_;
-  size_t len_;
-  Digest digest_;
+  Part &find_partition(int level, int index);
+  void init_num_partitions(int num_blocks);
+
+  Part *partitions_;
+  BlockCopy *blocks_;
+  int num_partitions_[PLevels];
+  int num_entries_;
 };
 
-inline Digest &CheckpointRecord::digest() { return digest_; }
+inline int CheckpointRecord::num_entries() const { return num_entries_; }
+
+inline bool CheckpointRecord::is_cleared() const { return sd.is_zero(); }
+
+inline Part &CheckpointRecord::partition(int level, int index) {
+  return find_partition(level, index);
+}
+
+inline BlockCopy &CheckpointRecord::block(int index) { return blocks_[index]; }
 
 }  // namespace libbyzea
 #endif  // !_LIBBYZEA_CHECKPOINT_RECORD_H_

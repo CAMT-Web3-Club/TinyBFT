@@ -7,7 +7,6 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
-#include "Array.h"
 #include "Data.h"
 #include "Fetch.h"
 #include "MD5.h"
@@ -29,7 +28,9 @@
 
 namespace libbyzea {
 
+#ifndef ALTERNATIVE_CHECKPOINT_RECORDS
 template class Log<Checkpoint_rec>;
+#endif
 
 #ifdef NO_STATE_TRANSLATION
 // External pointers to memory and bitmap for macros that check cow
@@ -37,90 +38,6 @@ template class Log<Checkpoint_rec>;
 unsigned long* _Byz_cow_bits = 0;
 char* _Byz_mem = 0;
 #endif
-
-//
-// The memory managed by the state abstraction is partitioned into
-// blocks.
-//
-struct Block {
-#ifdef NO_STATE_TRANSLATION
-  char data[Block_size];
-#else
-  char* data;
-  int size;
-#endif
-
-  inline Block() {
-#ifndef NO_STATE_TRANSLATION
-    data = NULL;
-    size = 0;
-#endif
-  }
-
-  inline Block(Block const& other) {
-#ifndef NO_STATE_TRANSLATION
-    size = other.size;
-    data = new char[size];
-    memcpy(data, other.data, size);
-#else
-    memcpy(data, other.data, Block_size);
-#endif
-  }
-
-#ifndef NO_STATE_TRANSLATION
-  inline ~Block() {
-    if (data) delete[] data;
-  }
-
-  inline void Block::init_from_ptr(char* ptr, int psize) {
-    if (data) delete[] data;
-    data = ptr;
-    size = psize;
-  }
-
-#endif
-
-  inline Block& operator=(Block const& other) {
-    if (this == &other) return *this;
-#ifndef NO_STATE_TRANSLATION
-    if (size != other.size) {
-      if (data) delete[] data;
-      data = new char[other.size];
-    }
-    size = other.size;
-    memcpy(data, other.data, other.size);
-#else
-    memcpy(data, other.data, Block_size);
-#endif
-    return *this;
-  }
-
-  inline Block& operator=(char const* other) {
-    if (this->data == other) return *this;
-#ifndef NO_STATE_TRANSLATION
-    if (size != Block_size) {
-      if (data) delete[] data;
-      data = new char[Block_size];
-    }
-    size = Block_size;
-#endif
-    memcpy(data, other, Block_size);
-    return *this;
-  }
-};
-
-// Blocks are grouped into partitions that form a hierarchy.
-// Part contains information about one such partition.
-struct Part {
-  Seqno lm;  // Sequence number of last checkpoint that modified partition
-  Digest d;  // Digest of partition
-
-#ifndef NO_STATE_TRANSLATION
-  int size;  // Size of object for level 'PLevels-1'
-#endif
-
-  Part() { lm = 0; }
-};
 
 // Information about stale partitions being fetched.
 struct FPart {
@@ -148,172 +65,6 @@ class CPartQueue : public Array<CPart> {
  public:
   CPartQueue(MEM_STATS_REF) : Array<CPart>(MEM_STATS_GUARD_PUSH(CPartQueue)) {}
 };
-
-// Copy of leaf partition (used in checkpoint records)
-struct BlockCopy : public Part {
-  Block data;  // Copy of data at the time the checkpoint was taken
-
-  BlockCopy() : Part() {}
-
-#ifndef NO_STATE_TRANSLATION
-  BlockCopy(char* d, int sz) : Part() { data.init_from_ptr(d, sz); }
-#endif
-};
-
-//
-// Checkpoint records.
-//
-
-// Key for partition map in checkpoint records
-class PartKey {
- public:
-  inline PartKey() {}
-  inline PartKey(int l, int i) : level(l), index(i) {}
-  inline PartKey(const PartKey& x) = default;
-
-  inline PartKey& operator=(const PartKey& x) = default;
-
-  inline int hash() const { return index << (PLevelSize[PLevels - 1] + level); }
-
-  inline bool operator==(PartKey const& x) {
-    return (level == x.level) && (index == x.index);
-  }
-
-  int level;
-  int index;
-};
-
-// Checkpoint record
-class Checkpoint_rec {
- public:
-  static size_t memory_consumption();
-
-  Checkpoint_rec();
-  // Effects: Creates an empty checkpoint record.
-
-  ~Checkpoint_rec();
-  // Effects: Deletes record an all parts it contains
-
-  void clear();
-  // Effects: Deletes all parts in record and removes them.
-
-  bool is_cleared();
-  // Effects: Returns true iff Checkpoint record is not in use.
-
-  void append(int l, int i, Part* p);
-  // Requires: fetch(l, i) == 0
-  // Effects: Appends partition index "i" at level "l" with value "p"
-  // to the record.
-
-  void appendr(int l, int i, Part* p);
-  // Effects: Like append but without the requires clause. If fetch(l,
-  // i) != 0 it retains the old mapping.
-
-  Part* fetch(int l, int i);
-  // Effects: If there is a partition with index "i" from level "l" in
-  // this, returns a pointer to its information. Otherwise, returns 0.
-
-  int num_entries() const;
-  // Effects: Returns the number of entries in the record.
-
-  class Iter {
-   public:
-    inline Iter(Checkpoint_rec* r) : g(r->parts) {}
-    // Effects: Return an iterator for the partitions in r.
-
-    inline bool get(int& level, int& index, Part*& p) {
-      // Effects: Modifies "level", "index" and "p" to contain
-      // information for the next partition in "r" and returns
-      // true. Unless there are no more partitions in "r" in which case
-      // it returns false.
-      PartKey k;
-      if (g.get(k, p)) {
-        level = k.level;
-        index = k.index;
-        return true;
-      }
-      return false;
-    }
-
-   private:
-    MapGenerator<PartKey, Part*> g;
-  };
-  friend class Iter;
-
-  void print();
-  // Effects: Prints description of this to stdout
-
-  Digest sd;  // state digest at the time the checkpoint is taken
-
- private:
-  // Map for partitions that were modified since this checkpoint was
-  // taken and before the next checkpoint.
-  Map<PartKey, Part*> parts;
-};
-
-inline size_t Checkpoint_rec::memory_consumption() {
-  return (
-      sizeof(libbyzea::Checkpoint_rec) +
-      (256 * sizeof(libbyzea::Buckets<
-                    libbyzea::HashPair<libbyzea::PartKey, libbyzea::Part*>>)));
-}
-
-inline Checkpoint_rec::Checkpoint_rec() : parts(256) {}
-
-inline Checkpoint_rec::~Checkpoint_rec() { clear(); }
-
-inline void Checkpoint_rec::append(int l, int i, Part* p) {
-  th_assert(!parts.contains(PartKey(l, i)), "Invalid state");
-  parts.add(PartKey(l, i), p);
-}
-
-inline void Checkpoint_rec::appendr(int l, int i, Part* p) {
-  if (parts.contains(PartKey(l, i))) return;
-
-  append(l, i, p);
-}
-
-inline Part* Checkpoint_rec::fetch(int l, int i) {
-  Part* p;
-  if (parts.find(PartKey(l, i), p)) {
-    return p;
-  }
-  return 0;
-}
-
-inline bool Checkpoint_rec::is_cleared() { return sd.is_zero(); }
-
-inline int Checkpoint_rec::num_entries() const { return parts.size(); }
-
-void Checkpoint_rec::print() {
-  printf("Checkpoint record: %d blocks \n", parts.size());
-  MapGenerator<PartKey, Part*> g(parts);
-  PartKey k;
-  Part* p;
-  while (g.get(k, p)) {
-    printf("Block: level= %d index=  %d  ", k.level, k.index);
-    printf("last mod=%qd ", p->lm);
-    p->d.print();
-    printf("\n");
-  }
-}
-
-void Checkpoint_rec::clear() {
-  if (!is_cleared()) {
-    MapGenerator<PartKey, Part*> g(parts);
-    PartKey k;
-    Part* p;
-    while (g.get(k, p)) {
-      if (k.level == PLevels - 1) {
-        //	/* debug */ fprintf(stderr, "Clearing leaf %d\t", k.index);
-        delete ((BlockCopy*)p);
-      } else
-        delete p;
-      g.remove();
-    }
-    sd.zero();
-  }
-}
 
 #ifndef NO_STATE_TRANSLATION
 
@@ -638,7 +389,10 @@ void State::print_memory_consumption(const size_t mem_size) {
       sizeof(unsigned long) *
       ((nb + (sizeof(unsigned long) << 3) - 1) / (sizeof(unsigned long) << 3));
   // Size of clog
+#ifdef ALTERNATIVE_CHECKPOINT_RECORDS
+#else
   memory_consumption += Log<Checkpoint_rec>::memory_consumption(max_out * 2);
+#endif
   for (int i = 0; i < PLevels - 1; i++) {
     memory_consumption += sizeof(libbyzea::Part) * PLevelSize[i];
     memory_consumption += (sizeof(libbyzea::DSum) + 32) * PLevelSize[i];
@@ -650,7 +404,7 @@ void State::print_memory_consumption(const size_t mem_size) {
   memory_consumption += 4 * sizeof(libbyzea::Meta_data_d*);
   memory_consumption += 4 * sizeof(unsigned long long);
   memory_consumption += sizeof(libbyzea::CPartQueue);
-  fprintf(stderr, "State: %ld Bytes\n", memory_consumption);
+  fprintf(stderr, "State: %d Bytes\n", memory_consumption);
 }
 
 #ifndef NO_STATE_TRANSLATION
@@ -673,7 +427,11 @@ State::State(MEM_STATS_PARAM Replica* rep, char* memory, int num_bytes)
       mem((Block*)memory),
       nb(num_bytes / Block_size),
       cowb(nb),
+#ifndef ALTERNATIVE_CHECKPOINT_RECORDS
       clog(MEM_STATS_ARG_PUSH(Log<Checkpoint_rec>) max_out * 2, 0),
+#else
+      clog(MEM_STATS_ARG_PUSH(CheckpointRecordLog) nb, 0),
+#endif
       lc(0),
       last_fetch_t(0) {
 #endif
@@ -734,7 +492,6 @@ State::~State() {
 }
 
 void State::cow_single(int i) {
-  BlockCopy* bcp;
   //  fprintf(stderr,"modifying %d\n",i);
   th_assert(i >= 0 && i < nb, "Invalid argument");
   //  th_assert(!cowb.test(i), "Invalid argument");
@@ -747,6 +504,8 @@ void State::cow_single(int i) {
   // Append a copy of the block to the last checkpoint
   Part& p = ptree[PLevels - 1][i];
 
+#ifndef ALTERNATIVE_CHECKPOINT_RECORDS
+  BlockCopy* bcp;
 #ifndef NO_STATE_TRANSLATION
   if (i >= nb - replica->used_state_pages()) bcp = new BlockCopy;
 #else
@@ -780,6 +539,9 @@ void State::cow_single(int i) {
 
   //  fprintf(stderr, "Estou a apendar o i=%d ao lc=%d\n",i,lc);
   clog.fetch(lc).append(PLevels - 1, i, bcp);
+#else   // ALTERNATIVE_CHECKPOINT_RECORDS
+  clog.fetch(lc).append(i, p.lm, p.d, mem[i]);
+#endif  // !ALTERNATIVE_CHECKPOINT_RECORDS
   cowb.set(i);
 
   STOP_CC(cow_cycles);
@@ -900,7 +662,7 @@ void State::update_ptree(Seqno n) {
   }
   mods[PLevels - 1] = &cowb;
 
-  Checkpoint_rec& cr = clog.fetch(lc);
+  auto& cr = clog.fetch(lc);
 
   for (int l = PLevels - 1; l > 0; l--) {
     Bitmap::Iter iter(mods[l]);
@@ -910,10 +672,14 @@ void State::update_ptree(Seqno n) {
       DSum& psum = stree[l - 1][i / PSize[l]];
       if (l < PLevels - 1) {
         // Append a copy of the partition to the last checkpoint
+#ifndef ALTERNATIVE_CHECKPOINT_RECORDS
         Part* np = new Part;
         np->lm = p.lm;
         np->d = p.d;
         cr.append(l, i, np);
+#else
+        cr.append(l, i, p);
+#endif
       }
 
       // Subtract old digest from parent sum
@@ -938,10 +704,14 @@ void State::update_ptree(Seqno n) {
     Part& p = ptree[0][0];
 
     // Append a copy of the root partition to the last checkpoint
+#ifndef ALTERNATIVE_CHECKPOINT_RECORDS
     Part* np = new Part;
     np->lm = p.lm;
     np->d = p.d;
     cr.append(0, 0, np);
+#else
+    cr.append(0, 0, p);
+#endif
 
     // Update root partition.
     p.lm = n;
@@ -961,7 +731,7 @@ void State::checkpoint(Seqno seqno) {
   update_ptree(seqno);
 
   lc = seqno;
-  Checkpoint_rec& nr = clog.fetch(seqno);
+  auto& nr = clog.fetch(seqno);
   nr.sd = ptree[0][0].d;
 
   //  printf("\n");
@@ -978,7 +748,7 @@ Seqno State::rollback() {
   START_CC(rollback_cycles);
 
   // Roll back to last checkpoint.
-  Checkpoint_rec& cr = clog.fetch(lc);
+  auto& cr = clog.fetch(lc);
 
   Bitmap::Iter iter(&cowb);
   unsigned int i;
@@ -1031,7 +801,7 @@ Seqno State::rollback() {
 bool State::digest(Seqno n, Digest& d) {
   if (!clog.within_range(n)) return false;
 
-  Checkpoint_rec& rec = clog.fetch(n);
+  auto& rec = clog.fetch(n);
   if (rec.sd.is_zero()) return false;
 
   d = rec.sd;
@@ -1110,7 +880,7 @@ char* State::get_data(Seqno c, int i) {
   }
 
   for (; c <= lc; c += checkpoint_interval) {
-    Checkpoint_rec& r = clog.fetch(c);
+    auto& r = clog.fetch(c);
 
     // Skip checkpoint seqno if record has no state.
     if (r.sd.is_zero()) continue;
@@ -1140,7 +910,7 @@ Part& State::get_meta_data(Seqno c, int l, int i) {
 
   for (; c <= lc; c += checkpoint_interval) {
     //    fprintf(stderr, "I1 ptree.lm = %qd, c = %qd. ", ptree[l][i].lm, c);
-    Checkpoint_rec& r = clog.fetch(c);
+    auto& r = clog.fetch(c);
     //    fprintf(stderr, "I2 ptree.lm = %qd, c = %qd. ", ptree[l][i].lm, c);
 
     // Skip checkpoint seqno if record has no state.
@@ -1179,7 +949,12 @@ void State::start_fetch(Seqno le, Seqno c, Digest* cd,
 
     // Update partition information to reflect last modification
     // rather than last checkpointed modification.
-    if (lc >= 0 && lc < le) checkpoint(le);
+    if (lc >= 0 && lc < le) {
+#ifdef ALTERNATIVE_CHECKPOINT_RECORDS
+      clog.set_fetch_seqno(le);
+#endif
+      checkpoint(le);
+    }
 
     // Initialize data structures.
     cert->clear();
@@ -1437,26 +1212,28 @@ void State::handle(Data* m) {
             cowb.set(i);
             if (keep_ckpts && !cowb.test(i)) {
               // Append a copy of p to the last checkpoint
-
+#ifndef ALTERNATIVE_CHECKPOINT_RECORDS
               BlockCopy* bcp;
 
 #ifdef NO_STATE_TRANSLATION
               bcp = new BlockCopy;
               bcp->data = mem[i];
 #else
-          if (i < nb - replica->used_state_pages()) {  // application state
-            char* data;
-            int size = get_segment(i, &data);
-            bcp = new BlockCopy(data, size);
-          } else {  // replication library state
-            bcp = new BlockCopy;
-            bcp->data = rep_mem[i - nb + replica->used_state_pages()];
-          }
+              if (i < nb - replica->used_state_pages()) {  // application state
+                char* data;
+                int size = get_segment(i, &data);
+                bcp = new BlockCopy(data, size);
+              } else {  // replication library state
+                bcp = new BlockCopy;
+                bcp->data = rep_mem[i - nb + replica->used_state_pages()];
+              }
 #endif
               bcp->lm = p.lm;
               bcp->d = p.d;
-
               clog.fetch(lc).append(l, i, bcp);
+#else   // ALTERNATIVE_CHECKPOINT_RECORDS
+          clog.fetch(lc).append(i, p.lm, p.d, mem[i]);
+#endif  // !ALTERNATIVE_CHECKPOINT_RECORDS
             }
 
             // Subtract old digest from parent sum
@@ -1727,10 +1504,14 @@ void State::done_with_level() {
 
     if (keep_ckpts) {
       // Append a copy of p to the last checkpoint
+#ifndef ALTERNATIVE_CHECKPOINT_RECORDS
       Part* np = new Part;
       np->lm = p.lm;
       np->d = p.d;
       clog.fetch(lc).appendr(l, i, np);
+#else
+      clog.fetch(lc).appendr(l, i, p);
+#endif
     }
 
     if (l > 0) {
@@ -1791,13 +1572,26 @@ void State::done_with_level() {
         // Move parts from this checkpoint to previous one
         Seqno prev = lc / checkpoint_interval * checkpoint_interval;
         if (clog.within_range(prev) && !clog.fetch(prev).is_cleared()) {
-          Checkpoint_rec& pr = clog.fetch(prev);
-          Checkpoint_rec& cr = clog.fetch(lc);
+          auto& pr = clog.fetch(prev);
+          auto& cr = clog.fetch(lc);
+#ifndef ALTERNATIVE_CHECKPOINT_RECORDS
           Checkpoint_rec::Iter g(&cr);
+#else
+          CheckpointRecord::Iter g(&cr);
+#endif
           int pl, pi;
           Part* p = nullptr;
           while (g.get(pl, pi, p)) {
+#ifndef ALTERNATIVE_CHECKPOINT_RECORDS
             pr.appendr(pl, pi, p);
+#else
+            if (pl == PLevels - 1) {
+              auto* block = (BlockCopy*)p;
+              pr.appendr(pi, block->lm, block->d, block->data);
+            } else {
+              pr.appendr(pl, pi, *p);
+            }
+#endif
           }
         }
       }
@@ -1812,7 +1606,7 @@ void State::done_with_level() {
         clog.truncate(lc - max_out);
       }
 
-      Checkpoint_rec& nr = clog.fetch(lc);
+      auto& nr = clog.fetch(lc);
       nr.sd = ptree[0][0].d;
       cowb.clear();
       stalep[l]->remove();
@@ -1945,7 +1739,7 @@ bool State::shutdown(FILE* o, Seqno ls) {
   // recovery should always start s fetch for digests.
   if (!fetching || keep_ckpts) {
     for (Seqno i = ls; i <= ls + max_out; i++) {
-      Checkpoint_rec& rec = clog.fetch(i);
+      auto& rec = clog.fetch(i);
 
       if (!rec.is_cleared()) {
         wb += fwrite(&i, sizeof(Seqno), 1, o);
@@ -1955,7 +1749,11 @@ bool State::shutdown(FILE* o, Seqno ls) {
         wb += fwrite(&size, sizeof(int), 1, o);
         ab += 3;
 
+#ifdef ALTERNATIVE_CHECKPOINT_RECORDS
+        CheckpointRecord::Iter g(&rec);
+#else
         Checkpoint_rec::Iter g(&rec);
+#endif
         int l, i;
         Part* p = nullptr;
 
@@ -2065,7 +1863,7 @@ bool State::restart(FILE* in, Replica* rep, Seqno ls, Seqno le, bool corrupt) {
   while (n >= 0) {
     if (n < ls || n > lc) return false;
 
-    Checkpoint_rec& rec = clog.fetch(n);
+    auto& rec = clog.fetch(n);
 
     rb += fread(&rec.sd, sizeof(Digest), 1, in);
     ab++;
@@ -2084,10 +1882,18 @@ bool State::restart(FILE* in, Replica* rep, Seqno ls, Seqno le, bool corrupt) {
       Part* p;
       int psize;
       if (l == PLevels - 1) {
+#ifndef ALTERNATIVE_CHECKPOINT_RECORDS
         p = new BlockCopy;
+#else  // ALTERNATIVE_CHECKPOINT_RECORDS
+        p = (Part*)&rec.block(i);
+#endif
         psize = sizeof(BlockCopy);
       } else {
+#ifndef ALTERNATIVE_CHECKPOINT_RECORDS
         p = new Part;
+#else  // ALTERNATIVE_CHECKPOINT_RECORDS
+        p = &rec.partition(l, i);
+#endif
         psize = sizeof(Part);
       }
 
@@ -2107,7 +1913,9 @@ bool State::restart(FILE* in, Replica* rep, Seqno ls, Seqno le, bool corrupt) {
       }
 #endif
 
+#ifndef ALTERNATIVE_CHECKPOINT_RECORDS
       rec.appendr(l, i, p);
+#endif  // !ALTERNATIVE_CHECKPOINT_RECORDS
     }
 
     rb += fread(&n, sizeof(Seqno), 1, in);

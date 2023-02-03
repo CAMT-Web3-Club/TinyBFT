@@ -1,7 +1,13 @@
 #ifndef _State_h
 #define _State_h 1
 
+#include "Array.h"
 #include "Bitmap.h"
+#ifdef ALTERNATIVE_CHECKPOINT_RECORDS
+#include "checkpoint_record_log.h"
+#else
+#include "Checkpoint_rec.h"
+#endif
 #include "Digest.h"
 #include "Log.h"
 #include "Partition.h"
@@ -20,7 +26,6 @@ class Block;
 class Part;
 class FPartQueue;
 class CPartQueue;
-class Checkpoint_rec;
 #ifndef NO_STATE_TRANSLATION
 class Page_mapping;
 class BlockCopy;
@@ -174,8 +179,12 @@ class State {
   Part *ptree[PLevels];      // Partition tree.
   DSum *stree[PLevels - 1];  // Tree of sums of digests of subpartitions.
 
+#ifdef ALTERNATIVE_CHECKPOINT_RECORDS
+  CheckpointRecordLog clog;  // Checkpoint log
+#else
   Log<Checkpoint_rec> clog;  // Checkpoint log
-  Seqno lc;                  // Sequence number of the last checkpoint
+#endif
+  Seqno lc;  // Sequence number of the last checkpoint
 
   //
   // Information used while fetching state.

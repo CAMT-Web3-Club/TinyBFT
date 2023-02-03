@@ -41,6 +41,26 @@ inline constexpr int partition_blocks(int level) {
   return PBlocks[level + (MAX_PARTITION_LEVELS - PLevels)];
 }
 
+/**
+ * @brief Return the number of meta-data partitions for a given block count.
+ *
+ * Return the total number of partitions that are active given the number of
+ * state blocks.
+ *
+ * @param num_blocks the size of the state in blocks.
+ * @return int the number of active partitions.
+ */
+inline int num_meta_partitions_for_blocks(int num_blocks) {
+  int num_partitions = 0;
+  int nodes_on_level = num_blocks;
+  for (int level = PLevels - 1; level > 0; level--) {
+    nodes_on_level = (nodes_on_level + PChildren - 1) / PChildren;
+    num_partitions += nodes_on_level;
+  }
+
+  return num_partitions;
+}
+
 }  // namespace libbyzea
 
 #endif /* _Partition_h */
