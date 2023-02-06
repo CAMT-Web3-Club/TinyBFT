@@ -3,7 +3,6 @@
 
 #include "Certificate.h"
 #include "Checkpoint.h"
-#include "Time.h"
 #include "mem_statistics_guard.h"
 
 namespace libbyzea {
