@@ -4,6 +4,7 @@
 #include <stddef.h>
 
 #include "Part.h"
+#include "Partition.h"
 #include "map.h"
 #include "th_assert.h"
 
