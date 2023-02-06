@@ -61,6 +61,7 @@ void call_stack_pop(void) {
 }
 
 void reset_mem_stats(void) {
+  fprintf(stderr, "### RESET STATS ###\n");
   total = 0;
   max_total = 0;
 }
