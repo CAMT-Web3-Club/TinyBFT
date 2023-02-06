@@ -6,6 +6,11 @@
 
 #ifdef PRINT_MEM_STATISTICS
 
+#define MEMSTATS_PRINT() \
+  do {                   \
+    print_total_mem();   \
+  } while (0)
+
 #define MEMSTATS_CALL_STACK_PUSH(x) \
   do {                              \
     call_stack_push(#x);            \
@@ -30,10 +35,11 @@
 #define MEMSTATS_RESET() \
   do {                   \
     reset_mem_stats();   \
-  } while(0)
+  } while (0)
 
 #else /* PRINT_MEM_STATISTICS */
 
+#define MEMSTATS_PRINT()
 #define MEMSTATS_CALL_STACK_PUSH(x)
 #define MEMSTATS_CALL_STACK_POP()
 #define MEMSTATS_TRACK_CHANGE(x)
@@ -44,6 +50,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+void print_mem_statistics(void);
 
 void call_stack_push(const char *name);
 
