@@ -29,6 +29,11 @@ static void print_mem_statistics(void) {
   fsync(STDERR_FILENO);
 }
 
+void print_total_mem(void) {
+  fprintf(stderr, "total = %lld\n", total);
+  fprintf(stderr, "max_total = %lld\n", max_total);
+}
+
 void call_stack_push(const char *name) {
   th_assert(call_stack_size < MAX_CALL_STACK_SIZE,
             "call stack ran out of space");

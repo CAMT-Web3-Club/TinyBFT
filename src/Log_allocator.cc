@@ -2,6 +2,8 @@
 
 #include <sys/mman.h>
 
+#include "mem_statistics.h"
+
 #ifndef MAP_VARIABLE
 #define MAP_VARIABLE 0x00
 #endif
@@ -29,16 +31,22 @@ Log_allocator::Chunk *Log_allocator::alloc_chunk() {
     ret = (Chunk *)(chunks + chunk_size * num_chunks);
     num_chunks++;
   } else {
+    MEMSTATS_CALL_STACK_PUSH(Log_allocator::alloc_chunk);
     // Allocate a new chunks array. The array must be chunk_size-aligned.
     void *addr = (void *)-1;
     for (int i = 1; i <= 1000; i++) {
       addr = (void *)(chunks + (chunk_size * max_num_chunks) * i);
+      MEMSTATS_CALL_STACK_PUSH(mmap);
       addr = mmap(addr, chunk_size * max_num_chunks,
                   PROT_READ | PROT_WRITE,  // R&W access
                   MAP_ANONYMOUS |          // Not from a file (zeroed pages)
                       MAP_VARIABLE | MAP_PRIVATE,  // Changes are private
                   -1,                              // No file
                   0);                              // No offset in file
+      if (addr != MAP_FAILED) {
+        MEMSTATS_TRACK_CHANGE((long)chunk_size * max_num_chunks);
+      }
+      MEMSTATS_CALL_STACK_POP();
       if (addr != (void *)-1 && ((long)addr) % chunk_size == 0) {
         break;
       } else {
@@ -49,6 +57,7 @@ Log_allocator::Chunk *Log_allocator::alloc_chunk() {
     if (addr == (void *)-1) {
       th_fail("Unable to allocate memory");
     }
+    MEMSTATS_CALL_STACK_POP();
     chunks = (char *)addr;
     ret = (Chunk *)chunks;
     num_chunks = 1;
@@ -57,6 +66,7 @@ Log_allocator::Chunk *Log_allocator::alloc_chunk() {
   ret->next = ret->data;
   ret->max = ret->next + (chunk_size - sizeof(Chunk));
   ret->nb = 1;  // this is the current chunk
+
   return ret;
 }
 

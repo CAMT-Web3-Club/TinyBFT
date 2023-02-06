@@ -51,7 +51,7 @@
 extern "C" {
 #endif
 
-void print_mem_statistics(void);
+void print_total_mem(void);
 
 void call_stack_push(const char *name);
 
