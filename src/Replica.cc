@@ -361,7 +361,6 @@ void Replica::recv() {
         break;
 
       case Checkpoint_tag:
-        fprintf(stderr, "Checkpoint.\n");
         gen_handle<Checkpoint>(m);
         break;
 
@@ -370,7 +369,6 @@ void Replica::recv() {
         break;
 
       case View_change_ack_tag:
-        fprintf(stderr, "View Change ACK.\n");
         gen_handle<View_change_ack>(m);
         break;
 
@@ -379,47 +377,38 @@ void Replica::recv() {
         break;
 
       case Fetch_tag:
-        fprintf(stderr, "Fetch.\n");
         gen_handle<Fetch>(m);
         break;
 
       case Reply_tag:
-        fprintf(stderr, "Reply.\n");
         gen_handle<Reply>(m);
         break;
 
       case Query_stable_tag:
-        fprintf(stderr, "Query Stable.\n");
         gen_handle<Query_stable>(m);
         break;
 
       case Reply_stable_tag:
-        fprintf(stderr, "Reply Stable.\n");
         gen_handle<Reply_stable>(m);
         break;
 
       case Meta_data_tag:
-        fprintf(stderr, "Metadata.\n");
         gen_handle<Meta_data>(m);
         break;
 
       case Meta_data_d_tag:
-        fprintf(stderr, "Metadata D.\n");
         gen_handle<Meta_data_d>(m);
         break;
 
       case Data_tag:
-        fprintf(stderr, "Data.\n");
         gen_handle<Data>(m);
         break;
 
       case View_change_tag:
-        fprintf(stderr, "View Change.\n");
         gen_handle<View_change>(m);
         break;
 
       case New_view_tag:
-        fprintf(stderr, "New View.\n");
         gen_handle<New_view>(m);
         break;
 
@@ -636,7 +625,6 @@ void Replica::handle(Prepare *m) {
 
 void Replica::handle(Commit *m) {
   const Seqno ms = m->seqno();
-  fprintf(stderr, "Commit(%lld, %d)\n", ms, m->id());
 
   // Only accept messages with the current view.  TODO: change to
   // accept commits from older views as in proof.
@@ -672,8 +660,6 @@ void Replica::handle(Checkpoint *m) {
           // I have enough Checkpoint messages for m->seqno() to make it stable.
           // Truncate logs, discard older stable state versions.
           //	  fprintf(stderr, "CP MSG call MS %qd!!!\n", last_executed);
-          fprintf(stderr, "Marking stable, num correct = %d\n",
-                  cs.num_correct());
           mark_stable(ms, true);
         }
         //	else {
@@ -1300,8 +1286,6 @@ void Replica::execute_committed() {
           Certificate<Checkpoint> &cc = elog.fetch(last_executed);
           cc.add_mine(e);
           if (cc.is_complete()) {
-            fprintf(stderr, "Marking stable, num correct = %d\n",
-                    cc.num_correct());
             mark_stable(last_executed, true);
             //	    fprintf(stderr, "EXEC call MS %qd!!!\n", last_executed);
           }
