@@ -190,6 +190,7 @@ void Byz_modify(char *mem, int size) { libbyzea::replica->modify(mem, size); }
 void Byz_replica_run() {
 #ifdef PRINT_MEM_STATISTICS
   libbyzea::MemoryStatisticsGuard mem_guard("Byz_replica_run", true);
+  MEMSTATS_RUNTIME_LOGGING(1);
 #endif
   libbyzea::stats.zero_stats();
   libbyzea::replica->recv();

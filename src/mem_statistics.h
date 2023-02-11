@@ -11,6 +11,16 @@
     print_total_mem();   \
   } while (0)
 
+#define MEMSTATS_SET_MEM_TYPE(x) \
+  do {                           \
+    set_mem_type(x);             \
+  } while (0)
+
+#define MEMSTATS_RUNTIME_LOGGING(x) \
+  do {                              \
+    mem_runtime_logging(x);         \
+  } while (0)
+
 #define MEMSTATS_CALL_STACK_PUSH(x) \
   do {                              \
     call_stack_push(#x);            \
@@ -40,6 +50,8 @@
 #else /* PRINT_MEM_STATISTICS */
 
 #define MEMSTATS_PRINT()
+#define MEMSTATS_SET_MEM_TYPE(x)
+#define MEMSTATS_RUNTIME_LOGGING(x)
 #define MEMSTATS_CALL_STACK_PUSH(x)
 #define MEMSTATS_CALL_STACK_POP()
 #define MEMSTATS_TRACK_CHANGE(x)
@@ -50,6 +62,19 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+enum mem_type {
+  MEM_TYPE_NONE,
+  MEM_TYPE_CERTIFICATE_LOGS,
+  MEM_TYPE_LOG_ALLOCATOR,
+  MEM_TYPE_STATE_MANAGEMENT,
+  MEM_TYPE_VIEW_INFO,
+  NUM_MEM_TYPES
+};
+
+void set_mem_type(enum mem_type type);
+
+void mem_runtime_logging(int v);
 
 void print_total_mem(void);
 

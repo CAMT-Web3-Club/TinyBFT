@@ -11,12 +11,22 @@
 
 static const char *call_stack[MAX_CALL_STACK_SIZE];
 static long alloc_stack[MAX_CALL_STACK_SIZE];
+static long runtime_allocations[NUM_MEM_TYPES];
+
 static long call_stack_size = 0;
 static long long total = 0;
 static long long max_total = 0;
+static enum mem_type current_mem_type = MEM_TYPE_NONE;
+static int runtime_logging = 0;
 
 #define BUF_LEN 256
 static void print_mem_statistics(void) {
+  // Do not print output for functions that effectively did not allocate any
+  // persistent memory.
+  if (alloc_stack[call_stack_size - 1] == 0) {
+    return;
+  }
+
   static char string_buf[BUF_LEN];
   int len = 0;
   for (long i = 0; i < (call_stack_size - 1); i++) {
@@ -29,7 +39,24 @@ static void print_mem_statistics(void) {
   fsync(STDERR_FILENO);
 }
 
+void mem_runtime_logging(int v) { runtime_logging = v; }
+
+void set_mem_type(enum mem_type type) { current_mem_type = type; }
+
+static char *mem_names[] = {"None",          "Certificate Logs",
+                            "Log Allocator", "State Management",
+                            "View Info",     "Num Mem Types"};
+
 void print_total_mem(void) {
+  long orig_size = call_stack_size;
+  for (; call_stack_size >= 0; call_stack_size--) {
+    print_mem_statistics();
+    call_stack_size--;
+  }
+  call_stack_size = orig_size;
+  for (int i = 0; i < NUM_MEM_TYPES; i++) {
+    fprintf(stderr, "%s = %ld\n", mem_names[i], runtime_allocations[i]);
+  }
   fprintf(stderr, "total = %lld\n", total);
   fprintf(stderr, "max_total = %lld\n", max_total);
 }
@@ -47,6 +74,10 @@ void track_memory_change(long size) {
   if (total > max_total) {
     max_total = total;
   }
+  if (runtime_logging) {
+    runtime_allocations[current_mem_type] += size;
+  }
+
   for (long i = 0; i < call_stack_size; i++) {
     alloc_stack[i] += size;
   }

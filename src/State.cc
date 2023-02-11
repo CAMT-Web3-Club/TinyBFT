@@ -492,6 +492,7 @@ State::~State() {
 }
 
 void State::cow_single(int i) {
+  MEMSTATS_CALL_STACK_PUSH(State::cow_single);
   //  fprintf(stderr,"modifying %d\n",i);
   th_assert(i >= 0 && i < nb, "Invalid argument");
   //  th_assert(!cowb.test(i), "Invalid argument");
@@ -545,6 +546,7 @@ void State::cow_single(int i) {
   cowb.set(i);
 
   STOP_CC(cow_cycles);
+  MEMSTATS_CALL_STACK_POP();
 }
 
 void State::cow(char* m, int size) {
@@ -656,6 +658,7 @@ void State::compute_full_digest() {
 }
 
 void State::update_ptree(Seqno n) {
+  MEMSTATS_CALL_STACK_PUSH(State::update_ptree);
   Bitmap* mods[PLevels];
   for (int l = 0; l < PLevels - 1; l++) {
     mods[l] = new Bitmap(PLevelSize[l]);
@@ -721,10 +724,11 @@ void State::update_ptree(Seqno n) {
   for (int l = 0; l < PLevels - 1; l++) {
     delete mods[l];
   }
+  MEMSTATS_CALL_STACK_POP();
 }
 
 void State::checkpoint(Seqno seqno) {
-  //  printf("Checkp  ");
+  MEMSTATS_CALL_STACK_PUSH(State::checkpoint);
   INCR_OP(num_ckpts);
   START_CC(ckpt_cycles);
 
@@ -738,6 +742,7 @@ void State::checkpoint(Seqno seqno) {
   cowb.clear();
 
   STOP_CC(ckpt_cycles);
+  MEMSTATS_CALL_STACK_POP();
 }
 
 Seqno State::rollback() {
