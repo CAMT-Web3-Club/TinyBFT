@@ -77,8 +77,8 @@ endif()
 
 if(DEFINED LOW_MEMORY_DEMAND)
     target_compile_definitions(byzea PUBLIC
-        ALTERNATIVE_CHECKPOINT_LOG=1
-        ALTERNATIVE_CHECKPOINT_RECORDS=1
+        ALTERNATIVE_CHECKPOINT_LOG=${LOW_MEMORY_DEMAND}
+        ALTERNATIVE_CHECKPOINT_RECORDS=${LOW_MEMORY_DEMAND}
     )
     target_sources(byzea PRIVATE
         src/checkpoint_log.cc
