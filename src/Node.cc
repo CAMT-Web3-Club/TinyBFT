@@ -90,7 +90,7 @@ Node::Node(MEM_STATS_PARAM FILE *config_file,
   fscanf(config_file, "%d\n", &at);
 
   // read in all the principals
-  char addr_buff[100];
+  char addr_buff[257];
   char public_keyfile[1024];
   short port;
 
@@ -124,7 +124,7 @@ Node::Node(MEM_STATS_PARAM FILE *config_file,
 
   principals = (Principal **)malloc(num_principals * sizeof(Principal *));
   for (int i = 0; i < num_principals; i++) {
-    fscanf(config_file, "%256s %32s %hd %1024s \n", host_name, addr_buff, &port,
+    fscanf(config_file, "%64s %32s %hd %1023s \n", host_name, addr_buff, &port,
            public_keyfile);
     a.sin_addr.s_addr = inet_addr(addr_buff);
     a.sin_port = htons(port);
