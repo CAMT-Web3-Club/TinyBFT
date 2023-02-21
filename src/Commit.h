@@ -2,6 +2,8 @@
 #define _Commit_h 1
 
 #include "Message.h"
+#include "agreement_region.h"
+#include "scratch_allocator.h"
 #include "types.h"
 
 namespace libbyzea {
@@ -58,6 +60,10 @@ class Commit : public Message {
   bool verify();
   // Effects: Verifies if the message is signed by the replica rep().id.
 
+#ifdef STATIC_LOG_ALLOCATOR
+  void persist();
+#endif
+
   static bool convert(Message *m1, Commit *&m2);
   // Effects: If "m1" has the right size and tag of a "Commit",
   // casts "m1" to a "Commit" pointer, returns the pointer in
@@ -92,6 +98,19 @@ inline bool Commit::match(const Commit *c) const {
   th_assert(view() == c->view() && seqno() == c->seqno(), "Invalid argument");
   return true;
 }
+
+#ifdef STATIC_LOG_ALLOCATOR
+inline void Commit::persist() {
+  th_assert(in_scratch_, "Message is already persisted in another certificate");
+
+  Seqno sn = seqno();
+  int replica_id = id();
+  agreement_region::store_commit(&(rep()), replica_id);
+  scratch_allocator::free(msg, max_size);
+  msg = (Message_rep *)agreement_region::load_commit(sn, replica_id);
+  in_scratch_ = false;
+}
+#endif
 
 }  // namespace libbyzea
 

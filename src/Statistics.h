@@ -134,8 +134,8 @@ struct Statistics {
   Cycle_counter cow_cycles;       // and number of cycles
   Cycle_counter fetch_cycles;     // Cycles fetching state (w/o waiting)
 
-  long cache_hits;
-  long cache_misses;
+  long long cache_hits;
+  long long cache_misses;
 
   //
   // Syscalls:
@@ -169,10 +169,10 @@ extern Statistics stats;
 
 // #define PRINT_STATS
 #ifdef PRINT_STATS
-#define START_CC(x) stats.##x##.start()
-#define STOP_CC(x) stats.##x##.stop()
-#define INCR_OP(x) stats.##x##++
-#define INCR_CNT(x, y) (stats.##x## += (y))
+#define START_CC(x) stats.x.start()
+#define STOP_CC(x) stats.x.stop()
+#define INCR_OP(x) stats.x++
+#define INCR_CNT(x, y) (stats.x += (y))
 #define INIT_REC_STATS() stats.init_rec_stats()
 #define END_REC_STATS() stats.end_rec_stats()
 #else

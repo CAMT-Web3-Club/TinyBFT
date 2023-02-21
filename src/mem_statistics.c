@@ -32,7 +32,7 @@ static void print_mem_statistics(void) {
   for (long i = 0; i < (call_stack_size - 1); i++) {
     len += snprintf((string_buf + len), (BUF_LEN - len), "%s->", call_stack[i]);
   }
-  len += snprintf((string_buf + len), (BUF_LEN - len), "%s: %lu\n",
+  len += snprintf((string_buf + len), (BUF_LEN - len), "%s: %ld\n",
                   call_stack[call_stack_size - 1],
                   alloc_stack[call_stack_size - 1]);
   write(STDERR_FILENO, string_buf, len);

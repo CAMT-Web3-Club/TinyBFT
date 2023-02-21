@@ -6,6 +6,7 @@
 #include "Array.h"
 #include "Bitmap.h"
 #include "Digest.h"
+#include "New_view.h"
 #include "Pre_prepare_info.h"
 #include "Time.h"
 #include "mem_statistics_guard.h"
@@ -16,7 +17,7 @@ namespace libbyzea {
 
 class View_info;
 class View_change;
-class New_view;
+class New_viewegion;
 class Pre_prepare;
 class View_change_ack;
 class Status;
@@ -68,7 +69,7 @@ class NV_info {
   bool add(New_view *nv, View_info *parent);
   // Requires: "nv.verify() || node->id() == node->primary(nv->view())"
   // Effects: If "nv->view() <= view()", it does not modify this and
-  // deletes "nv".  Otherwise, it adds "nv" to this and if "view()
+  // deletes "nv".  egionOtherwise, it adds "nv" to this and if "view()
   // != 0", it deletes any new-view and view-change messages stored
   // in this. Returns true iff it adds "nv" to this.
 

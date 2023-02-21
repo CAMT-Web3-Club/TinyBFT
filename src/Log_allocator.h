@@ -128,6 +128,10 @@ inline char *Log_allocator::malloc(int sz) {
     } else {
       // Allocate a new chunk
       cur->nb--;  // To allow old chunk to be deallocated
+      fprintf(
+          stderr,
+          "a->malloc = %p(%d) cur->next = %p, cur->max = %p; active = %lld\n",
+          next, sz, cur->next, cur->max, cur->nb);
       cur = alloc_chunk();
     }
   }
@@ -146,7 +150,6 @@ inline void Log_allocator::free(char *p, int sz) {
   th_assert(ALIGNED_SIZE(sz), "Invalid argument");
   th_assert(ALIGNED(p), "Invalid argument");
   Chunk *pc = (Chunk *)((long)p & ~((long)chunk_size - 1));
-
 #ifdef DEBUG_ALLOC
   int *pi = (int *)p;
   for (int i = 0; i < sz / 4; i++) {

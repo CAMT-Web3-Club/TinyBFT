@@ -48,6 +48,9 @@ bool Certificate<T>::add(T *m) {
         if (!c->m->full() && m->full()) {
           // if c->m is not full and m is, replace c->m
           delete c->m;
+#ifdef STATIC_LOG_ALLOCATOR
+          m->persist();
+#endif
           c->m = m;
         } else {
           delete m;
@@ -63,6 +66,9 @@ bool Certificate<T>::add(T *m) {
           val.count++;
           if (val.count >= correct) c = vals + i;
           if (!val.m->full() && m->full()) {
+#ifdef STATIC_LOG_ALLOCATOR
+            m->persist();
+#endif
             // if val.m is not full and m is, replace val.m
             delete val.m;
             val.m = m;
@@ -75,6 +81,9 @@ bool Certificate<T>::add(T *m) {
 
       // "m" has a new value.
       if (cur_size < max_size) {
+#ifdef STATIC_LOG_ALLOCATOR
+        m->persist();
+#endif
         vals[cur_size].m = m;
         vals[cur_size++].count = 1;
         return true;
@@ -105,6 +114,10 @@ bool Certificate<T>::add_mine(T *m) {
         m->stag());
     return false;
   }
+
+#ifdef STATIC_LOG_ALLOCATOR
+  m->persist();
+#endif
 
   if (c == 0) {
     // Set m to be the correct value.

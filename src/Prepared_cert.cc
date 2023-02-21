@@ -35,6 +35,9 @@ bool Prepared_cert::add(Pre_prepare* m) {
 
     if (p == 0) {
       if (m->verify()) {
+#ifdef STATIC_LOG_ALLOCATOR
+        m->persist();
+#endif
         pi.add(m);
         return true;
       }
@@ -47,6 +50,9 @@ bool Prepared_cert::add(Pre_prepare* m) {
         Prepare* val;
         while (viter.get(val, vc)) {
           if (vc >= node->f() && m->match(val)) {
+#ifdef STATIC_LOG_ALLOCATOR
+            m->persist();
+#endif
             pi.add(m);
             return true;
           }
@@ -55,6 +61,9 @@ bool Prepared_cert::add(Pre_prepare* m) {
     } else {
       // If we sent a prepare, we only accept a matching pre-prepare.
       if (m->match(p) && m->verify(Pre_prepare::NRC)) {
+#ifdef STATIC_LOG_ALLOCATOR
+        m->persist();
+#endif
         pi.add(m);
         return true;
       }

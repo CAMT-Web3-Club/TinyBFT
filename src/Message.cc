@@ -3,15 +3,22 @@
 #include <stdlib.h>
 
 #include "Node.h"
+#include "scratch_allocator.h"
 #include "th_assert.h"
 
 namespace libbyzea {
 
 Log_allocator *Message::a = nullptr;
 
-Message::Message(unsigned sz) : msg(0), max_size(ALIGNED_SIZE(sz)) {
+Message::Message(unsigned sz)
+    : msg(0), max_size(ALIGNED_SIZE(sz)), in_scratch_(false) {
   if (sz != 0) {
+#ifndef STATIC_LOG_ALLOCATOR
     msg = (Message_rep *)a->malloc(max_size);
+#else
+    msg = (Message_rep *)scratch_allocator::malloc(max_size);
+#endif
+    in_scratch_ = true;
     th_assert(ALIGNED(msg), "Improperly aligned pointer");
     msg->tag = -1;
     msg->size = 0;
@@ -21,8 +28,13 @@ Message::Message(unsigned sz) : msg(0), max_size(ALIGNED_SIZE(sz)) {
 
 Message::Message(int t, unsigned sz) {
   max_size = ALIGNED_SIZE(sz);
+#ifndef STATIC_LOG_ALLOCATOR
   msg = (Message_rep *)a->malloc(max_size);
+#else
+  msg = (Message_rep *)scratch_allocator::malloc(max_size);
+#endif
   th_assert(ALIGNED(msg), "Improperly aligned pointer");
+  in_scratch_ = true;
   msg->tag = t;
   msg->size = max_size;
   msg->extra = 0;
@@ -30,18 +42,38 @@ Message::Message(int t, unsigned sz) {
 
 Message::Message(Message_rep *cont) {
   th_assert(ALIGNED(cont), "Improperly aligned pointer");
+
+#ifndef STATIC_LOG_ALLOCATOR
+  in_scratch_ = false;
+#else
+  in_scratch_ = scratch_allocator::is_in_scratch(cont);
+#endif
   msg = cont;
   max_size = -1;  // To prevent contents from being deallocated or trimmed
 }
 
 Message::~Message() {
-  if (max_size > 0) a->free((char *)msg, max_size);
+#ifndef STATIC_LOG_ALLOCATOR
+  if (max_size > 0) {
+    a->free((char *)msg, max_size);
+  }
+#else
+  if (max_size > 0 && in_scratch_) {
+    scratch_allocator::free(msg, max_size);
+  }
+#endif
 }
 
 void Message::trim() {
+#ifndef STATIC_LOG_ALLOCATOR
   if (max_size > 0 && a->realloc((char *)msg, max_size, msg->size)) {
     max_size = msg->size;
   }
+#else
+  if (max_size > 0 && in_scratch_) {
+    scratch_allocator::realloc(msg, msg->size);
+  }
+#endif
 }
 
 void Message::set_size(int size) {
@@ -92,7 +124,11 @@ bool Message::decode(FILE *i) {
   return sz == 2U + csize;
 }
 
-void Message::init() { a = new Log_allocator(); }
+void Message::init() {
+#ifndef STATIC_LOG_ALLOCATOR
+  a = new Log_allocator();
+#endif
+}
 
 const char *Message::stag() {
   static const char *string_tags[] = {

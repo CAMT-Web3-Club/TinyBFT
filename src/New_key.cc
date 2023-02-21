@@ -42,6 +42,17 @@ New_key::New_key() : Message(New_key_tag, Max_message_size) {
   node->gen_signature(contents(), old_size, contents() + old_size);
 }
 
+#ifdef STATIC_LOG_ALLOCATOR
+New_key::~New_key() {
+  if (msg == nullptr) {
+    return;
+  }
+  if (!in_scratch_) {
+    special_region::free_new_key(&(rep()));
+  }
+}
+#endif
+
 bool New_key::verify() {
   // If bad principal or old message discard.
   Principal *p = node->i_to_p(id());

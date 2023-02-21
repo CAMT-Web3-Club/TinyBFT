@@ -156,7 +156,10 @@ inline Bitmap& Bitmap::operator=(Bitmap const& other) {
   return *this;
 }
 
-inline Bitmap::~Bitmap() { delete[] chunks; }
+inline Bitmap::~Bitmap() {
+  MEM_STATS_INIT(Bitmap::Bitmap, true);
+  delete[] chunks;
+}
 
 inline Chunk Bitmap::bitSelector(unsigned int i) const {
   return 1UL << (i % ChunkBits);

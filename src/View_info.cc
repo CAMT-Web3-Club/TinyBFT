@@ -12,14 +12,16 @@
 #include "View_change.h"
 #include "View_change_ack.h"
 #include "mem_statistics_guard.h"
+#include "special_region.h"
 #include "th_assert.h"
 
 namespace libbyzea {
 
 View_info::VCA_info::VCA_info()
     : v(0),
-      vacks(MEM_STATS_ARG_INIT_PUSH(Array<View_change_ack *>)
-            (View_change_ack *)nullptr, node->n()) {}
+      vacks(MEM_STATS_ARG_INIT_PUSH(Array<View_change_ack *>)(
+                View_change_ack *) nullptr,
+            node->n()) {}
 
 void View_info::VCA_info::clear() {
   for (int i = 0; i < node->n(); i++) {
@@ -232,6 +234,9 @@ void View_info::view_change(View vi, Seqno last_executed, State *state) {
   node->send(vc, Node::All_replicas);
 
   // Record that this message was sent.
+#ifdef STATIC_LOG_ALLOCATOR
+  vc->persist();
+#endif
   last_vcs[id] = vc;
   last_views[id] = v;
 
@@ -243,6 +248,9 @@ void View_info::view_change(View vi, Seqno last_executed, State *state) {
       View_change *lvc = last_vcs[i];
       if (lvc && lvc->view() == v && i != id && i != primv) {
         View_change_ack *vack = new View_change_ack(v, id, i, lvc->digest());
+#ifdef STATIC_LOG_ALLOCATOR
+        vack->persist();
+#endif
         my_vacks[i] = vack;
         node->send(vack, primv);
       }
@@ -321,13 +329,22 @@ bool View_info::add(View_change *vc) {
         View_change_ack *vack = new View_change_ack(v, id, vci, vc->digest());
         th_assert(my_vacks[vci] == 0, "Invalid state");
 
+#ifdef STATIC_LOG_ALLOCATOR
+        vack->persist();
+#endif
         my_vacks[vci] = vack;
         node->send(vack, primv);
       }
     }
   }
 
-  if (!stored) delete vc;
+  if (!stored) {
+    delete vc;
+  } else {
+#ifdef STATIC_LOG_ALLOCATOR
+    vc->persist();
+#endif
+  }
 
   return stored;
 }
@@ -377,6 +394,9 @@ void View_info::add(View_change_ack *vca) {
         }
 
         delete vcai.vacks[vci];
+#ifdef STATIC_LOG_ALLOCATOR
+        vca->persist();
+#endif
         vcai.vacks[vci] = vca;
         vcai.v = v;
         return;

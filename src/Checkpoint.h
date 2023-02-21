@@ -3,8 +3,9 @@
 
 #include "Digest.h"
 #include "Message.h"
+#include "checkpoint_region.h"
+#include "scratch_allocator.h"
 #include "types.h"
-
 namespace libbyzea {
 
 class Principal;
@@ -57,6 +58,9 @@ class Checkpoint : public Message {
   bool verify();
   // Effects: Verifies if the message is signed by the replica rep().id.
 
+  void persist();
+  // Effects: persists this message in an underlying storage.
+
   static bool convert(Message *m1, Checkpoint *&m2);
   // Effects: If "m1" has the right size and tag of a "Checkpoint",
   // casts "m1" to a "Checkpoint" pointer, returns the pointer in
@@ -85,6 +89,17 @@ inline bool Checkpoint::stable() const { return rep().extra == 1; }
 inline bool Checkpoint::match(const Checkpoint *c) const {
   th_assert(seqno() == c->seqno(), "Invalid argument");
   return digest() == c->digest();
+}
+
+inline void Checkpoint::persist() {
+  th_assert(in_scratch_, "Message is already persisted in another certificate");
+
+  Seqno sn = seqno();
+  int replica_id = id();
+  checkpoint_region::store_checkpoint(&(rep()), replica_id);
+  scratch_allocator::free(msg, max_size);
+  msg = (Message_rep *)checkpoint_region::load_checkpoint(sn, replica_id);
+  in_scratch_ = false;
 }
 
 }  // namespace libbyzea

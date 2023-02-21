@@ -659,6 +659,7 @@ void State::compute_full_digest() {
 
 void State::update_ptree(Seqno n) {
   MEMSTATS_CALL_STACK_PUSH(State::update_ptree);
+
   Bitmap* mods[PLevels];
   for (int l = 0; l < PLevels - 1; l++) {
     mods[l] = new Bitmap(PLevelSize[l]);

@@ -28,6 +28,7 @@ typedef int16_t Bits16;
 typedef int32_t Bits32;
 typedef int64_t Bits64;
 
+#define BITS(datatype) (int)(sizeof(datatype) * byte_bits)
 #define INT_BITS (int)(sizeof(int) * byte_bits)
 #define LONG_BITS (int)(sizeof(long) * byte_bits)
 

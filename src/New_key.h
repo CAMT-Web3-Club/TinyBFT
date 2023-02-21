@@ -4,6 +4,8 @@
 #include "Digest.h"
 #include "Message.h"
 #include "Principal.h"
+#include "scratch_allocator.h"
+#include "special_region.h"
 #include "types.h"
 
 namespace libbyzea {
@@ -31,6 +33,10 @@ class New_key : public Message {
   // Effects: Creates a new signed New_key message and updates "node"
   // accordingly (i.e., updates the in-keys for all principals.)
 
+#ifdef STATIC_LOG_ALLOCATOR
+  ~New_key();
+#endif
+
   int id() const;
   // Effects: Fetches the identifier of the replica from the message.
 
@@ -38,6 +44,10 @@ class New_key : public Message {
   // Effects: Verifies if the message is signed by the principal
   // rep().id. If the message is correct updates the entry for
   // rep().id accordingly (i.e., out-key, tstamp.)
+
+#ifdef STATIC_LOG_ALLOCATOR
+  void persist();
+#endif
 
   static bool convert(Message *m1, New_key *&m2);
   // Effects: If "m1" has the right size and tag of a "New_key",
@@ -57,6 +67,16 @@ inline New_key_rep &New_key::rep() const {
 
 inline int New_key::id() const { return rep().id; }
 
+#ifdef STATIC_LOG_ALLOCATOR
+inline void New_key::persist() {
+  th_assert(in_scratch_, "Already in special region");
+  special_region::store_new_key(&(rep()));
+  scratch_allocator::free(msg, max_size);
+
+  msg = (Message_rep *)special_region::load_new_key();
+  in_scratch_ = false;
+}
+#endif
 }  // namespace libbyzea
 
 #endif  // _New_key_h

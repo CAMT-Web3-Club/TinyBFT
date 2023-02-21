@@ -13,7 +13,7 @@ Prepare::Prepare(View v, Seqno s, Digest &d, Principal *dst)
 #ifndef USE_PKEY
                                + ((dst) ? MAC_size : node->auth_size())) {
 #else
-                               + ((dst) ? MAC_size : node->sig_size())) {
+              +((dst) ? MAC_size : node->sig_size()))) {
 #endif
   rep().extra = (dst) ? 1 : 0;
   rep().view = v;

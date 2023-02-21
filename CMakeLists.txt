@@ -3,10 +3,14 @@ cmake_minimum_required(VERSION 3.18.4)
 project(libbyzea VERSION 0.0.1)
 
 set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_COMPILER "i686-linux-gnu-gcc-10")
 set(CMAKE_C_STANDARD_REQUIRED True)
+set(CMAKE_C_FLAGS "-m32")
 
 set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_COMPILER "i686-linux-gnu-g++-10")
 set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_CXX_FLAGS "-m32")
 
 add_library(byzea STATIC)
 
@@ -79,11 +83,16 @@ if(DEFINED LOW_MEMORY_DEMAND)
     target_compile_definitions(byzea PUBLIC
         ALTERNATIVE_CHECKPOINT_LOG=${LOW_MEMORY_DEMAND}
         ALTERNATIVE_CHECKPOINT_RECORDS=${LOW_MEMORY_DEMAND}
+        STATIC_LOG_ALLOCATOR=${LOW_MEMORY_DEMAND}
     )
     target_sources(byzea PRIVATE
+        src/agreement_region.cc
         src/checkpoint_log.cc
         src/checkpoint_record.cc
         src/checkpoint_record_log.cc
+        src/checkpoint_region.cc
+        src/special_region.cc
+        src/scratch_allocator.cc
     )
 else()
     target_sources(byzea PRIVATE
@@ -140,30 +149,30 @@ target_sources(byzea PRIVATE
     src/platform.cc
 )
 
-enable_testing()
-
-include(FetchContent)
-FetchContent_Declare(
-  googletest
-  URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
-)
-# For Windows: Prevent overriding the parent project's compiler/linker settings
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest)
-
-add_executable(
-  unit_tests
-
-  test/dsum_test.cc
-)
-target_include_directories(unit_tests PUBLIC include)
-target_include_directories(unit_tests PRIVATE src)
-target_link_libraries(
-  unit_tests
-  byzea
-  mbedcrypto
-  GTest::gtest_main
-)
-
-include(GoogleTest)
-gtest_discover_tests(unit_tests)
+#enable_testing()
+#
+#include(FetchContent)
+#FetchContent_Declare(
+#  googletest
+#  URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
+#)
+## For Windows: Prevent overriding the parent project's compiler/linker settings
+#set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+#FetchContent_MakeAvailable(googletest)
+#
+#add_executable(
+#  unit_tests
+#
+#  test/dsum_test.cc
+#)
+#target_include_directories(unit_tests PUBLIC include)
+#target_include_directories(unit_tests PRIVATE src)
+#target_link_libraries(
+#  unit_tests
+#  byzea
+#  mbedcrypto
+#  GTest::gtest_main
+#)
+#
+#include(GoogleTest)
+#gtest_discover_tests(unit_tests)

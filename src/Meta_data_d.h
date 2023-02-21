@@ -4,6 +4,8 @@
 #include "Digest.h"
 #include "Message.h"
 #include "parameters.h"
+#include "scratch_allocator.h"
+#include "special_region.h"
 #include "types.h"
 
 namespace libbyzea {
@@ -79,6 +81,10 @@ class Meta_data_d : public Message {
   // Effects: Verifies if the message is correct and authenticated by
   // replica rep().id.
 
+#ifdef STATIC_LOG_ALLOCATOR
+  void persist();
+#endif
+
   static bool convert(Message *m1, Meta_data_d *&m2);
   // Effects: If "m1" has the right size and tag of a "Meta_data_d",
   // casts "m1" to a "Meta_data_d" pointer, returns the pointer in
@@ -112,6 +118,17 @@ inline int Meta_data_d::index() const { return rep().i; }
 
 inline int Meta_data_d::id() const { return rep().id; }
 
+#ifdef STATIC_LOG_ALLOCATOR
+inline void Meta_data_d::persist() {
+  th_assert(in_scratch_, "Message is already persisted in another certificate");
+
+  int replica_id = id();
+  special_region::store_metadata_d(&(rep()));
+  scratch_allocator::free(msg, max_size);
+  msg = (Message_rep *)special_region::load_metadata_d(replica_id);
+  in_scratch_ = false;
+}
+#endif
 }  // namespace libbyzea
 
 #endif  // _Meta_data_d_h

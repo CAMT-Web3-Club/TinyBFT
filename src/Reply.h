@@ -99,6 +99,8 @@ class Reply : public Message {
   bool is_tentative() const;
   // Effects: Returns true iff the reply is tentative.
 
+  void persist();
+
   static bool convert(Message *m1, Reply *&m2);
   // Effects: If "m1" has the right size and tag of a "Reply", casts
   // "m1" to a "Reply" pointer, returns the pointer in "m2" and
@@ -138,6 +140,10 @@ inline bool Reply::match(Reply *r) {
   return (rep().digest == r->rep().digest) &
          (!is_tentative() | r->is_tentative() | (view() == r->view()));
 }
+
+#ifdef STATIC_LOG_ALLOCATOR
+inline void Reply::persist() {}
+#endif
 
 }  // namespace libbyzea
 

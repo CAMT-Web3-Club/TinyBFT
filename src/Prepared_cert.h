@@ -131,7 +131,11 @@ inline bool Prepared_cert::add_mine(Prepare *m) {
 
 inline bool Prepared_cert::add_mine(Pre_prepare *m) {
   th_assert(node->id() == node->primary(m->view()), "Invalid Argument");
-  th_assert(!pi.pre_prepare(), "Invalid state");
+  th_assert(pi.pre_prepare() == nullptr, "Invalid state");
+
+#ifdef STATIC_LOG_ALLOCATOR
+  m->persist();
+#endif
   pi.add_complete(m);
   primary = true;
   t_sent = currentTime();
@@ -139,7 +143,10 @@ inline bool Prepared_cert::add_mine(Pre_prepare *m) {
 }
 
 inline void Prepared_cert::add_old(Pre_prepare *m) {
-  th_assert(pi.pre_prepare() == 0, "Invalid state");
+  th_assert(pi.pre_prepare() == nullptr, "Invalid state");
+#ifdef STATIC_LOG_ALLOCATOR
+  m->persist();
+#endif
   pi.add(m);
 }
 

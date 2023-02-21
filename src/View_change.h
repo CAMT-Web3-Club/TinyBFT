@@ -6,6 +6,8 @@
 #include "Principal.h"
 #include "bits.h"
 #include "parameters.h"
+#include "scratch_allocator.h"
+#include "special_region.h"
 #include "types.h"
 
 namespace libbyzea {
@@ -52,8 +54,9 @@ struct View_change_rep : public Message_rep {
   short n_reqs;   // number of entries in req_info
 
   // Bitmap with bits set for requests that are prepared in req_info
-  static constexpr int prepared_size = (max_out + INT_BITS - 1) / INT_BITS;
-  unsigned prepared[prepared_size];
+  static constexpr int prepared_size =
+      (max_out + BITS(uint64_t) - 1) / BITS(uint64_t);
+  uint64_t prepared[prepared_size];
 
   // digest of the entire message (except authenticator) with d zeroed.
   Digest d;
@@ -138,6 +141,10 @@ class View_change : public Message {
   bool verify_digest();
   // Effects: Returns true iff digest() is correct.
 
+#ifdef STATIC_LOG_ALLOCATOR
+  void persist();
+#endif
+
   static bool convert(Message *m1, View_change *&m2);
   // Effects: If "m1" has the right size and tag of a "View_change",
   // casts "m1" to a "View_change" pointer, returns the pointer in
@@ -171,17 +178,19 @@ inline Req_info *View_change::req_info() {
 }
 
 inline void View_change::mark(int index) {
-  th_assert(index >= 0 && index < View_change_rep::prepared_size * INT_BITS,
-            "Out of bounds");
-  unsigned *chunk = rep().prepared + index / INT_BITS;
-  *chunk |= (1 << (index % INT_BITS));
+  th_assert(
+      index >= 0 && index < View_change_rep::prepared_size * BITS(uint64_t),
+      "Out of bounds");
+  uint64_t *chunk = rep().prepared + index / BITS(uint64_t);
+  *chunk |= (1 << (index % BITS(uint64_t)));
 }
 
 inline bool View_change::test(int index) {
-  th_assert(index >= 0 && index < View_change_rep::prepared_size * INT_BITS,
-            "Out of bounds");
-  unsigned chunk = *(rep().prepared + index / INT_BITS);
-  return (chunk & (1 << (index % INT_BITS))) ? true : false;
+  th_assert(
+      index >= 0 && index < View_change_rep::prepared_size * BITS(uint64_t),
+      "Out of bounds");
+  uint64_t chunk = *(rep().prepared + index / BITS(uint64_t));
+  return (chunk & (1 << (index % BITS(uint64_t)))) ? true : false;
 }
 
 inline int View_change::id() const { return rep().id; }
@@ -205,6 +214,18 @@ inline bool View_change::last_ckpt(Digest &d, Seqno &n) {
 
   return false;
 }
+
+#ifdef STATIC_LOG_ALLOCATOR
+inline void View_change::persist() {
+  th_assert(in_scratch_, "Message is already persisted in another certificate");
+
+  int replica_id = id();
+  special_region::store_view_change(&(rep()));
+  scratch_allocator::free(msg, max_size);
+  msg = (Message_rep *)special_region::load_view_change(replica_id);
+  in_scratch_ = false;
+}
+#endif
 
 }  // namespace libbyzea
 

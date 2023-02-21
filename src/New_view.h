@@ -4,6 +4,8 @@
 #include "Digest.h"
 #include "Message.h"
 #include "Node.h"
+#include "scratch_allocator.h"
+#include "special_region.h"
 #include "types.h"
 
 namespace libbyzea {
@@ -120,6 +122,10 @@ class New_view : public Message {
   // "m2" and returns true. Otherwise, it returns false.
   // If the conversion is successful it trims excess allocation.
 
+#ifdef STATIC_LOG_ALLOCATOR
+  void persist();
+#endif
+
  private:
   New_view_rep& rep() const;
   // Effects: Casts "msg" to a New_view_rep&
@@ -164,6 +170,17 @@ inline bool New_view::view_change(int id) {
   if (vci.d.is_zero()) return false;
   return true;
 }
+
+#ifdef STATIC_LOG_ALLOCATOR
+inline void New_view::persist() {
+  th_assert(in_scratch_, "Message is already persisted in another certificate");
+  auto v = view();
+  special_region::store_new_view(&(rep()));
+  scratch_allocator::free(msg, max_size);
+  msg = (Message_rep*)special_region::load_new_view(v);
+  in_scratch_ = false;
+}
+#endif
 
 }  // namespace libbyzea
 

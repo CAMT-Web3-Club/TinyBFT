@@ -75,6 +75,7 @@ bool Meta_data_cert::add(Meta_data_d* m, bool mine) {
       last_mdds[id] = 0;
       return false;
     }
+    m->persist();
 
     // Update vals to adjust for digests in m and om, and delete vals
     // with seqno less than ls.

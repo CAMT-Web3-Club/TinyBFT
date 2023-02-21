@@ -4,6 +4,8 @@
 #include "Digest.h"
 #include "Message.h"
 #include "Prepare.h"
+#include "agreement_region.h"
+#include "scratch_allocator.h"
 #include "types.h"
 
 namespace libbyzea {
@@ -116,6 +118,10 @@ class Pre_prepare : public Message {
   bool check_digest();
   // Effects: Verifies if the digest is correct.
 
+#ifdef STATIC_LOG_ALLOCATOR
+  void persist();
+#endif
+
   static bool convert(Message* m1, Pre_prepare*& m2);
   // Effects: If "m1" has the right size and tag, casts "m1" to a
   // "Pre_prepare" pointer, returns the pointer in "m2" and returns
@@ -182,6 +188,17 @@ inline Digest& Pre_prepare::big_req_digest(int i) {
   th_assert(i >= 0 && i < num_big_reqs(), "Invalid argument");
   return *(big_reqs() + i);
 }
+
+#ifdef STATIC_LOG_ALLOCATOR
+inline void Pre_prepare::persist() {
+  th_assert(in_scratch_, "Message is already persisted in another certificate");
+  Seqno sn = seqno();
+  agreement_region::store_pre_prepare(&(rep()));
+  scratch_allocator::free(msg, max_size);
+  msg = (Message_rep*)agreement_region::load_pre_prepare(sn);
+  in_scratch_ = false;
+}
+#endif
 
 }  // namespace libbyzea
 

@@ -5,8 +5,10 @@
 #include <stdio.h>
 
 #include "Log_allocator.h"
+#ifndef STATIC_LOG_ALLOCATOR
+#include "scratch_allocator.h"
+#endif
 #include "Message_tags.h"
-#include "simple_log_allocator.h"
 #include "th_assert.h"
 #include "types.h"
 
@@ -18,6 +20,16 @@ namespace libbyzea {
 
 // Maximum message size. Must verify ALIGNED_SIZE.
 const size_t Max_message_size = MAX_MESSAGE_SIZE;
+
+constexpr int F = MAX_NUM_REPLICAS / 3;
+
+#ifdef PKEY
+// Assume a maximum RSA key-size of 2048 bit
+constexpr unsigned AUTHENTICATOR_SIZE = 256;
+#else
+// UMac size
+constexpr unsigned AUTHENTICATOR_SIZE = 16 * (MAX_NUM_REPLICAS + 1);
+#endif
 
 //
 // All messages have the following format:
@@ -69,10 +81,12 @@ class Message {
   bool full() const;
   // Effects: Messages may be full or empty. Empty messages are just
   // digests of full messages.
-
+#if 0
   // Message-specific heap management operators.
   void *operator new(size_t s);
   void operator delete(void *x, size_t s);
+#endif
+
   static void init();
   // Effects: Should be called once to initialize the memory allocator.
   // Before any message is allocated.
@@ -86,7 +100,9 @@ class Message {
   // true if successful and false otherwise.
 
   static void debug_alloc() {
+#ifndef STATIC_LOG_ALLOCATOR
     if (a) a->debug_print();
+#endif
   }
   // Effects: Prints debug information for memory allocator.
 
@@ -128,6 +144,7 @@ class Message {
                      // or "-1" if this instance is not responsible for
                      // deallocating the storage in msg.
                      // Invariant: max_size <= 0 || 0 < msg->size <= max_size
+  bool in_scratch_;
 
  private:
   //
@@ -153,7 +170,7 @@ inline bool Message::has_tag(int t, int sz) const {
 inline View Message::view() const { return 0; }
 
 inline bool Message::full() const { return true; }
-
+#if 0
 inline void *Message::operator new(size_t s) {
   void *ret = (void *)a->malloc(ALIGNED_SIZE(s));
   th_assert(ret != 0, "Ran out of memory\n");
@@ -161,8 +178,13 @@ inline void *Message::operator new(size_t s) {
 }
 
 inline void Message::operator delete(void *x, size_t s) {
-  if (x != 0) a->free((char *)x, ALIGNED_SIZE(s));
+  if (x == nullptr) {
+    return;
+  }
+
+  a->free((char *)x, ALIGNED_SIZE(s));
 }
+#endif
 
 inline int Message::msize() const {
   return (max_size >= 0) ? max_size : msg->size;

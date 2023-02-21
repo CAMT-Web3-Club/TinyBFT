@@ -144,6 +144,17 @@ void Replica::print_memory_consumption([[maybe_unused]] const size_t mem_size) {
   fprintf(stderr, "sizeof(Log<Certificate<Checkpoint>>) = %u\n",
           sizeof(Log<Certificate<Checkpoint>>));
   fprintf(stderr, "sizeof(CheckpointLog) = %u\n", sizeof(CheckpointLog));
+
+#ifdef STATIC_LOG_ALLOCATOR
+  fprintf(stderr, "sizeof(agreement_region) = %u\n",
+          agreement_region::memory_demand());
+  fprintf(stderr, "sizeof(checkpoint_region) = %u\n",
+          checkpoint_region::memory_demand());
+  fprintf(stderr, "sizeof(special_region) = %u\n",
+          special_region::memory_demand());
+  fprintf(stderr, "sizeof(scratch_region) = %u\n",
+          scratch_allocator::memory_demand());
+#endif
 }
 
 #ifndef NO_STATE_TRANSLATION
@@ -1537,6 +1548,8 @@ void Replica::mark_stable(Seqno n, bool have_state) {
   state.discard_checkpoint(last_stable, last_executed);
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
   brt.mark_stable(last_stable);
+  agreement_region::truncate(last_stable + 1);
+  checkpoint_region::truncate(last_stable);
 
   if (have_state) {
     // Re-authenticate my checkpoint message to mark it as stable or

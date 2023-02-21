@@ -81,9 +81,9 @@
  * assembly in the C code. To allow intrinsics and/or assembly routines
  * (whichever is faster) set only USE_C_AND_ASSEMBLY to 1.
  */
-#define USE_C_ONLY 0           /* ANSI C and 64-bit integers req'd */
+#define USE_C_ONLY 1           /* ANSI C and 64-bit integers req'd */
 #define USE_C_AND_INTRINSICS 0 /* Intrinsics for rotation, MMX, etc.    */
-#define USE_C_AND_ASSEMBLY 1   /* Intrinsics and assembly */
+#define USE_C_AND_ASSEMBLY 0   /* Intrinsics and assembly */
 
 #if (USE_C_ONLY + USE_C_AND_INTRINSICS + USE_C_AND_ASSEMBLY != 1)
 #error-- Only one setting may be nonzero

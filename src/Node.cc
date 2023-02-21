@@ -21,6 +21,7 @@
 #include "Time.h"
 #include "parameters.h"
 #include "platform.h"
+#include "special_region.h"
 #include "th_assert.h"
 
 #define NO_IP_MULTICAST
@@ -46,6 +47,8 @@ static const char *DRBG_PERSONALIZATION_STRING =
 Node::Node(MEM_STATS_PARAM FILE *config_file,
            const std::string &private_key_file, short req_port) {
   node = this;
+
+  special_region::init();
 
 #ifdef NO_IP_MULTICAST
   fprintf(stderr, "WARNING: disabled multicast\n");
@@ -269,7 +272,6 @@ bool Node::has_messages(long to) {
 
 Message *Node::recv() {
   Message *m = new Message(Max_message_size);
-
   while (1) {
 #ifndef ASYNC_SOCK
     while (!has_messages(20000))
@@ -281,7 +283,7 @@ Message *Node::recv() {
 
     int ret = recvfrom(sock, m->contents(), m->msize(), 0, 0, 0);
     if (size_t(m->size()) > Max_message_size) {
-      printf("[ERROR]: %d > %lu!\n", m->size(), Max_message_size);
+      printf("[ERROR]: %d > %u!\n", m->size(), Max_message_size);
       th_fail("Message size is larger than maximum message size!");
     }
     STOP_CC(recvfrom_cycles);
@@ -458,6 +460,9 @@ void Node::send_new_key() {
 
   // Multicast new key to all replicas.
   last_new_key = new New_key();
+#ifdef STATIC_LOG_ALLOCATOR
+  last_new_key->persist();
+#endif
   send(last_new_key, All_replicas);
 
   // Stop timer if not expired and then restart it
