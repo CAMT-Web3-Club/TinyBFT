@@ -58,8 +58,10 @@ class Checkpoint : public Message {
   bool verify();
   // Effects: Verifies if the message is signed by the replica rep().id.
 
+#ifdef STATIC_LOG_ALLOCATOR
   void persist();
   // Effects: persists this message in an underlying storage.
+#endif
 
   static bool convert(Message *m1, Checkpoint *&m2);
   // Effects: If "m1" has the right size and tag of a "Checkpoint",
@@ -91,16 +93,18 @@ inline bool Checkpoint::match(const Checkpoint *c) const {
   return digest() == c->digest();
 }
 
+#ifdef STATIC_LOG_ALLOCATOR
 inline void Checkpoint::persist() {
-  th_assert(in_scratch_, "Message is already persisted in another certificate");
-
   Seqno sn = seqno();
   int replica_id = id();
   checkpoint_region::store_checkpoint(&(rep()), replica_id);
-  scratch_allocator::free(msg, max_size);
+  if (in_scratch_) {
+    scratch_allocator::free(msg, max_size);
+    in_scratch_ = false;
+  }
   msg = (Message_rep *)checkpoint_region::load_checkpoint(sn, replica_id);
-  in_scratch_ = false;
 }
+#endif
 
 }  // namespace libbyzea
 

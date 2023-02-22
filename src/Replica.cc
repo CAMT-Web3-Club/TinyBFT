@@ -722,6 +722,7 @@ void Replica::handle(Checkpoint *m) {
       Checkpoint *c = sset.fetch(m->id());
       if (c == 0 || c->seqno() < ms) {
         delete sset.remove(m->id());
+        m->persist();
         sset.store(m);
         if (sset.size() > f()) {
           if (last_tentative_execute > last_executed) {
