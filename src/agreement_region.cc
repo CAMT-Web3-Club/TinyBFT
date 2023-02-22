@@ -55,12 +55,15 @@ struct AgreementSlice {
 };
 
 static AgreementSlice slices[max_out];
-static Seqno head;
-static size_t head_index;
+static Seqno head = 1;
+static size_t head_index = 0;
 
 size_t memory_demand() {
   return sizeof(slices) + sizeof(head) + sizeof(head_index);
 }
+
+static Seqno max_seqno() { return head + max_out - 1; }
+
 static inline size_t cert_index(Seqno n) {
   return (head_index + (n - head)) % max_out;
 }
@@ -110,8 +113,6 @@ void store_commit(Commit_rep *commit, size_t i) {
   auto *store = &slices[sn].commit_cert.commits_[i].msg;
   std::memcpy(store, commit, commit->size);
 }
-
-Seqno max_seqno() { return head + max_out - 1; }
 
 bool within_range(Seqno seqno) {
   return (seqno >= head && seqno <= max_seqno());

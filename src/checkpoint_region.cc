@@ -26,7 +26,7 @@ struct Certificate {
 static constexpr size_t NUM_CERTS = max_out / checkpoint_interval + 1;
 static Certificate checkpoint_certs[NUM_CERTS];
 static Block above_window_checkpoints[MAX_NUM_REPLICAS - 1];
-static Seqno head = -1;
+static Seqno head = 0;
 static size_t head_index = 0;
 
 size_t memory_demand() {
@@ -73,9 +73,8 @@ void store_checkpoint(Checkpoint_rep *checkpoint, size_t i) {
     size_t cert_index = certificate_index(checkpoint->seqno);
     store = checkpoint_certs[cert_index].checkpoints_[i].raw;
   } else {
-    th_assert(checkpoint->seqno >
-                  above_window_checkpoints[replica_index(i)].msg.seqno,
-              "Invalid state");
+    auto &cur = above_window_checkpoints[replica_index(i)].msg;
+    th_assert(checkpoint->seqno > cur.seqno, "Invalid state");
     store = above_window_checkpoints[replica_index(i)].raw;
   }
   std::memcpy(store, checkpoint, checkpoint->size);

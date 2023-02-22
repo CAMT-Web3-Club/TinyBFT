@@ -1538,19 +1538,19 @@ void Replica::mark_stable(Seqno n, bool have_state) {
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_CERTIFICATE_LOGS);
   plog.truncate(last_stable + 1);
   clog.truncate(last_stable + 1);
+  agreement_region::truncate(last_stable + 1);
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_VIEW_INFO);
   vi.mark_stable(last_stable);
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_CERTIFICATE_LOGS);
   elog.truncate(last_stable);
+  checkpoint_region::truncate(last_stable);
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_STATE_MANAGEMENT);
   state.discard_checkpoint(last_stable, last_executed);
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
   brt.mark_stable(last_stable);
-  agreement_region::truncate(last_stable + 1);
-  checkpoint_region::truncate(last_stable);
 
   if (have_state) {
     // Re-authenticate my checkpoint message to mark it as stable or
