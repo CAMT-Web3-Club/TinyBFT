@@ -75,7 +75,6 @@ void Request::re_authenticate(bool change, [[maybe_unused]] Principal *p) {
 
   size_t old_size = sizeof(Request_rep) + rep().command_size;
   if ((rep().extra & 2) == 0) {
-    fprintf(stderr, "%p + %u\n", contents(), old_size);
     node->gen_auth_in(contents(), sizeof(Request_rep), contents() + old_size);
   } else {
     node->gen_signature(contents(), sizeof(Request_rep), contents() + old_size);

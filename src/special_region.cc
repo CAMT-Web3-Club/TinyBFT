@@ -111,7 +111,6 @@ New_key_rep *load_new_key() {
 }
 
 void store_new_key(New_key_rep *msg) {
-  fprintf(stderr, "%d\n", msg->size);
   th_assert(new_key.msg.id == MAGIC, "New_key already in use");
   th_assert((size_t)msg->size <= sizeof(NewKeyBlock), "New_key_rep too large");
   std::memcpy(&new_key.raw, msg, msg->size);
