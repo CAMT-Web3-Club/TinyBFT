@@ -48,7 +48,9 @@ Node::Node(MEM_STATS_PARAM FILE *config_file,
            const std::string &private_key_file, short req_port) {
   node = this;
 
+#ifdef STATIC_LOG_ALLOCATOR
   special_region::init();
+#endif
 
 #ifdef NO_IP_MULTICAST
   fprintf(stderr, "WARNING: disabled multicast\n");

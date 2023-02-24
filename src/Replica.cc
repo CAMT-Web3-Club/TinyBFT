@@ -729,7 +729,9 @@ void Replica::handle(Checkpoint *m) {
       Checkpoint *c = sset.fetch(m->id());
       if (c == 0 || c->seqno() < ms) {
         delete sset.remove(m->id());
+#ifdef STATIC_LOG_ALLOCATOR
         m->persist();
+#endif
         sset.store(m);
         if (sset.size() > f()) {
           if (last_tentative_execute > last_executed) {
@@ -1552,19 +1554,23 @@ void Replica::mark_stable(Seqno n, bool have_state) {
 
   if (last_stable > seqno) seqno = last_stable;
 
-  //  fprintf(stderr, "mark_stable: Truncating plog to %ld have_state=%d\n",
-  //  last_stable+1, have_state);
+  fprintf(stderr, "mark_stable: Truncating plog to %lld have_state=%d\n",
+          last_stable + 1, have_state);
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_CERTIFICATE_LOGS);
   plog.truncate(last_stable + 1);
   clog.truncate(last_stable + 1);
+#ifdef STATIC_LOG_ALLOCATOR
   agreement_region::truncate(last_stable + 1);
+#endif
   MEMSTATS_RESTORE_MEM_TYPE();
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_VIEW_INFO);
   vi.mark_stable(last_stable);
   MEMSTATS_RESTORE_MEM_TYPE();
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_CERTIFICATE_LOGS);
   elog.truncate(last_stable);
+#ifdef STATIC_LOG_ALLOCATOR
   checkpoint_region::truncate(last_stable);
+#endif
   MEMSTATS_RESTORE_MEM_TYPE();
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_STATE_MANAGEMENT);
   state.discard_checkpoint(last_stable, last_executed);
