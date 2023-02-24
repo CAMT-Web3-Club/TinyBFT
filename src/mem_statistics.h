@@ -11,9 +11,17 @@
     print_total_mem();   \
   } while (0)
 
-#define MEMSTATS_SET_MEM_TYPE(x) \
-  do {                           \
-    set_mem_type(x);             \
+#define MEMSTATS_RESTORE_MEM_TYPE() \
+  do {                              \
+    set_mem_type(_old_mem_type);    \
+  } while (0)
+
+#define MEMSTATS_MEM_TYPE_VAR enum mem_type _old_mem_type;
+
+#define MEMSTATS_SET_MEM_TYPE(x)  \
+  _old_mem_type = get_mem_type(); \
+  do {                            \
+    set_mem_type(x);              \
   } while (0)
 
 #define MEMSTATS_RUNTIME_LOGGING(x) \
@@ -50,6 +58,8 @@
 #else /* PRINT_MEM_STATISTICS */
 
 #define MEMSTATS_PRINT()
+#define MEMSTATS_MEM_TYPE_VAR
+#define MEMSTATS_RESTORE_MEM_TYPE()
 #define MEMSTATS_SET_MEM_TYPE(x)
 #define MEMSTATS_RUNTIME_LOGGING(x)
 #define MEMSTATS_CALL_STACK_PUSH(x)
@@ -73,6 +83,8 @@ enum mem_type {
 };
 
 void set_mem_type(enum mem_type type);
+
+enum mem_type get_mem_type(void);
 
 void mem_runtime_logging(int v);
 

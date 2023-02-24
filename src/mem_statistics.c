@@ -43,6 +43,8 @@ void mem_runtime_logging(int v) { runtime_logging = v; }
 
 void set_mem_type(enum mem_type type) { current_mem_type = type; }
 
+enum mem_type get_mem_type(void) { return current_mem_type; }
+
 static char *mem_names[] = {"None",          "Certificate Logs",
                             "Log Allocator", "State Management",
                             "View Info",     "Num Mem Types"};

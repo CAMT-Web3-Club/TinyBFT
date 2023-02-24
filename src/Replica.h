@@ -429,9 +429,10 @@ inline int Replica::used_state_pages() const {
 
 #ifdef NO_STATE_TRANSLATION
 inline void Replica::modify(char *mem, int size) {
+  MEMSTATS_MEM_TYPE_VAR;
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_STATE_MANAGEMENT);
   state.cow(mem, size);
-  MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+  MEMSTATS_RESTORE_MEM_TYPE();
 }
 
 #else
@@ -442,9 +443,10 @@ inline void Replica::modify_index_replies(int bindex) {
 #endif
 
 inline void Replica::modify_index(int bindex) {
+  MEMSTATS_MEM_TYPE_VAR;
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_STATE_MANAGEMENT);
   state.cow_single(bindex);
-  MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+  MEMSTATS_RESTORE_MEM_TYPE();
 }
 
 inline bool Replica::has_new_view() const {

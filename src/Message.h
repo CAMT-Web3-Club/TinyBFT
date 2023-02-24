@@ -4,11 +4,12 @@
 #include <stddef.h>
 #include <stdio.h>
 
+#include <cstdlib>
+
 #include "Log_allocator.h"
-#ifndef STATIC_LOG_ALLOCATOR
-#include "scratch_allocator.h"
-#endif
 #include "Message_tags.h"
+#include "mem_statistics.h"
+#include "scratch_allocator.h"
 #include "th_assert.h"
 #include "types.h"
 
@@ -81,11 +82,10 @@ class Message {
   bool full() const;
   // Effects: Messages may be full or empty. Empty messages are just
   // digests of full messages.
-#if 0
+
   // Message-specific heap management operators.
   void *operator new(size_t s);
   void operator delete(void *x, size_t s);
-#endif
 
   static void init();
   // Effects: Should be called once to initialize the memory allocator.
@@ -170,21 +170,34 @@ inline bool Message::has_tag(int t, int sz) const {
 inline View Message::view() const { return 0; }
 
 inline bool Message::full() const { return true; }
-#if 0
+
 inline void *Message::operator new(size_t s) {
+#ifndef STATIC_LOG_ALLOCATOR
   void *ret = (void *)a->malloc(ALIGNED_SIZE(s));
+#else
+  MEMSTATS_MEM_TYPE_VAR
+  MEMSTATS_SET_MEM_TYPE(MEM_TYPE_LOG_ALLOCATOR);
+  void *ret = malloc(ALIGNED_SIZE(s));
+  MEMSTATS_RESTORE_MEM_TYPE();
+#endif
   th_assert(ret != 0, "Ran out of memory\n");
   return ret;
 }
 
-inline void Message::operator delete(void *x, size_t s) {
+inline void Message::operator delete(void *x, [[maybe_unused]] size_t s) {
   if (x == nullptr) {
     return;
   }
 
+#ifndef STATIC_LOG_ALLOCATOR
   a->free((char *)x, ALIGNED_SIZE(s));
-}
+#else
+  MEMSTATS_MEM_TYPE_VAR
+  MEMSTATS_SET_MEM_TYPE(MEM_TYPE_LOG_ALLOCATOR);
+  free(x);
+  MEMSTATS_RESTORE_MEM_TYPE();
 #endif
+}
 
 inline int Message::msize() const {
   return (max_size >= 0) ? max_size : msg->size;

@@ -32,6 +32,7 @@ Log_allocator::Chunk *Log_allocator::alloc_chunk() {
     num_chunks++;
   } else {
     MEMSTATS_CALL_STACK_PUSH(Log_allocator::alloc_chunk);
+    MEMSTATS_MEM_TYPE_VAR
     MEMSTATS_SET_MEM_TYPE(MEM_TYPE_LOG_ALLOCATOR);
     // Allocate a new chunks array. The array must be chunk_size-aligned.
     void *addr = (void *)-1;
@@ -47,7 +48,7 @@ Log_allocator::Chunk *Log_allocator::alloc_chunk() {
       if (addr != MAP_FAILED) {
         MEMSTATS_TRACK_CHANGE((long)chunk_size * max_num_chunks);
       }
-      MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+      MEMSTATS_RESTORE_MEM_TYPE();
       MEMSTATS_CALL_STACK_POP();
       if (addr != (void *)-1 && ((long)addr) % chunk_size == 0) {
         break;

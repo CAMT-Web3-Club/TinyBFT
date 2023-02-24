@@ -26,9 +26,10 @@ Log<T>::~Log() {
 
 template <class T>
 void Log<T>::clear(Seqno h) {
+  MEMSTATS_MEM_TYPE_VAR
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_CERTIFICATE_LOGS);
   for (int i = 0; i < max_size; i++) elems[i].clear();
-  MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+  MEMSTATS_RESTORE_MEM_TYPE();
 
   head = h;
 }
@@ -41,6 +42,7 @@ T &Log<T>::fetch(Seqno seqno) {
 
 template <class T>
 void Log<T>::truncate(Seqno new_head) {
+  MEMSTATS_MEM_TYPE_VAR
   if (new_head <= head) return;
 
   int i = head;
@@ -54,7 +56,7 @@ void Log<T>::truncate(Seqno new_head) {
   for (; i < max; i++) {
     elems[mod(i)].clear();
   }
-  MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+  MEMSTATS_RESTORE_MEM_TYPE();
 
   head = new_head;
 }

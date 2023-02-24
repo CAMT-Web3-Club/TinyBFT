@@ -313,13 +313,14 @@ void Replica::compute_non_det(Seqno s, char *b, int *b_len) {
 Replica::~Replica() {}
 
 void Replica::recv() {
+  MEMSTATS_MEM_TYPE_VAR
   // Compute session keys and send initial new-key message.
   Node::send_new_key();
 
   // Compute digest of initial state and first checkpoint.
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_STATE_MANAGEMENT);
   state.compute_full_digest();
-  MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+  MEMSTATS_RESTORE_MEM_TYPE();
 
   // Start status and authentication freshness timers
   stimer->start();
@@ -335,7 +336,7 @@ void Replica::recv() {
     if (state.in_check_state()) {
       MEMSTATS_SET_MEM_TYPE(MEM_TYPE_STATE_MANAGEMENT);
       state.check_state();
-      MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+      MEMSTATS_RESTORE_MEM_TYPE();
     }
 
     Message *m = Node::recv();
@@ -490,6 +491,7 @@ void Replica::handle(Request *m) {
 }
 
 void Replica::send_pre_prepare() {
+  MEMSTATS_MEM_TYPE_VAR
   th_assert(primary() == node_id, "Non-primary called send_pre_prepare");
 
   // If rqueue is empty there are no requests for which to send
@@ -525,7 +527,7 @@ void Replica::send_pre_prepare() {
     send(pp, All_replicas);
     MEMSTATS_SET_MEM_TYPE(MEM_TYPE_CERTIFICATE_LOGS);
     plog.fetch(seqno).add_mine(pp);
-    MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+    MEMSTATS_RESTORE_MEM_TYPE();
   }
 }
 
@@ -560,6 +562,7 @@ bool Replica::in_wv(T *m) {
 }
 
 void Replica::handle(Pre_prepare *m) {
+  MEMSTATS_MEM_TYPE_VAR
   const Seqno ms = m->seqno();
 
   Byz_buffer b;
@@ -573,7 +576,7 @@ void Replica::handle(Pre_prepare *m) {
 #endif
     MEMSTATS_SET_MEM_TYPE(MEM_TYPE_CERTIFICATE_LOGS);
     Prepared_cert &pc = plog.fetch(ms);
-    MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+    MEMSTATS_RESTORE_MEM_TYPE();
 
     // Only accept message if we never accepted another pre-prepare
     // for the same view and sequence number and the message is valid.
@@ -589,7 +592,7 @@ void Replica::handle(Pre_prepare *m) {
     // a view-change.
     MEMSTATS_SET_MEM_TYPE(MEM_TYPE_VIEW_INFO);
     vi.add_missing(m);
-    MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+    MEMSTATS_RESTORE_MEM_TYPE();
     return;
   }
 
@@ -607,6 +610,7 @@ void Replica::send_prepare(Prepared_cert &pc) {
 }
 
 void Replica::send_commit(Seqno s) {
+  MEMSTATS_MEM_TYPE_VAR
   // Executing request before sending commit improves performance
   // for null requests. May not be true in general.
   if (s == last_executed + 1) execute_prepared();
@@ -619,13 +623,14 @@ void Replica::send_commit(Seqno s) {
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_CERTIFICATE_LOGS);
   Certificate<Commit> &cs = clog.fetch(s);
   if (cs.add_mine(c) && cs.is_complete()) {
-    MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+    MEMSTATS_RESTORE_MEM_TYPE();
     execute_committed();
   }
-  MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+  MEMSTATS_RESTORE_MEM_TYPE();
 }
 
 void Replica::handle(Prepare *m) {
+  MEMSTATS_MEM_TYPE_VAR
   const Seqno ms = m->seqno();
 
   // Only accept prepare messages that are not sent by the primary for
@@ -634,7 +639,7 @@ void Replica::handle(Prepare *m) {
     MEMSTATS_SET_MEM_TYPE(MEM_TYPE_CERTIFICATE_LOGS);
     Prepared_cert &ps = plog.fetch(ms);
     if (ps.add(m) && ps.is_complete()) send_commit(ms);
-    MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+    MEMSTATS_RESTORE_MEM_TYPE();
     return;
   }
 
@@ -643,7 +648,7 @@ void Replica::handle(Prepare *m) {
     // request to complete a view-change.
     MEMSTATS_SET_MEM_TYPE(MEM_TYPE_VIEW_INFO);
     vi.add_missing(m);
-    MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+    MEMSTATS_RESTORE_MEM_TYPE();
     return;
   }
 
@@ -652,6 +657,7 @@ void Replica::handle(Prepare *m) {
 }
 
 void Replica::handle(Commit *m) {
+  MEMSTATS_MEM_TYPE_VAR
   const Seqno ms = m->seqno();
 
   // Only accept messages with the current view.  TODO: change to
@@ -660,10 +666,10 @@ void Replica::handle(Commit *m) {
     MEMSTATS_SET_MEM_TYPE(MEM_TYPE_CERTIFICATE_LOGS);
     Certificate<Commit> &cs = clog.fetch(m->seqno());
     if (cs.add(m) && cs.is_complete()) {
-      MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+      MEMSTATS_RESTORE_MEM_TYPE();
       execute_committed();
     }
-    MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+    MEMSTATS_RESTORE_MEM_TYPE();
     return;
   }
   delete m;
@@ -671,6 +677,7 @@ void Replica::handle(Commit *m) {
 }
 
 void Replica::handle(Checkpoint *m) {
+  MEMSTATS_MEM_TYPE_VAR
   const Seqno ms = m->seqno();
   if (ms > last_stable) {
     if (ms <= last_stable + max_out) {
@@ -683,10 +690,10 @@ void Replica::handle(Checkpoint *m) {
       if (clog.within_range(last_executed)) {
         Time *t = nullptr;
         clog.fetch(last_executed).mine(&t);
-        MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+        MEMSTATS_RESTORE_MEM_TYPE();
         late &= diffTime(currentTime(), *t) > 200000;
       }
-      MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+      MEMSTATS_RESTORE_MEM_TYPE();
 
       if (!late) {
         Certificate<Checkpoint> &cs = elog.fetch(ms);
@@ -730,7 +737,7 @@ void Replica::handle(Checkpoint *m) {
             th_assert(!state.in_fetch_state(), "Invalid state");
             MEMSTATS_SET_MEM_TYPE(MEM_TYPE_STATE_MANAGEMENT);
             Seqno rc = state.rollback();
-            MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+            MEMSTATS_RESTORE_MEM_TYPE();
             last_tentative_execute = last_executed = rc;
             //	    fprintf(stderr, ":):):):):):):):) Set le = %d\n",
             // last_executed);
@@ -741,7 +748,7 @@ void Replica::handle(Checkpoint *m) {
           vtimer->stop();
           MEMSTATS_SET_MEM_TYPE(MEM_TYPE_STATE_MANAGEMENT);
           state.start_fetch(last_executed);
-          MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+          MEMSTATS_RESTORE_MEM_TYPE();
         }
         return;
       }
@@ -759,6 +766,7 @@ void Replica::handle(New_key *m) {
 }
 
 void Replica::handle(Status *m) {
+  MEMSTATS_MEM_TYPE_VAR
   static const int max_ret_bytes = 65536;
 
   if (m->verify() && qs == 0) {
@@ -796,7 +804,7 @@ void Replica::handle(Status *m) {
       // Retransmit my latest view-change message
       MEMSTATS_SET_MEM_TYPE(MEM_TYPE_VIEW_INFO);
       View_change *vc = vi.my_view_change(&t);
-      MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+      MEMSTATS_RESTORE_MEM_TYPE();
       if (vc != 0) retransmit(vc, current, t, p);
       delete m;
       return;
@@ -814,7 +822,7 @@ void Replica::handle(Status *m) {
 
           MEMSTATS_SET_MEM_TYPE(MEM_TYPE_CERTIFICATE_LOGS);
           Commit *c = clog.fetch(n).mine(&t);
-          MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+          MEMSTATS_RESTORE_MEM_TYPE();
           if (c != 0) {
             retransmit(c, current, t, p);
           }
@@ -829,14 +837,14 @@ void Replica::handle(Status *m) {
           if (primary() == node_id) {
             MEMSTATS_SET_MEM_TYPE(MEM_TYPE_CERTIFICATE_LOGS);
             Pre_prepare *pp = plog.fetch(n).my_pre_prepare(&t);
-            MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+            MEMSTATS_RESTORE_MEM_TYPE();
             if (pp != 0) {
               retransmit(pp, current, t, p);
             }
           } else {
             MEMSTATS_SET_MEM_TYPE(MEM_TYPE_CERTIFICATE_LOGS);
             Prepare *pr = plog.fetch(n).my_prepare(&t);
-            MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+            MEMSTATS_RESTORE_MEM_TYPE();
             if (pr != 0) {
               retransmit(pr, current, t, p);
             }
@@ -855,7 +863,7 @@ void Replica::handle(Status *m) {
             if (plog.within_range(ppn)) {
               Pre_prepare_info::BRS_iter gen(plog.fetch(ppn).prep_info(),
                                              mrmap);
-              MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+              MEMSTATS_RESTORE_MEM_TYPE();
               Request *r;
               while (gen.get(r)) {
                 send(r, m->id());
@@ -870,7 +878,7 @@ void Replica::handle(Status *m) {
           // p does not have my view-change: send it.
           MEMSTATS_SET_MEM_TYPE(MEM_TYPE_VIEW_INFO);
           View_change *vc = vi.my_view_change(&t);
-          MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+          MEMSTATS_RESTORE_MEM_TYPE();
           th_assert(vc != 0, "Invalid state");
           retransmit(vc, current, t, p);
         }
@@ -880,7 +888,7 @@ void Replica::handle(Status *m) {
             // p does not have new-view message and I am primary: send it
             MEMSTATS_SET_MEM_TYPE(MEM_TYPE_VIEW_INFO);
             New_view *nv = vi.my_new_view(&t);
-            MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+            MEMSTATS_RESTORE_MEM_TYPE();
             if (nv != 0) retransmit(nv, current, t, p);
           }
         } else {
@@ -897,7 +905,7 @@ void Replica::handle(Status *m) {
               if (m->id() == i) continue;
               MEMSTATS_SET_MEM_TYPE(MEM_TYPE_VIEW_INFO);
               View_change_ack *vca = vi.my_vc_ack(i);
-              MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+              MEMSTATS_RESTORE_MEM_TYPE();
               if (vca && !m->has_vc(i))
                 // View-change acks are not being authenticated
                 retransmit(vca, current, &current, p);
@@ -918,12 +926,12 @@ void Replica::handle(Status *m) {
             if (m->id() == primary(v)) {
               MEMSTATS_SET_MEM_TYPE(MEM_TYPE_VIEW_INFO);
               pp = vi.pre_prepare(ppn, ppv);
-              MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+              MEMSTATS_RESTORE_MEM_TYPE();
             } else {
               MEMSTATS_SET_MEM_TYPE(MEM_TYPE_CERTIFICATE_LOGS);
               if (primary(v) == id() && plog.within_range(ppn))
                 pp = plog.fetch(ppn).pre_prepare();
-              MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+              MEMSTATS_RESTORE_MEM_TYPE();
             }
 
             if (pp) {
@@ -946,7 +954,7 @@ void Replica::handle(Status *m) {
             if (ppp) {
               MEMSTATS_SET_MEM_TYPE(MEM_TYPE_VIEW_INFO);
               vi.send_proofs(ppn, ppv, m->id());
-              MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+              MEMSTATS_RESTORE_MEM_TYPE();
             }
           }
         }
@@ -968,6 +976,7 @@ void Replica::handle(Status *m) {
 }
 
 void Replica::handle(View_change *m) {
+  MEMSTATS_MEM_TYPE_VAR
   printf("RECV: view change v=%qd from %d\n", m->view(), m->id());
   if (m->id() == primary() && m->view() > v) {
     printf("Received View_change from primary %d\n", m->id());
@@ -981,14 +990,14 @@ void Replica::handle(View_change *m) {
 
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_VIEW_INFO);
   bool modified = vi.add(m);
-  MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+  MEMSTATS_RESTORE_MEM_TYPE();
   if (!modified) return;
 
   // TODO: memoize maxv and avoid this computation if it cannot change i.e.
   // m->view() <= last maxv. This also holds for the next check.
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_VIEW_INFO);
   View maxv = vi.max_view();
-  MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+  MEMSTATS_RESTORE_MEM_TYPE();
   if (maxv > v) {
     // Replica has at least f+1 view-changes with a view number
     // greater than or equal to maxv: change to view maxv.
@@ -1019,22 +1028,25 @@ void Replica::handle(View_change *m) {
 void Replica::handle(New_view *m) {
   //  printf("RECV: new view v=%qd from %d\n", m->view(), m->id());
 
+  MEMSTATS_MEM_TYPE_VAR
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_VIEW_INFO);
   vi.add(m);
-  MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+  MEMSTATS_RESTORE_MEM_TYPE();
 }
 
 void Replica::handle(View_change_ack *m) {
   //  printf("RECV: view-change ack v=%qd from %d for %d\n", m->view(), m->id(),
   //  m->vc_id());
 
+  MEMSTATS_MEM_TYPE_VAR
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_VIEW_INFO);
   vi.add(m);
-  MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+  MEMSTATS_RESTORE_MEM_TYPE();
 }
 
 void Replica::send_view_change() {
   // Move to next view.
+  MEMSTATS_MEM_TYPE_VAR
   v++;
   cur_primary = v % num_replicas;
   limbo = true;
@@ -1046,7 +1058,7 @@ void Replica::send_view_change() {
     th_assert(!state.in_fetch_state(), "Invalid state");
     MEMSTATS_SET_MEM_TYPE(MEM_TYPE_STATE_MANAGEMENT);
     Seqno rc = state.rollback();
-    MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+    MEMSTATS_RESTORE_MEM_TYPE();
     //    printf("XXXRolled back in vc to %qd with last_executed=%qd\n", rc,
     //    last_executed);
     last_tentative_execute = last_executed = rc;
@@ -1059,24 +1071,24 @@ void Replica::send_view_change() {
     MEMSTATS_SET_MEM_TYPE(MEM_TYPE_CERTIFICATE_LOGS);
     Prepared_cert &pc = plog.fetch(i);
     Certificate<Commit> &cc = clog.fetch(i);
-    MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+    MEMSTATS_RESTORE_MEM_TYPE();
 
     if (pc.is_complete()) {
       MEMSTATS_SET_MEM_TYPE(MEM_TYPE_VIEW_INFO);
       vi.add_complete(pc.rem_pre_prepare());
-      MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+      MEMSTATS_RESTORE_MEM_TYPE();
     } else {
       Prepare *p = pc.my_prepare();
       if (p != 0) {
         MEMSTATS_SET_MEM_TYPE(MEM_TYPE_VIEW_INFO);
         vi.add_incomplete(i, p->digest());
-        MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+        MEMSTATS_RESTORE_MEM_TYPE();
       } else {
         Pre_prepare *pp = pc.my_pre_prepare();
         if (pp != 0) {
           MEMSTATS_SET_MEM_TYPE(MEM_TYPE_VIEW_INFO);
           vi.add_incomplete(i, pp->digest());
-          MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+          MEMSTATS_RESTORE_MEM_TYPE();
         }
       }
     }
@@ -1090,12 +1102,13 @@ void Replica::send_view_change() {
   printf("XXX SND: view change %qd\n", v);
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_VIEW_INFO);
   vi.view_change(v, last_executed, &state);
-  MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+  MEMSTATS_RESTORE_MEM_TYPE();
 }
 
 void Replica::process_new_view(Seqno min, Digest d, Seqno max, Seqno ms) {
   th_assert(ms >= 0 && ms <= min, "Invalid state");
   //  printf("XXX process new view: %qd\n", v);
+  MEMSTATS_MEM_TYPE_VAR
 
   vtimer->restop();
   limbo = false;
@@ -1104,7 +1117,7 @@ void Replica::process_new_view(Seqno min, Digest d, Seqno max, Seqno ms) {
   if (primary(v) == id()) {
     MEMSTATS_SET_MEM_TYPE(MEM_TYPE_VIEW_INFO);
     New_view *nv = vi.my_new_view();
-    MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+    MEMSTATS_RESTORE_MEM_TYPE();
     send(nv, All_replicas);
   }
 
@@ -1126,7 +1139,7 @@ void Replica::process_new_view(Seqno min, Digest d, Seqno max, Seqno ms) {
     Digest d;
     MEMSTATS_SET_MEM_TYPE(MEM_TYPE_VIEW_INFO);
     Pre_prepare *pp = vi.fetch_request(i, d);
-    MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+    MEMSTATS_RESTORE_MEM_TYPE();
     MEMSTATS_SET_MEM_TYPE(MEM_TYPE_CERTIFICATE_LOGS);
     Prepared_cert &pc = plog.fetch(i);
 
@@ -1140,7 +1153,7 @@ void Replica::process_new_view(Seqno min, Digest d, Seqno max, Seqno ms) {
       th_assert(pp != 0 && pp->digest() == p->digest(), "Invalid state");
       pc.add_old(pp);
     }
-    MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+    MEMSTATS_RESTORE_MEM_TYPE();
   }
 
   if (primary() == id()) {
@@ -1152,7 +1165,7 @@ void Replica::process_new_view(Seqno min, Digest d, Seqno max, Seqno ms) {
     has_nv_state = false;
     MEMSTATS_SET_MEM_TYPE(MEM_TYPE_STATE_MANAGEMENT);
     state.start_fetch(last_executed, min, &d, min <= ms);
-    MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+    MEMSTATS_RESTORE_MEM_TYPE();
   } else {
     has_nv_state = true;
 
@@ -1169,18 +1182,20 @@ void Replica::process_new_view(Seqno min, Digest d, Seqno max, Seqno ms) {
 }
 
 Pre_prepare *Replica::prepared(Seqno n) {
+  MEMSTATS_MEM_TYPE_VAR
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_CERTIFICATE_LOGS);
   Prepared_cert &pc = plog.fetch(n);
   if (pc.is_complete()) {
     auto *pp = pc.pre_prepare();
-    MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+    MEMSTATS_RESTORE_MEM_TYPE();
     return pp;
   }
-  MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+  MEMSTATS_RESTORE_MEM_TYPE();
   return 0;
 }
 
 Pre_prepare *Replica::committed(Seqno s) {
+  MEMSTATS_MEM_TYPE_VAR
   // TODO: This is correct but too conservative: fix to handle case
   // where commit and prepare are not in same view; and to allow
   // commits without prepared requests, i.e., only with the
@@ -1188,10 +1203,10 @@ Pre_prepare *Replica::committed(Seqno s) {
   Pre_prepare *pp = prepared(s);
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_CERTIFICATE_LOGS);
   if (clog.fetch(s).is_complete()) {
-    MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+    MEMSTATS_RESTORE_MEM_TYPE();
     return pp;
   }
-  MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+  MEMSTATS_RESTORE_MEM_TYPE();
   return 0;
 }
 
@@ -1241,6 +1256,7 @@ bool Replica::execute_read_only(Request *req) {
 }
 
 void Replica::execute_prepared(bool committed) {
+  MEMSTATS_MEM_TYPE_VAR
   if (last_tentative_execute < last_executed + 1 &&
       last_executed < last_stable + max_out && !state.in_fetch_state() &&
       !state.in_check_state() && has_new_view()) {
@@ -1329,13 +1345,14 @@ void Replica::execute_prepared(bool committed) {
       if ((last_executed + 1) % checkpoint_interval == 0) {
         MEMSTATS_SET_MEM_TYPE(MEM_TYPE_STATE_MANAGEMENT);
         state.checkpoint(last_executed + 1);
-        MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+        MEMSTATS_RESTORE_MEM_TYPE();
       }
     }
   }
 }
 
 void Replica::execute_committed() {
+  MEMSTATS_MEM_TYPE_VAR
   if (!state.in_fetch_state() && !state.in_check_state() && has_new_view()) {
     while (1) {
       if (last_executed >= last_stable + max_out || last_executed < last_stable)
@@ -1385,7 +1402,7 @@ void Replica::execute_committed() {
           Digest d_state;
           MEMSTATS_SET_MEM_TYPE(MEM_TYPE_STATE_MANAGEMENT);
           state.digest(last_executed, d_state);
-          MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+          MEMSTATS_RESTORE_MEM_TYPE();
           Checkpoint *e = new Checkpoint(last_executed, d_state);
           Certificate<Checkpoint> &cc = elog.fetch(last_executed);
           cc.add_mine(e);
@@ -1444,10 +1461,11 @@ void Replica::update_max_rec() {
 }
 
 void Replica::new_state(Seqno c) {
+  MEMSTATS_MEM_TYPE_VAR
   //  fprintf(stderr, ":n)e:w):s)t:a)t:e) ");
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_VIEW_INFO);
   if (vi.has_new_view(v) && c >= low_bound) has_nv_state = true;
-  MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+  MEMSTATS_RESTORE_MEM_TYPE();
 
   if (c > last_executed) {
     last_executed = last_tentative_execute = c;
@@ -1468,7 +1486,7 @@ void Replica::new_state(Seqno c) {
     Digest d;
     MEMSTATS_SET_MEM_TYPE(MEM_TYPE_STATE_MANAGEMENT);
     state.digest(c, d);
-    MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+    MEMSTATS_RESTORE_MEM_TYPE();
     Checkpoint *ck = new Checkpoint(c, d);
     elog.fetch(c).add_mine(ck);
     send(ck, All_replicas);
@@ -1508,6 +1526,7 @@ void Replica::new_state(Seqno c) {
 }
 
 void Replica::mark_stable(Seqno n, bool have_state) {
+  MEMSTATS_MEM_TYPE_VAR
   // XXXXXcheck if this should be < or <=
 
   //  fprintf(stderr, "mark stable n %qd laststable %qd\n", n, last_stable);
@@ -1539,17 +1558,17 @@ void Replica::mark_stable(Seqno n, bool have_state) {
   plog.truncate(last_stable + 1);
   clog.truncate(last_stable + 1);
   agreement_region::truncate(last_stable + 1);
-  MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+  MEMSTATS_RESTORE_MEM_TYPE();
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_VIEW_INFO);
   vi.mark_stable(last_stable);
-  MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+  MEMSTATS_RESTORE_MEM_TYPE();
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_CERTIFICATE_LOGS);
   elog.truncate(last_stable);
   checkpoint_region::truncate(last_stable);
-  MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+  MEMSTATS_RESTORE_MEM_TYPE();
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_STATE_MANAGEMENT);
   state.discard_checkpoint(last_stable, last_executed);
-  MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+  MEMSTATS_RESTORE_MEM_TYPE();
   brt.mark_stable(last_stable);
 
   if (have_state) {
@@ -1561,7 +1580,7 @@ void Replica::mark_stable(Seqno n, bool have_state) {
       Digest d_state;
       MEMSTATS_SET_MEM_TYPE(MEM_TYPE_STATE_MANAGEMENT);
       state.digest(last_stable, d_state);
-      MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+      MEMSTATS_RESTORE_MEM_TYPE();
       c = new Checkpoint(last_stable, d_state, true);
       elog.fetch(last_stable).add_mine(c);
       elog.fetch(last_stable).make_complete();
@@ -1605,33 +1624,38 @@ void Replica::mark_stable(Seqno n, bool have_state) {
 }
 
 void Replica::handle(Data *m) {
+  MEMSTATS_MEM_TYPE_VAR
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_STATE_MANAGEMENT);
   state.handle(m);
-  MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+  MEMSTATS_RESTORE_MEM_TYPE();
 }
 
 void Replica::handle(Meta_data *m) {
+  MEMSTATS_MEM_TYPE_VAR
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_STATE_MANAGEMENT);
   state.handle(m);
-  MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+  MEMSTATS_RESTORE_MEM_TYPE();
 }
 
 void Replica::handle(Meta_data_d *m) {
+  MEMSTATS_MEM_TYPE_VAR
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_STATE_MANAGEMENT);
   state.handle(m);
-  MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+  MEMSTATS_RESTORE_MEM_TYPE();
 }
 
 void Replica::handle(Fetch *m) {
+  MEMSTATS_MEM_TYPE_VAR
   int mid = m->id();
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_STATE_MANAGEMENT);
   if (!state.handle(m, last_stable) && last_new_key != 0) {
     send(last_new_key, mid);
   }
-  MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+  MEMSTATS_RESTORE_MEM_TYPE();
 }
 
 void Replica::send_new_key() {
+  MEMSTATS_MEM_TYPE_VAR
   Node::send_new_key();
 
   // Cleanup messages in incomplete certificates that are
@@ -1642,7 +1666,7 @@ void Replica::send_new_key() {
     if (n % checkpoint_interval == 0) {
       MEMSTATS_SET_MEM_TYPE(MEM_TYPE_CERTIFICATE_LOGS);
       elog.fetch(n).mark_stale();
-      MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+      MEMSTATS_RESTORE_MEM_TYPE();
     }
   }
 
@@ -1652,18 +1676,19 @@ void Replica::send_new_key() {
     MEMSTATS_SET_MEM_TYPE(MEM_TYPE_CERTIFICATE_LOGS);
     plog.fetch(n).mark_stale();
     clog.fetch(n).mark_stale();
-    MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+    MEMSTATS_RESTORE_MEM_TYPE();
   }
 
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_VIEW_INFO);
   vi.mark_stale();
-  MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+  MEMSTATS_RESTORE_MEM_TYPE();
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_STATE_MANAGEMENT);
   state.mark_stale();
-  MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+  MEMSTATS_RESTORE_MEM_TYPE();
 }
 
 void Replica::send_status() {
+  MEMSTATS_MEM_TYPE_VAR
   // Check how long ago we sent the last status message.
   Time cur = currentTime();
   if (diffTime(cur, last_status) > 100000) {
@@ -1687,10 +1712,10 @@ void Replica::send_status() {
     MEMSTATS_SET_MEM_TYPE(MEM_TYPE_STATE_MANAGEMENT);
     if (state.retrans_fetch(cur)) {
       state.send_fetch(true);
-      MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+      MEMSTATS_RESTORE_MEM_TYPE();
       return;
     }
-    MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+    MEMSTATS_RESTORE_MEM_TYPE();
 
     Status s(v, last_stable, last_executed, has_new_view(),
              vi.has_nv_message(v));
@@ -1718,7 +1743,7 @@ void Replica::send_status() {
       MEMSTATS_SET_MEM_TYPE(MEM_TYPE_VIEW_INFO);
       vi.set_received_vcs(&s);
       vi.set_missing_pps(&s);
-      MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+      MEMSTATS_RESTORE_MEM_TYPE();
     }
 
     // Multicast status to all replicas.
@@ -1728,6 +1753,7 @@ void Replica::send_status() {
 }
 
 bool Replica::shutdown() {
+  MEMSTATS_MEM_TYPE_VAR
   START_CC(shutdown_time);
   vtimer->stop();
 
@@ -1735,7 +1761,7 @@ bool Replica::shutdown() {
   if (!state.in_fetch_state()) {
     MEMSTATS_SET_MEM_TYPE(MEM_TYPE_STATE_MANAGEMENT);
     Seqno rc = state.rollback();
-    MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+    MEMSTATS_RESTORE_MEM_TYPE();
     last_tentative_execute = last_executed = rc;
     //    fprintf(stderr, ":):):):):):):):) shutd Set le = %d\n",
     //    last_executed);
@@ -1903,6 +1929,7 @@ void Replica::handle(Query_stable *m) {
 }
 
 void Replica::enforce_bound(Seqno b) {
+  MEMSTATS_MEM_TYPE_VAR
   th_assert(recovering && se.estimate() >= 0, "Invalid state");
 
   bool correct = !corrupt && last_stable <= b - max_out && seqno <= b &&
@@ -1933,19 +1960,20 @@ void Replica::enforce_bound(Seqno b) {
     plog.clear(known_stable + 1);
     clog.clear(known_stable + 1);
     elog.clear(known_stable);
-    MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+    MEMSTATS_RESTORE_MEM_TYPE();
   }
 
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_VIEW_INFO);
   correct &= vi.enforce_bound(b, known_stable, !correct);
-  MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+  MEMSTATS_RESTORE_MEM_TYPE();
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_STATE_MANAGEMENT);
   correct &= state.enforce_bound(b, known_stable, !correct);
-  MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+  MEMSTATS_RESTORE_MEM_TYPE();
   corrupt = !correct;
 }
 
 void Replica::handle(Reply_stable *m) {
+  MEMSTATS_MEM_TYPE_VAR
   if (qs && qs->nonce() == m->nonce()) {
     if (se.add(m)) {
       // Done with estimation.
@@ -1977,7 +2005,7 @@ void Replica::handle(Reply_stable *m) {
       vtimer->stop();
       MEMSTATS_SET_MEM_TYPE(MEM_TYPE_STATE_MANAGEMENT);
       state.start_check(last_executed);
-      MEMSTATS_SET_MEM_TYPE(MEM_TYPE_NONE);
+      MEMSTATS_RESTORE_MEM_TYPE();
 
       // Leave multicast group.
       //            printf("XXX Leaving mcast group\n");
