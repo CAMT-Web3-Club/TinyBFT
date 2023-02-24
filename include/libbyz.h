@@ -17,7 +17,11 @@ typedef unsigned long bool;
 #define BLOCK_SIZE 4096
 #endif  // !BLOCK_SIZE
 static const int Block_size = BLOCK_SIZE;
+#ifdef __cplusplus
 static_assert(Block_size % 2 == 0, "Block size must be a power of two");
+#else
+_Static_assert(BLOCK_SIZE % 2 == 0, "Block size must be a power of two");
+#endif
 
 #include "Modify.h"
 #include "types.h"
