@@ -447,7 +447,9 @@ State::State(MEM_STATS_PARAM Replica* rep, char* memory, int num_bytes)
 #endif
 
   for (int i = 0; i < PLevels; i++) {
+    MEM_STATS_GUARD_PUSH(Part);
     ptree[i] = new Part[(i != PLevels - 1) ? PLevelSize[i] : nb];
+    MEM_STATS_GUARD_POP();
     stalep[i] = new FPartQueue(MEM_STATS_ARG);
   }
 
@@ -455,7 +457,9 @@ State::State(MEM_STATS_PARAM Replica* rep, char* memory, int num_bytes)
   DSum::init("d2a10a09a80bc599b4d60bbec06c05d5e9f9c369954940145b63a1e2");
 
   for (int i = 0; i < PLevels - 1; i++) {
+    MEM_STATS_GUARD_PUSH(DSum);
     stree[i] = new DSum[PLevelSize[i]];
+    MEM_STATS_GUARD_POP();
   }
 
   fetching = false;
