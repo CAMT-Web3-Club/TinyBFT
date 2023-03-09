@@ -96,7 +96,7 @@ inline int Commit::id() const { return rep().id; }
 
 inline bool Commit::match(const Commit *c) const {
   th_assert(view() == c->view() && seqno() == c->seqno(), "Invalid argument");
-  return true;
+  return (view() == c->view() && seqno() == c->seqno());
 }
 
 #ifdef STATIC_LOG_ALLOCATOR

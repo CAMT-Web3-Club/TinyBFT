@@ -164,18 +164,14 @@ unsigned Principal::encrypt(const char *src, uint32_t src_len, char *dst,
 }
 
 void random_nonce(unsigned *n) {
-  th_assert(
-      mbedtls_ctr_drbg_random(node->drbg_context(),
-                              reinterpret_cast<uint8_t *>(n), Nonce_size) == 0,
-      "failed to generate random nonce");
+  int err = mbedtls_ctr_drbg_random(node->drbg_context(), reinterpret_cast<uint8_t *>(n), Nonce_size);
+  th_assert(err == 0, "failed to generate random nonce");
 }
 
 int random_int() {
   int i;
-  th_assert(
-      mbedtls_ctr_drbg_random(node->drbg_context(),
-                              reinterpret_cast<uint8_t *>(&i), sizeof(i)) == 0,
-      "failed to generate random integer");
+  int err = mbedtls_ctr_drbg_random(node->drbg_context(), reinterpret_cast<uint8_t *>(&i),sizeof(i));
+  th_assert(err == 0, "failed to generate random integer");
   return i;
 }
 
