@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 #ifndef __cplusplus
-typedef unsigned long bool;
+#include <stdbool.h>
 #endif
 
 /* Because of FILE parameter */
