@@ -57,7 +57,8 @@ inline uint64_t cycle_count() {
   union cycle_count count;
 
 #if defined(__i386__) || defined(__x86_64__)
-  __asm__("rdtsc" : "=a"(count.words.low), "=d"(count.words.high) :);
+  unsigned int aux;
+  count.value = __builtin_ia32_rdtscp(&aux);
 #elif defined(ESP_PLATFORM) && defined(__riscv)
   count.words.high = 0;
   __asm__("csrr %0, %1" : "=r"(count.words.low) : "i"(csr::MPCCR));
