@@ -132,6 +132,7 @@ void Replica::print_memory_consumption([[maybe_unused]] const size_t mem_size) {
   fprintf(stderr, "sizeof(View_info) = %u\n", sizeof(View_info));
   fprintf(stderr, "sizeof(CheckpointRecordLog) = %u\n",
           sizeof(CheckpointRecordLog));
+  fprintf(stderr, "sizeof(Checkpoint_rec) = %u\n", sizeof(Checkpoint_rec));
   fprintf(stderr, "sizeof(CheckpointRecord) = %u\n", sizeof(CheckpointRecord));
   fprintf(stderr, "sizeof(Log<Prepared_cert>) = %u\n",
           sizeof(Log<Prepared_cert>));
@@ -144,7 +145,7 @@ void Replica::print_memory_consumption([[maybe_unused]] const size_t mem_size) {
   fprintf(stderr, "sizeof(Log<Certificate<Checkpoint>>) = %u\n",
           sizeof(Log<Certificate<Checkpoint>>));
   fprintf(stderr, "sizeof(CheckpointLog) = %u\n", sizeof(CheckpointLog));
-
+  fprintf(stderr, "sizeof(OReq_info) = %u", sizeof(View_info::OReq_info));
 #ifdef STATIC_LOG_ALLOCATOR
   fprintf(stderr, "sizeof(agreement_region) = %u\n",
           agreement_region::memory_demand());
