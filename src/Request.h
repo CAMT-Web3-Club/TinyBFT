@@ -53,7 +53,7 @@ class Request : public Message {
   Request *clone() const;
   // Effects: Clones this.
 
-  static const int big_req_thresh = 1024;  // Maximum size of not-big requests
+  static const int big_req_thresh = 0;  // Maximum size of not-big requests
   char *store_command(int &max_len);
   // Effects: Returns a pointer to the location within the message
   // where the command should be stored and sets "max_len" to the number of
