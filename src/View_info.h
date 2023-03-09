@@ -212,7 +212,7 @@ class View_info {
     View v;
     inline ODigest_info() { v = -1; }
   };
-
+  friend Replica;
   struct OReq_info {
     View lv;
     View v;
