@@ -26,8 +26,7 @@ static_assert(PLevels >= 2 && PLevels <= MAX_PARTITION_LEVELS,
               "Partition Tree Level must be between 2 and 4");
 
 // Number of siblings at each level.
-constexpr int PSize[] = {1, PChildren, PChildren* PChildren,
-                         PChildren* PChildren* PChildren};
+constexpr int PSize[] = {1, PChildren, PChildren, PChildren};
 
 // Number of partitions at each level.
 constexpr int PLevelSize[] = {1, PChildren, PChildren* PChildren,
