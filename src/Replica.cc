@@ -132,7 +132,7 @@ void Replica::print_memory_consumption([[maybe_unused]] const size_t mem_size) {
   fprintf(stderr, "sizeof(View_info) = %u\n", sizeof(View_info));
   fprintf(stderr, "sizeof(CheckpointRecordLog) = %u\n",
           sizeof(CheckpointRecordLog));
-  fprintf(stderr, "sizeof(Checkpoint_rec) = %u\n", sizeof(Checkpoint_rec));
+  // fprintf(stderr, "sizeof(Checkpoint_rec) = %u\n", sizeof(Checkpoint_rec));
   fprintf(stderr, "sizeof(CheckpointRecord) = %u\n", sizeof(CheckpointRecord));
   fprintf(stderr, "sizeof(Log<Prepared_cert>) = %u\n",
           sizeof(Log<Prepared_cert>));
@@ -1555,8 +1555,8 @@ void Replica::mark_stable(Seqno n, bool have_state) {
 
   if (last_stable > seqno) seqno = last_stable;
 
-  fprintf(stderr, "mark_stable: Truncating plog to %lld have_state=%d\n",
-          last_stable + 1, have_state);
+  // fprintf(stderr, "mark_stable: Truncating plog to %lld have_state=%d\n",
+  //         last_stable + 1, have_state);
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_CERTIFICATE_LOGS);
   plog.truncate(last_stable + 1);
   clog.truncate(last_stable + 1);
