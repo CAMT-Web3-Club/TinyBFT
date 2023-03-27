@@ -79,6 +79,14 @@ if (DEFINED PRINT_MEM_STATISTICS)
     )
 endif()
 
+if(DEFINED MAX_NUM_CLIENTS)
+	target_compile_definitions(byzea PUBLIC MAX_NUM_CLIENTS=${MAX_NUM_CLIENTS})
+endif()
+
+if(DEFINED MAX_REQUEST_SIZE)
+	target_compile_definitions(byzea PUBLIC MAX_REQUEST_SIZE=${MAX_REQUEST_SIZE})
+endif()
+
 if(DEFINED LOW_MEMORY_DEMAND)
     target_compile_definitions(byzea PUBLIC
         ALTERNATIVE_CHECKPOINT_LOG=${LOW_MEMORY_DEMAND}

@@ -13,6 +13,7 @@ class New_view_rep;
 class New_key_rep;
 class Meta_data_d_rep;
 class New_view_rep;
+class Request_rep;
 
 namespace special_region {
 
@@ -38,6 +39,9 @@ void store_metadata_d(Meta_data_d_rep *meta_data_d);
 New_key_rep *load_new_key();
 void store_new_key(New_key_rep *msg);
 void free_new_key(New_key_rep *msg);
+
+Request_rep *load_request(int client_id);
+void store_request(Request_rep *req);
 
 }  // namespace special_region
 }  // namespace libbyzea

@@ -451,6 +451,9 @@ void Replica::handle(Request *m) {
 
         return;
       }
+#ifdef STATIC_LOG_ALLOCATOR
+      m->persist();
+#endif
 
       Request_id last_rid = replies.req_id(cid);
       if (last_rid < rid) {
@@ -462,7 +465,9 @@ void Replica::handle(Request *m) {
             return;
           }
         } else {
-          if (m->size() > Request::big_req_thresh && brt.add_request(m)) return;
+          if (m->size() > Request::big_req_thresh && brt.add_request(m)) {
+	    return;
+	  }
 
           if (rqueue.append(m)) {
             if (!limbo) {
@@ -484,8 +489,9 @@ void Replica::handle(Request *m) {
       }
     }
   } else {
-    if (m->size() > Request::big_req_thresh && !ro && brt.add_request(m, false))
+    if (m->size() > Request::big_req_thresh && !ro && brt.add_request(m, false)) {
       return;
+    }
   }
 
   delete m;

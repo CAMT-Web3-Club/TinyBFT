@@ -1,6 +1,10 @@
 #ifndef _parameters_h
 #define _parameters_h 1
 
+#ifndef MAX_NUM_CLIENTS
+#define MAX_NUM_CLIENTS 1
+#endif
+
 #ifndef WINDOW_SIZE
 #define WINDOW_SIZE 256
 #endif  // WINDOW_SIZE
@@ -31,6 +35,8 @@ static_assert(checkpoint_interval > 0,
 // unable to make progress.
 constexpr int max_out = WINDOW_SIZE;
 
+
+constexpr int max_num_clients = MAX_NUM_CLIENTS;
 }  // namespace libbyzea
 
 #endif  // _parameters_h

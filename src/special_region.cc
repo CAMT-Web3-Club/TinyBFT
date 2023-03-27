@@ -8,6 +8,7 @@
 #include "New_view.h"
 #include "View_change.h"
 #include "View_change_ack.h"
+#include "Request.h"
 #include "parameters.h"
 #include "th_assert.h"
 
@@ -48,11 +49,20 @@ union NewKeyBlock {
   char raw[1400];
 };
 
+union RequestBlock {
+  Request_rep msg;
+  char raw[max_request_size];
+
+  RequestBlock() { new (&msg) Request_rep(); }
+  ~RequestBlock() {}
+};
+
 static NewViewBlock new_views[MAX_NUM_REPLICAS];
 static ViewChangeBlock view_changes[MAX_NUM_REPLICAS];
 static ViewChangeAckBlock view_change_acks[MAX_NUM_REPLICAS][MAX_NUM_REPLICAS];
 static MetaDataDBlock metadata_ds[MAX_NUM_REPLICAS];
 static NewKeyBlock new_key;
+static RequestBlock requests[max_num_clients];
 
 static constexpr int MAGIC = 0xaa5555aa;
 
@@ -121,6 +131,16 @@ void free_new_key(New_key_rep *msg) {
   th_assert(new_key.msg.id != MAGIC, "Double free");
 
   new_key.msg.id = MAGIC;
+}
+
+Request_rep *load_request(int client_id) {
+  return &requests[client_id-4].msg;
+}
+
+void store_request(Request_rep *req) {
+	th_assert((size_t)req->size <= sizeof(RequestBlock), "Request too large");
+	int i = req->cid - 4;
+	std::memcpy(&requests[i].raw, req, req->size);
 }
 
 }  // namespace special_region

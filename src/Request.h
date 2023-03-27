@@ -4,6 +4,12 @@
 #include "Digest.h"
 #include "Message.h"
 #include "types.h"
+#include "special_region.h"
+#include "scratch_allocator.h"
+
+#ifndef MAX_REQUEST_SIZE
+#define MAX_REQUEST_SIZE 8
+#endif
 
 namespace libbyzea {
 
@@ -23,6 +29,8 @@ struct Request_rep : public Message_rep {
   // Followed a command which is "command_size" bytes long and an
   // authenticator.
 };
+
+constexpr int max_request_size = MAX_REQUEST_SIZE + sizeof(Request_rep) + AUTHENTICATOR_SIZE;
 
 class Request : public Message {
   //
@@ -53,8 +61,8 @@ class Request : public Message {
   Request *clone() const;
   // Effects: Clones this.
 
-  static const int big_req_thresh =
-      Max_message_size;  // Maximum size of not-big requests
+  static const int big_req_thresh = 0;  // Maximum size of not-big requests
+
   char *store_command(int &max_len);
   // Effects: Returns a pointer to the location within the message
   // where the command should be stored and sets "max_len" to the number of
@@ -123,6 +131,10 @@ class Request : public Message {
   // m1 and the storage associated with "contents" is not deallocated
   // if "m2" is later deleted.
 
+#ifdef STATIC_LOG_ALLOCATOR
+  void persist();
+#endif
+
  private:
   Request_rep &rep() const;
   // Effects: Casts "msg" to a Request_rep&
@@ -132,7 +144,10 @@ class Request : public Message {
 };
 
 inline Request_rep &Request::rep() const {
-  th_assert(ALIGNED(msg), "Improperly aligned pointer");
+  if (!ALIGNED(msg)) {
+    th_fail("Improperly aligned pointer");
+  }
+  //assert(ALIGNED(msg), "Improperly aligned pointer");
   return *((Request_rep *)msg);
 }
 
@@ -152,6 +167,18 @@ inline bool Request::is_read_only() const { return rep().extra & 1; }
 inline bool Request::is_signed() const { return rep().extra & 2; }
 
 inline Digest &Request::digest() const { return rep().od; }
+
+#ifdef STATIC_LOG_ALLOCATOR
+inline void Request::persist() {
+  th_assert(in_scratch_, "Request is already persisted");
+
+  special_region::store_request(&rep());
+  auto *tmp = msg;
+  msg = (Message_rep *)special_region::load_request(client_id());
+  scratch_allocator::free(tmp, tmp->size);
+  in_scratch_ = false;
+}
+#endif
 
 }  // namespace libbyzea
 
