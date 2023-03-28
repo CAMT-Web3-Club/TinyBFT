@@ -139,13 +139,12 @@ void rtimer_handler() {
 void Client::retransmit() {
   // Retransmit any outstanding request.
   static const int thresh = 1;
-  static const int nk_thresh = 4;
-  static const int nk_thresh_1 = 100;
+  static const int nk_thresh = INT_MAX;//4;
+  static const int nk_thresh_1 = INT_MAX;//100;
 
   if (out_req != 0) {
     INCR_OP(req_retrans);
 
-    //    fprintf(stderr, ".");
     n_retrans++;
     if (n_retrans == nk_thresh || n_retrans % nk_thresh_1 == 0) {
       send_new_key();
