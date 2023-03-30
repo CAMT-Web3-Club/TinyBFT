@@ -451,9 +451,6 @@ void Replica::handle(Request *m) {
 
         return;
       }
-#ifdef STATIC_LOG_ALLOCATOR
-      m->persist();
-#endif
 
       Request_id last_rid = replies.req_id(cid);
       if (last_rid < rid) {
@@ -461,6 +458,9 @@ void Replica::handle(Request *m) {
         if (id() == primary()) {
           if (!rqueue.in_progress(cid, rid, v) && rqueue.append(m)) {
             //	    fprintf(stderr, "RID %qd. ", rid);
+#ifdef STATIC_LOG_ALLOCATOR
+      m->persist();
+#endif
             send_pre_prepare();
             return;
           }
@@ -470,6 +470,9 @@ void Replica::handle(Request *m) {
 	  }
 
           if (rqueue.append(m)) {
+#ifdef STATIC_LOG_ALLOCATOR
+      m->persist();
+#endif
             if (!limbo) {
               send(m, primary());
               vtimer->start();
@@ -483,6 +486,9 @@ void Replica::handle(Request *m) {
 
         if (id() != primary() && !replies.is_committed(cid) &&
             rqueue.append(m)) {
+#ifdef STATIC_LOG_ALLOCATOR
+      m->persist();
+#endif
           vtimer->start();
           return;
         }
