@@ -3,12 +3,10 @@ cmake_minimum_required(VERSION 3.18.4)
 project(libbyzea VERSION 0.0.1)
 
 set(CMAKE_C_STANDARD 11)
-set(CMAKE_C_COMPILER "i686-linux-gnu-gcc-10")
 set(CMAKE_C_STANDARD_REQUIRED True)
 set(CMAKE_C_FLAGS "-m32 -Wno-unused-variable -Wno-unused-but-set-variable")
 
 set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_COMPILER "i686-linux-gnu-g++-10")
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_CXX_FLAGS "-m32 -Wno-unused-variable -Wno-unused-but-set-variable")
 
