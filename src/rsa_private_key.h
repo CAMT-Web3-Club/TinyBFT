@@ -6,9 +6,11 @@
 
 #include <string>
 
+#include "private_key.h"
+
 namespace libbyzea {
 
-class RsaPrivateKey {
+class RsaPrivateKey : public PrivateKey {
  public:
   /**
    * @brief Initialize an RSA private key.
@@ -32,7 +34,7 @@ class RsaPrivateKey {
    * @return int 0 on success, an error code otherwise.
    */
   int decrypt(const uint8_t *ciphertext, size_t len, char *dest,
-              size_t dest_len, size_t *plaintext_len);
+              size_t dest_len, size_t *plaintext_len) override;
 
   /**
    * @brief Sign a message.
@@ -41,7 +43,7 @@ class RsaPrivateKey {
    *
    * @return int 0 on sucess, a negative error code otherwise.
    */
-  int sign(const std::string &msg, uint8_t *signature, size_t len);
+  int sign(const std::string &msg, uint8_t *signature, size_t len) override;
 
   /**
    * @brief Return the key size in bytes.
@@ -50,7 +52,7 @@ class RsaPrivateKey {
    *
    * @return size_t the key's modulus size in bytes.
    */
-  size_t size() const;
+  size_t size() const override;
 
  private:
   mbedtls_rsa_context *ctx_;

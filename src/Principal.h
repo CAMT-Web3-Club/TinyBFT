@@ -1,12 +1,13 @@
 #ifndef _Principal_h
 #define _Principal_h 1
 
+#include <mbedtls/ctr_drbg.h>
 #include <string.h>
 #include <sys/time.h>
 
 #include "Time.h"
 #include "mem_statistics_guard.h"
-#include "rsa_public_key.h"
+#include "public_key.h"
 #include "th_assert.h"
 #include "types.h"
 
@@ -146,7 +147,7 @@ class Principal {
  private:
   int id;
   Addr addr;
-  RsaPublicKey *pkey;
+  PublicKey *pkey;
   mbedtls_ctr_drbg_context *drbg_ctx;
   size_t ssize;  // signature size
   unsigned

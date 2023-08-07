@@ -21,6 +21,7 @@
 #include "Time.h"
 #include "parameters.h"
 #include "platform.h"
+#include "rsa_private_key.h"
 #include "special_region.h"
 #include "th_assert.h"
 

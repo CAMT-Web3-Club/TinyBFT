@@ -9,7 +9,7 @@
 #include "Principal.h"
 #include "Statistics.h"
 #include "mem_statistics.h"
-#include "rsa_private_key.h"
+#include "private_key.h"
 #include "th_assert.h"
 #include "types.h"
 
@@ -159,7 +159,7 @@ class Node {
   int threshold;     // Number of correct replicas. It must be
                      // threshold == 2*max_faulty+1.
 
-  RsaPrivateKey *priv_key;  // Node's private key.
+  PrivateKey *priv_key;  // Node's private key.
 
   // Random number generator data
   mbedtls_ctr_drbg_context ctr_drbg_ctx;

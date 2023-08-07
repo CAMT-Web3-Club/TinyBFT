@@ -6,9 +6,11 @@
 
 #include <string>
 
+#include "public_key.h"
+
 namespace libbyzea {
 
-class RsaPublicKey {
+class RsaPublicKey : public PublicKey {
  public:
   /**
    * @brief Initialize a new RSA public key.
@@ -39,7 +41,7 @@ class RsaPublicKey {
    * @return int 0 on success, an error code otherwise.
    */
   int encrypt(const std::string &plaintext, uint8_t *ciphertext,
-              size_t ciphertext_len);
+              size_t ciphertext_len) override;
 
   /**
    * @brief Verify the signature of a message.
@@ -52,7 +54,7 @@ class RsaPublicKey {
    * @return true if the signature is valid, false otherwise.
    */
   bool verify(const std::string &msg, const uint8_t *signature,
-              size_t signature_len);
+              size_t signature_len) override;
 
   /**
    * @brief Return the key size in bytes.
@@ -62,7 +64,7 @@ class RsaPublicKey {
    *
    * @return size_t the key's modulus size in bytes.
    */
-  size_t size() const;
+  size_t size() const override;
 
  private:
   mbedtls_rsa_context *ctx_;

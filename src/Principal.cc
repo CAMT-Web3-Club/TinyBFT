@@ -8,6 +8,7 @@
 
 #include "Node.h"
 #include "Reply.h"
+#include "rsa_public_key.h"
 
 namespace libbyzea {
 
