@@ -459,19 +459,19 @@ void Replica::handle(Request *m) {
           if (!rqueue.in_progress(cid, rid, v) && rqueue.append(m)) {
             //	    fprintf(stderr, "RID %qd. ", rid);
 #ifdef STATIC_LOG_ALLOCATOR
-      m->persist();
+            m->persist();
 #endif
             send_pre_prepare();
             return;
           }
         } else {
           if (m->size() > Request::big_req_thresh && brt.add_request(m)) {
-	    return;
-	  }
+            return;
+          }
 
           if (rqueue.append(m)) {
 #ifdef STATIC_LOG_ALLOCATOR
-      m->persist();
+            m->persist();
 #endif
             if (!limbo) {
               send(m, primary());
@@ -487,7 +487,7 @@ void Replica::handle(Request *m) {
         if (id() != primary() && !replies.is_committed(cid) &&
             rqueue.append(m)) {
 #ifdef STATIC_LOG_ALLOCATOR
-      m->persist();
+          m->persist();
 #endif
           vtimer->start();
           return;
@@ -495,7 +495,8 @@ void Replica::handle(Request *m) {
       }
     }
   } else {
-    if (m->size() > Request::big_req_thresh && !ro && brt.add_request(m, false)) {
+    if (m->size() > Request::big_req_thresh && !ro &&
+        brt.add_request(m, false)) {
       return;
     }
   }
@@ -653,7 +654,6 @@ void Replica::handle(Prepare *m) {
     Prepared_cert &ps = plog.fetch(ms);
     if (ps.add(m) && ps.is_complete()) send_commit(ms);
     MEMSTATS_RESTORE_MEM_TYPE();
-    return;
   }
 
   if (m->is_proof() && !has_new_view()) {
