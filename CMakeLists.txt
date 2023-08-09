@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.18.4)
 
 project(libbyzea VERSION 0.0.1)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS True)
+
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED True)
 set(CMAKE_C_FLAGS "-m32 -Wno-unused-variable -Wno-unused-but-set-variable")
