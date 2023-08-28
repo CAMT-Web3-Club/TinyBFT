@@ -48,7 +48,7 @@ int RsaPublicKey::encrypt(const std::string &plaintext, uint8_t *dest,
 bool RsaPublicKey::verify(const std::string &msg, const uint8_t *signature,
                           size_t signature_len) {
   if (signature == nullptr || signature_len < size()) {
-    printf("%p == nullptr || %u < %u?", signature, signature_len, size());
+    printf("%p == nullptr || %zu < %zu?", signature, signature_len, size());
     return false;
   }
 

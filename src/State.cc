@@ -404,7 +404,7 @@ void State::print_memory_consumption(const size_t mem_size) {
   memory_consumption += 4 * sizeof(libbyzea::Meta_data_d*);
   memory_consumption += 4 * sizeof(unsigned long long);
   memory_consumption += sizeof(libbyzea::CPartQueue);
-  fprintf(stderr, "State: %d Bytes\n", memory_consumption);
+  fprintf(stderr, "State: %zu Bytes\n", memory_consumption);
 }
 
 #ifndef NO_STATE_TRANSLATION

@@ -125,35 +125,35 @@ void Replica::print_memory_consumption([[maybe_unused]] const size_t mem_size) {
 #endif
 
   fprintf(stderr, "\n\n\n");
-  fprintf(stderr, "sizeof(Replica) = %u\n", sizeof(Replica));
-  fprintf(stderr, "sizeof(Node) = %u\n", sizeof(Node));
-  fprintf(stderr, "sizeof(Prepared_cert) = %u\n", sizeof(Prepared_cert));
-  fprintf(stderr, "sizeof(State) = %u\n", sizeof(State));
-  fprintf(stderr, "sizeof(View_info) = %u\n", sizeof(View_info));
-  fprintf(stderr, "sizeof(CheckpointRecordLog) = %u\n",
+  fprintf(stderr, "sizeof(Replica) = %zu\n", sizeof(Replica));
+  fprintf(stderr, "sizeof(Node) = %zu\n", sizeof(Node));
+  fprintf(stderr, "sizeof(Prepared_cert) = %zu\n", sizeof(Prepared_cert));
+  fprintf(stderr, "sizeof(State) = %zu\n", sizeof(State));
+  fprintf(stderr, "sizeof(View_info) = %zu\n", sizeof(View_info));
+  fprintf(stderr, "sizeof(CheckpointRecordLog) = %zu\n",
           sizeof(CheckpointRecordLog));
   // fprintf(stderr, "sizeof(Checkpoint_rec) = %u\n", sizeof(Checkpoint_rec));
-  fprintf(stderr, "sizeof(CheckpointRecord) = %u\n", sizeof(CheckpointRecord));
-  fprintf(stderr, "sizeof(Log<Prepared_cert>) = %u\n",
+  fprintf(stderr, "sizeof(CheckpointRecord) = %zu\n", sizeof(CheckpointRecord));
+  fprintf(stderr, "sizeof(Log<Prepared_cert>) = %zu\n",
           sizeof(Log<Prepared_cert>));
-  fprintf(stderr, "sizeof(Certificate<Commit>) = %u\n",
+  fprintf(stderr, "sizeof(Certificate<Commit>) = %zu\n",
           sizeof(Certificate<Commit>));
-  fprintf(stderr, "sizeof(Log<Certificate<Commit>>) = %u\n",
+  fprintf(stderr, "sizeof(Log<Certificate<Commit>>) = %zu\n",
           sizeof(Log<Certificate<Commit>>));
-  fprintf(stderr, "sizeof(Certificate<Checkpoint>) = %u\n",
+  fprintf(stderr, "sizeof(Certificate<Checkpoint>) = %zu\n",
           sizeof(Certificate<Checkpoint>));
-  fprintf(stderr, "sizeof(Log<Certificate<Checkpoint>>) = %u\n",
+  fprintf(stderr, "sizeof(Log<Certificate<Checkpoint>>) = %zu\n",
           sizeof(Log<Certificate<Checkpoint>>));
-  fprintf(stderr, "sizeof(CheckpointLog) = %u\n", sizeof(CheckpointLog));
-  fprintf(stderr, "sizeof(OReq_info) = %u", sizeof(View_info::OReq_info));
+  fprintf(stderr, "sizeof(CheckpointLog) = %zu\n", sizeof(CheckpointLog));
+  fprintf(stderr, "sizeof(OReq_info) = %zu", sizeof(View_info::OReq_info));
 #ifdef STATIC_LOG_ALLOCATOR
-  fprintf(stderr, "sizeof(agreement_region) = %u\n",
+  fprintf(stderr, "sizeof(agreement_region) = %zu\n",
           agreement_region::memory_demand());
-  fprintf(stderr, "sizeof(checkpoint_region) = %u\n",
+  fprintf(stderr, "sizeof(checkpoint_region) = %zu\n",
           checkpoint_region::memory_demand());
-  fprintf(stderr, "sizeof(special_region) = %u\n",
+  fprintf(stderr, "sizeof(special_region) = %zu\n",
           special_region::memory_demand());
-  fprintf(stderr, "sizeof(scratch_region) = %u\n",
+  fprintf(stderr, "sizeof(scratch_region) = %zu\n",
           scratch_allocator::memory_demand());
 #endif
 }
