@@ -154,12 +154,18 @@ Node::Node(MEM_STATS_PARAM FILE *config_file,
   // Initialize socket.
   sock = socket(AF_INET, SOCK_DGRAM, 0);
 
+  // Allow address rebinding so evaluation iterations do not fail with
+  // EADDRINUSE.
+  int reuse_addr = 1;
+  int error = setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &reuse_addr,
+                         sizeof(reuse_addr));
+
   // name the socket
   Addr tmp;
   tmp.sin_family = AF_INET;
   tmp.sin_addr.s_addr = htonl(INADDR_ANY);
   tmp.sin_port = principals[node_id]->address()->sin_port;
-  int error = bind(sock, (struct sockaddr *)&tmp, sizeof(Addr));
+  error = bind(sock, (struct sockaddr *)&tmp, sizeof(Addr));
   if (error < 0) {
     perror("Unable to name socket");
     exit(1);
