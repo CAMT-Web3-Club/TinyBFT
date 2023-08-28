@@ -275,6 +275,11 @@ class MapGenerator : public Generator<KEY>, private BHG {
     return ret;
   }
   virtual void remove() { BHG::remove(); }
+
+ private:
+  // Expose our base class's overloaded get-method to prevent overloaded-virtual
+  // warnings.
+  using BHG::get;
 };
 
 #undef BHG
