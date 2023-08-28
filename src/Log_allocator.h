@@ -1,6 +1,7 @@
 #ifndef _Log_allocator_h
 #define _Log_allocator_h 1
 
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -19,7 +20,7 @@
 
 // bool ALIGNED(void *ptr) or bool ALIGNED(long sz)
 // Effects: Returns true iff the argument is aligned to ALIGNMENT
-#define ALIGNED(ptr) (((long)(ptr)) % ALIGNMENT == 0)
+#define ALIGNED(ptr) (((uintptr_t)(ptr)) % ALIGNMENT == 0)
 
 // int ALIGNED_SIZE(int sz)
 // Effects: Increases sz to the least multiple of ALIGNMENT greater
