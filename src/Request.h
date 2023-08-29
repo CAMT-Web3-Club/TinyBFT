@@ -145,10 +145,7 @@ class Request : public Message {
 };
 
 inline Request_rep &Request::rep() const {
-  if (!ALIGNED(msg)) {
-    th_fail("Improperly aligned pointer");
-  }
-  //assert(ALIGNED(msg), "Improperly aligned pointer");
+  th_assert(ALIGNED(msg), "Improperly aligned pointer");
   return *((Request_rep *)msg);
 }
 
