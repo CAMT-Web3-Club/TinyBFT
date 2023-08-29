@@ -144,7 +144,8 @@ void Byz_modify(int npages, int *pages) {
 int Byz_init_replica(const char *conf, const char *conf_priv, char *mem,
                      unsigned int size,
                      int (*exec)(Byz_req *, Byz_rep *, Byz_buffer *, int, bool),
-                     void (*comp_ndet)(Seqno, Byz_buffer *), int ndet_max_len) {
+                     void (*comp_ndet)(Seqno, Byz_buffer *), int ndet_max_len,
+                     short port) {
 #ifdef PRINT_MEM_STATISTICS
   libbyzea::MemoryStatisticsGuard mem_guard("Byz_init_replica", true);
 #endif
@@ -172,8 +173,9 @@ int Byz_init_replica(const char *conf, const char *conf_priv, char *mem,
   srand48(getpid());
 
   const std::string private_key_file(conf_priv, std::strlen(conf_priv));
-  libbyzea::replica = new libbyzea::Replica(
-      MEM_STATS_ARG_PUSH(Replica) config_file, private_key_file, mem, size);
+  libbyzea::replica =
+      new libbyzea::Replica(MEM_STATS_ARG_PUSH(Replica) config_file,
+                            private_key_file, mem, size, port);
   libbyzea::node = libbyzea::replica;
 
   // Register service-specific functions.

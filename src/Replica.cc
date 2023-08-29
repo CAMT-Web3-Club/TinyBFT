@@ -179,8 +179,9 @@ Replica::Replica(FILE *config_file, const std::string &private_key_file,
 #else
 
 Replica::Replica(MEM_STATS_PARAM FILE *config_file,
-                 const std::string &private_key_file, char *mem, int nbytes)
-    : Node(MEM_STATS_ARG_PUSH(Node) config_file, private_key_file),
+                 const std::string &private_key_file, char *mem, int nbytes,
+                 short port)
+    : Node(MEM_STATS_ARG_PUSH(Node) config_file, private_key_file, port),
       rqueue(MEM_STATS_GUARD_PUSH(Req_queue)),
       ro_rqueue(MEM_STATS_GUARD_PUSH(Req_queue)),
       plog(MEM_STATS_ARG_PUSH(Log<Prepared_cert>) max_out),

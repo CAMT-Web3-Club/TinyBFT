@@ -69,7 +69,8 @@ class Replica : public Node {
 
 #else
   Replica(MEM_STATS_PARAM FILE *config_file,
-          const std::string &private_key_file, char *mem, int nbytes);
+          const std::string &private_key_file, char *mem, int nbytes,
+          short port);
   // Requires: "mem" is vm page aligned and nbytes is a multiple of the
   // vm page size.
   // Effects: Create a new server replica using the information in
