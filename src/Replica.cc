@@ -653,8 +653,11 @@ void Replica::handle(Prepare *m) {
   if (in_wv(m) && ms > low_bound && primary() != m->id() && has_new_view()) {
     MEMSTATS_SET_MEM_TYPE(MEM_TYPE_CERTIFICATE_LOGS);
     Prepared_cert &ps = plog.fetch(ms);
-    if (ps.add(m) && ps.is_complete()) send_commit(ms);
+    if (ps.add(m) && ps.is_complete()) {
+      send_commit(ms);
+    }
     MEMSTATS_RESTORE_MEM_TYPE();
+    return;
   }
 
   if (m->is_proof() && !has_new_view()) {
