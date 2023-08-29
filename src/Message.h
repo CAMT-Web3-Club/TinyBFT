@@ -29,7 +29,8 @@ constexpr int F = MAX_NUM_REPLICAS / 3;
 constexpr unsigned AUTHENTICATOR_SIZE = 256;
 #else
 // UNonce_size + n * UMac_size
-constexpr unsigned AUTHENTICATOR_SIZE = sizeof(long long) + 8 * (MAX_NUM_REPLICAS);
+constexpr unsigned AUTHENTICATOR_SIZE =
+    sizeof(long long) + 8 * (MAX_NUM_REPLICAS);
 #endif
 
 //

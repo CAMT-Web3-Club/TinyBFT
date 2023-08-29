@@ -3,9 +3,9 @@
 
 #include "Digest.h"
 #include "Message.h"
-#include "types.h"
-#include "special_region.h"
 #include "scratch_allocator.h"
+#include "special_region.h"
+#include "types.h"
 
 #ifndef MAX_REQUEST_SIZE
 #define MAX_REQUEST_SIZE 8
@@ -30,7 +30,8 @@ struct Request_rep : public Message_rep {
   // authenticator.
 };
 
-constexpr int max_request_size = MAX_REQUEST_SIZE + sizeof(Request_rep) + AUTHENTICATOR_SIZE;
+constexpr int max_request_size =
+    MAX_REQUEST_SIZE + sizeof(Request_rep) + AUTHENTICATOR_SIZE;
 
 class Request : public Message {
   //
