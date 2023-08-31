@@ -35,16 +35,16 @@ CheckpointRecord::CheckpointRecord(MEM_STATS_PARAM int num_state_blocks)
 }
 
 CheckpointRecord::~CheckpointRecord() {
-  delete partitions_;
-  delete blocks_;
+  delete[] partitions_;
+  delete[] blocks_;
 }
 
 void CheckpointRecord::init(MEM_STATS_PARAM int num_state_blocks) {
   if (partitions_ != nullptr) {
-    delete partitions_;
+    delete[] partitions_;
   }
   if (blocks_ != nullptr) {
-    delete blocks_;
+    delete[] blocks_;
   }
 
   init_num_partitions(num_state_blocks);
