@@ -1,29 +1,24 @@
 #ifndef _Partition_h
 #define _Partition_h 1
 
+#include <stddef.h>
+
+#include "Message.h"
+#include "Meta_data.h"
 #include "libbyz.h"
 
 namespace libbyzea {
 
+constexpr int MAX_PARTITION_LEVELS =
+    4;  //< Maximum number of partition tree levels.
+
+#ifndef DYNAMIC_PARTITION_TREE
+
 //
 // Definitions for hierarchical state partitions.
 //
-#ifndef PARTITION_TREE_LEVELS
-#define PARTITION_TREE_LEVELS 4
-#endif
-
-#ifndef PARTITION_TREE_CHILDREN
-#define PARTITION_TREE_CHILDREN 256
-#endif
-
-constexpr int PChildren =
-    PARTITION_TREE_CHILDREN;  // Number of children for non-leaf partitions.
-constexpr int PLevels =
-    PARTITION_TREE_LEVELS;  // Number of levels in partition tree.
-constexpr int MAX_PARTITION_LEVELS =
-    4;  //< Maximum number of partition tree levels.
-static_assert(PLevels >= 2 && PLevels <= MAX_PARTITION_LEVELS,
-              "Partition Tree Level must be between 2 and 4");
+constexpr int PChildren = 256;  // Number of children for non-leaf partitions.
+constexpr int PLevels = 4;      // Number of levels in partition tree.
 
 // Number of siblings at each level.
 constexpr int PSize[] = {1, PChildren, PChildren, PChildren};
@@ -35,11 +30,21 @@ constexpr int PLevelSize[] = {1, PChildren, PChildren* PChildren,
 // Number of blocks in a partition at each level
 constexpr int PBlocks[] = {PChildren * PChildren * PChildren,
                            PChildren* PChildren, PChildren, 1};
+#else
 
-inline constexpr int partition_blocks(int level) {
-  return PBlocks[level + (MAX_PARTITION_LEVELS - PLevels)];
-}
+extern int PLevels;
 
+constexpr int PChildren =
+    (Max_message_size - sizeof(Meta_data_rep)) / sizeof(Part_info);
+
+extern int PSize[MAX_PARTITION_LEVELS];
+
+extern int PLevelSize[MAX_PARTITION_LEVELS];
+
+extern int PBlocks[MAX_PARTITION_LEVELS];
+#endif  // !DYNAMIC_PARTITION_TREE
+
+namespace partition {
 /**
  * @brief Return the number of meta-data partitions for a given block count.
  *
@@ -49,7 +54,7 @@ inline constexpr int partition_blocks(int level) {
  * @param num_blocks the size of the state in blocks.
  * @return int the number of active partitions.
  */
-inline int num_meta_partitions_for_blocks(int num_blocks) {
+inline int num_meta_for_blocks(int num_blocks) {
   int num_partitions = 0;
   int nodes_on_level = num_blocks;
   for (int level = PLevels - 1; level > 0; level--) {
@@ -60,6 +65,16 @@ inline int num_meta_partitions_for_blocks(int num_blocks) {
   return num_partitions;
 }
 
+inline int blocks(int level) {
+  return PBlocks[level + (MAX_PARTITION_LEVELS - PLevels)];
+}
+
+/**
+ * @brief Initialize partition tree information
+ */
+int init(size_t mem_size);
+
+}  // namespace partition
 }  // namespace libbyzea
 
 #endif /* _Partition_h */

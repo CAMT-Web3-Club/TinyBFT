@@ -3,11 +3,9 @@
 
 #include "Digest.h"
 #include "Message.h"
-#include "Partition.h"
 #include "types.h"
 
 namespace libbyzea {
-
 //
 // Meta_data messages contain information about a partition and its
 // subpartitions. They have the following format:
@@ -30,9 +28,6 @@ struct Meta_data_rep : public Message_rep {
                    // greater than the lu on fetch)
   // Part_info parts[num_partitions]; // array of subpartition information
 };
-static_assert((Max_message_size - sizeof(Meta_data_rep)) >=
-                  PChildren * sizeof(Part_info),
-              "Maximum message size is too small for sending complete fetch");
 
 class Meta_data : public Message {
   //

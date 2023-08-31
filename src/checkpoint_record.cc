@@ -2,6 +2,7 @@
 
 #include <cstring>
 
+#include "Partition.h"
 #include "th_assert.h"
 
 namespace libbyzea {
@@ -11,19 +12,13 @@ size_t CheckpointRecord::memory_consumption() {
 }
 
 CheckpointRecord::CheckpointRecord()
-    : partitions_(nullptr),
-      blocks_(nullptr),
-      num_partitions_(),
-      num_entries_(0) {}
+    : partitions_(nullptr), blocks_(nullptr), num_entries_(0) {}
 
 CheckpointRecord::CheckpointRecord(MEM_STATS_PARAM int num_state_blocks)
-    : partitions_(new Part[num_meta_partitions_for_blocks(num_state_blocks)]),
+    : partitions_(new Part[partition::num_meta_for_blocks(num_state_blocks)]),
       blocks_(new BlockCopy[num_state_blocks]),
-      num_partitions_(),
       num_entries_(0) {
-  init_num_partitions(num_state_blocks);
-
-  int partitions = num_meta_partitions_for_blocks(num_state_blocks);
+  int partitions = partition::num_meta_for_blocks(num_state_blocks);
   for (int i = 0; i < partitions; i++) {
     partitions_[i].lm = -1;
   }
@@ -35,8 +30,12 @@ CheckpointRecord::CheckpointRecord(MEM_STATS_PARAM int num_state_blocks)
 }
 
 CheckpointRecord::~CheckpointRecord() {
-  delete[] partitions_;
-  delete[] blocks_;
+  if (partitions_ != nullptr) {
+    delete[] partitions_;
+  }
+  if (blocks_ != nullptr) {
+    delete[] blocks_;
+  }
 }
 
 void CheckpointRecord::init(MEM_STATS_PARAM int num_state_blocks) {
@@ -47,9 +46,7 @@ void CheckpointRecord::init(MEM_STATS_PARAM int num_state_blocks) {
     delete[] blocks_;
   }
 
-  init_num_partitions(num_state_blocks);
-
-  partitions_ = new Part[num_meta_partitions_for_blocks(num_state_blocks)];
+  partitions_ = new Part[partition::num_meta_for_blocks(num_state_blocks)];
   blocks_ = new BlockCopy[num_state_blocks];
   num_entries_ = 1;
   clear();
@@ -63,12 +60,12 @@ void CheckpointRecord::clear() {
 
   int partition = 0;
   for (int level = 0; level < PLevels - 1; level++) {
-    for (int i = 0; i < num_partitions_[level]; i++) {
+    for (int i = 0; i < PSize[level]; i++) {
       partitions_[partition].lm = -1;
       partition++;
     }
   }
-  for (int i = 0; i < num_partitions_[PLevels - 1]; i++) {
+  for (int i = 0; i < PSize[PLevels - 1]; i++) {
     blocks_[i].lm = -1;
   }
 
@@ -132,19 +129,10 @@ Part *CheckpointRecord::fetch(int l, int i) {
   return &part;
 }
 
-void CheckpointRecord::init_num_partitions(int num_blocks) {
-  num_partitions_[PLevels - 1] = num_blocks;
-  int num_partitions = num_blocks;
-  for (int i = PLevels - 2; i >= 0; i--) {
-    num_partitions = (num_partitions + PChildren - 1) / PChildren;
-    num_partitions_[i] = num_partitions;
-  }
-}
-
 Part &CheckpointRecord::find_partition(int level, int index) {
   int partition = 0;
   for (int i = 0; i < level; i++) {
-    partition += num_partitions_[i];
+    partition += PSize[i];
   }
   partition += index;
   return partitions_[partition];

@@ -279,7 +279,7 @@ Replica::Replica(MEM_STATS_PARAM FILE *config_file,
   error = setsockopt(sock, SOL_SOCKET, SO_RCVBUF, (char *)&rcv_buf_size,
                      sizeof(rcv_buf_size));
   if (error < 0) {
-    perror("unable to increase send buffer size");
+    perror("unable to increase recv buffer size");
     exit(1);
   }
 #endif

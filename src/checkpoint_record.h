@@ -94,7 +94,7 @@ class CheckpointRecord {
       }
 
       for (int l = level_; l < PLevels - 1; l++) {
-        for (int i = index_; i < record_->num_partitions_[l]; i++) {
+        for (int i = index_; i < PSize[l]; i++) {
           auto &part = record_->find_partition(l, i);
           if (part.lm >= 0) {
             level_ = l;
@@ -107,7 +107,7 @@ class CheckpointRecord {
         level_ = l + 1;
       }
 
-      for (int i = index_; i < record_->num_partitions_[level_]; i++) {
+      for (int i = index_; i < PSize[level_]; i++) {
         if (record_->blocks_[i].lm >= 0) {
           index_ = i;
           return;
@@ -129,11 +129,9 @@ class CheckpointRecord {
 
  private:
   Part &find_partition(int level, int index);
-  void init_num_partitions(int num_blocks);
 
   Part *partitions_;
   BlockCopy *blocks_;
-  int num_partitions_[PLevels];
   int num_entries_;
 };
 

@@ -12,9 +12,11 @@
 #include "Meta_data.h"
 #include "Meta_data_cert.h"
 #include "Meta_data_d.h"
+#include "Partition.h"
 #include "Replica.h"
 #include "State_defs.h"
 #include "Statistics.h"
+#include "dsum.h"
 #include "libbyz.h"
 #include "map.h"
 #include "th_assert.h"
@@ -427,12 +429,18 @@ State::State(MEM_STATS_PARAM Replica* rep, char* memory, int num_bytes)
       mem((Block*)memory),
       nb(num_bytes / Block_size),
       cowb(nb),
+      ptree(new Part*[PLevels]),
+      stree(new DSum*[PLevels - 1]),
 #ifndef ALTERNATIVE_CHECKPOINT_RECORDS
       clog(MEM_STATS_ARG_PUSH(Log<Checkpoint_rec>) max_out * 2, 0),
 #else
       clog(MEM_STATS_ARG_PUSH(CheckpointRecordLog) nb, 0),
 #endif
       lc(0),
+      fetching(false),
+      keep_ckpts(false),
+      flevel(0),
+      stalep(new FPartQueue*[PLevels]),
       last_fetch_t(0) {
 #endif
 
@@ -1687,8 +1695,8 @@ void State::check_state() {
   int count = 1;
   while (to_check->size() > 0) {
     CPart& cp = to_check->slot(0);
-    int min = cp.index * partition_blocks(cp.level);
-    int max = min + partition_blocks(cp.level);
+    int min = cp.index * partition::blocks(cp.level);
+    int max = min + partition::blocks(cp.level);
     if (max > nb) max = nb;
 
     if (lchecked < min || lchecked >= max) lchecked = min;

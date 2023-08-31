@@ -176,8 +176,8 @@ class State {
   // blocks should be copied iff their bit is 0.
   Bitmap cowb;
 
-  Part *ptree[PLevels];      // Partition tree.
-  DSum *stree[PLevels - 1];  // Tree of sums of digests of subpartitions.
+  Part **ptree;  // Partition tree.
+  DSum **stree;  // Tree of sums of digests of subpartitions.
 
 #ifdef ALTERNATIVE_CHECKPOINT_RECORDS
   CheckpointRecordLog clog;  // Checkpoint log
@@ -189,11 +189,10 @@ class State {
   //
   // Information used while fetching state.
   //
-  bool fetching;    // true iff replica is fetching missing state
-  bool keep_ckpts;  // whether to keep last checkpoints
-  int flevel;       // level of state partition info being fetched
-  FPartQueue
-      *stalep[PLevels];  // queue of out-of-date partitions for each level
+  bool fetching;        // true iff replica is fetching missing state
+  bool keep_ckpts;      // whether to keep last checkpoints
+  int flevel;           // level of state partition info being fetched
+  FPartQueue **stalep;  // queue of out-of-date partitions for each level
 
 #ifndef NO_STATE_TRANSLATION
   Page_mapping *fetched_pages;  // set of fetched pages in a fetch operation

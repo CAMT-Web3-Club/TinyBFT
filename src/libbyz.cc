@@ -172,6 +172,10 @@ int Byz_init_replica(const char *conf, const char *conf_priv, char *mem,
   // Initialize random number generator
   srand48(getpid());
 
+#ifdef DYNAMIC_PARTITION_TREE
+  libbyzea::partition::init(size);
+#endif
+
   const std::string private_key_file(conf_priv, std::strlen(conf_priv));
   libbyzea::replica =
       new libbyzea::Replica(MEM_STATS_ARG_PUSH(Replica) config_file,
