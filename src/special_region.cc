@@ -126,7 +126,7 @@ void store_new_key(New_key_rep *msg) {
   std::memcpy(&new_key.raw, msg, msg->size);
 }
 
-void free_new_key(New_key_rep *msg) {
+void free_new_key([[maybe_unused]] New_key_rep *msg) {
   th_assert(msg == &new_key.msg, "Invalid free pointer");
   th_assert(new_key.msg.id != MAGIC, "Double free");
 

@@ -1,5 +1,9 @@
 #include "Checkpoint_rec.h"
 
+// Force template instantiation
+#include "bhash.t"
+#include "buckets.t"
+
 namespace libbyzea {
 
 void Checkpoint_rec::print() {

@@ -49,6 +49,11 @@ Replica *replica;
 }  // namespace libbyzea
 
 // Force template instantiation
+#include "Array.t"
+namespace libbyzea {
+template class Array<libbyzea::Req_queue::PNode>;
+}
+
 #include "Certificate.t"
 namespace libbyzea {
 template class Certificate<Commit>;

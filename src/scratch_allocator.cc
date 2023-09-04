@@ -1,5 +1,6 @@
 #include "scratch_allocator.h"
 
+#include <assert.h>
 #include <stdint.h>
 
 #include <cstring>
@@ -8,7 +9,6 @@
 #include "agreement_region.h"
 #include "checkpoint_region.h"
 #include "th_assert.h"
-#include <assert.h>
 
 namespace libbyzea {
 namespace scratch_allocator {
@@ -42,7 +42,7 @@ static inline void unset_bit(int i) {
   scratch_bitmap[i / 8] &= ~(1 << bit);
 }
 
-void *malloc(size_t size) {
+void *malloc([[maybe_unused]] size_t size) {
   th_assert(size <= Max_message_size,
             "Message larger than maximum message size");
   for (unsigned i = 0; i < SLOTS; i++) {

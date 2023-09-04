@@ -81,7 +81,7 @@ void store_checkpoint(Checkpoint_rep *checkpoint, size_t i) {
 }
 
 void truncate(Seqno new_head) {
-  if (new_head <= head_index) {
+  if (new_head <= static_cast<Seqno>(head_index)) {
     return;
   }
 
