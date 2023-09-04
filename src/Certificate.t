@@ -107,11 +107,11 @@ bool Certificate<T>::add_mine(T *m) {
   th_assert(m->full(), "Invalid argument");
 
   if (c != 0 && !c->m->match(m)) {
-    delete m;
     fprintf(
         stderr,
         "Node is faulty, more than f faulty replicas or faulty primary%s \n",
         m->stag());
+    delete m;
     return false;
   }
 
