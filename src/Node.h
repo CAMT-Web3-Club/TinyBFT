@@ -282,7 +282,7 @@ inline unsigned Node::sig_size(int id) const {
   return principals[id]->sig_size();
 }
 
-inline int cypher_size(char *dst, unsigned dst_len) {
+inline int cipher_size(char *dst, unsigned dst_len) {
   // Effects: Returns the size of the cypher in dst or 0 if dst
   // does not contain a valid cypher.
   if (dst_len < 2 * sizeof(unsigned)) return 0;

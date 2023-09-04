@@ -68,7 +68,7 @@ bool New_key::verify() {
     // Skip principal that sent message
     if (i == id()) continue;
 
-    int ssize = cypher_size(dst, dst_len);
+    int ssize = cipher_size(dst, dst_len);
     if (ssize == 0) return false;
 
     if (i == node->id()) {
