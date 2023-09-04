@@ -398,8 +398,8 @@ void Node::gen_signature(const char *src, unsigned src_len, char *sig) {
 
   memcpy(sig, &key_size, sizeof(key_size));
   sig += sizeof(key_size);
-  const std::string msg(src, src_len);
-  int err = priv_key->sign(msg, reinterpret_cast<uint8_t *>(sig), key_size);
+  int err = priv_key->sign(reinterpret_cast<const uint8_t *>(src), src_len,
+                           reinterpret_cast<uint8_t *>(sig), key_size);
   if (err) {
     th_fail("failed to sign message");
   }

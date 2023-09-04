@@ -3,6 +3,7 @@
 
 #include <mbedtls/ctr_drbg.h>
 #include <mbedtls/rsa.h>
+#include <stdint.h>
 
 #include <string>
 
@@ -40,8 +41,8 @@ class RsaPublicKey : public PublicKey {
    * @param ciphertext_len the length of the ciphertext buffer.
    * @return int 0 on success, an error code otherwise.
    */
-  int encrypt(const std::string &plaintext, uint8_t *ciphertext,
-              size_t ciphertext_len) override;
+  int encrypt(const uint8_t *plaintext, size_t plaintext_len,
+              uint8_t *ciphertext, size_t ciphertext_len) override;
 
   /**
    * @brief Verify the signature of a message.
@@ -53,7 +54,7 @@ class RsaPublicKey : public PublicKey {
    * @param signature_len length of the signature in bytes.
    * @return true if the signature is valid, false otherwise.
    */
-  bool verify(const std::string &msg, const uint8_t *signature,
+  bool verify(const uint8_t *msg, size_t msg_len, const uint8_t *signature,
               size_t signature_len) override;
 
   /**

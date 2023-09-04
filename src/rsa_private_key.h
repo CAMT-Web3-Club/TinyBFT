@@ -3,6 +3,7 @@
 
 #include <mbedtls/ctr_drbg.h>
 #include <mbedtls/rsa.h>
+#include <stdint.h>
 
 #include <string>
 
@@ -43,7 +44,8 @@ class RsaPrivateKey : public PrivateKey {
    *
    * @return int 0 on sucess, a negative error code otherwise.
    */
-  int sign(const std::string &msg, uint8_t *signature, size_t len) override;
+  int sign(const uint8_t *msg, size_t msg_len, uint8_t *signature,
+           size_t len) override;
 
   /**
    * @brief Return the key size in bytes.

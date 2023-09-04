@@ -132,9 +132,9 @@ bool Principal::verify_signature(const char *src, unsigned src_len,
     return false;
   }
 
-  const std::string msg(src, src_len);
   bool ret =
-      pkey->verify(msg, reinterpret_cast<const uint8_t *>(sig), signature_len);
+      pkey->verify(reinterpret_cast<const uint8_t *>(src), src_len,
+                   reinterpret_cast<const uint8_t *>(sig), signature_len);
 
   STOP_CC(sig_ver_cycles);
   return ret;
@@ -155,10 +155,10 @@ unsigned Principal::encrypt(const char *src, uint32_t src_len, char *dst,
   dst += sizeof(ciphertext_len);
   dst_len -= (sizeof(src_len) + sizeof(ciphertext_len));
 
-  std::string plaintext(src, src_len);
   // This is rather inefficient if message is big but messages will
   // be small.
-  int err = pkey->encrypt(plaintext, reinterpret_cast<uint8_t *>(dst), dst_len);
+  int err = pkey->encrypt(reinterpret_cast<const uint8_t *>(src), src_len,
+                          reinterpret_cast<uint8_t *>(dst), dst_len);
   th_assert(err == 0, "unexpected error while encrypting message");
 
   return total_len;

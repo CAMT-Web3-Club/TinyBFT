@@ -32,30 +32,28 @@ RsaPublicKey::RsaPublicKey(const std::string &key_filename,
 
 RsaPublicKey::~RsaPublicKey() { mbedtls_rsa_free(ctx_); }
 
-int RsaPublicKey::encrypt(const std::string &plaintext, uint8_t *dest,
-                          size_t dest_len) {
+int RsaPublicKey::encrypt(const uint8_t *plaintext, size_t plaintext_len,
+                          uint8_t *dest, size_t dest_len) {
   if (dest == nullptr || dest_len < size()) {
     return EINVAL;
   }
 
-  int err = mbedtls_rsa_pkcs1_encrypt(
-      ctx_, mbedtls_ctr_drbg_random, rng_ctx_, plaintext.length(),
-      reinterpret_cast<const unsigned char *>(plaintext.c_str()), dest);
+  int err = mbedtls_rsa_pkcs1_encrypt(ctx_, mbedtls_ctr_drbg_random, rng_ctx_,
+                                      plaintext_len, plaintext, dest);
 
   return err;
 }
 
-bool RsaPublicKey::verify(const std::string &msg, const uint8_t *signature,
-                          size_t signature_len) {
+bool RsaPublicKey::verify(const uint8_t *msg, size_t msg_len,
+                          const uint8_t *signature, size_t signature_len) {
   if (signature == nullptr || signature_len < size()) {
     printf("%p == nullptr || %zu < %zu?", signature, signature_len, size());
     return false;
   }
 
   // TODO: use hash instead of the whole raw message
-  int err = mbedtls_rsa_pkcs1_verify(
-      ctx_, MBEDTLS_MD_NONE, msg.length(),
-      reinterpret_cast<const unsigned char *>(msg.c_str()), signature);
+  int err =
+      mbedtls_rsa_pkcs1_verify(ctx_, MBEDTLS_MD_NONE, msg_len, msg, signature);
   return err == 0;
 }
 

@@ -22,8 +22,8 @@ class PublicKey {
    * @param ciphertext_len the length of the ciphertext buffer.
    * @return int 0 on success, an error code otherwise.
    */
-  virtual int encrypt(const std::string &plaintext, uint8_t *ciphertext,
-                      size_t ciphertext_len) = 0;
+  virtual int encrypt(const uint8_t *plaintext, size_t plaintext_len,
+                      uint8_t *ciphertext, size_t ciphertext_len) = 0;
 
   /**
    * @brief Verify the signature of a message.
@@ -36,8 +36,8 @@ class PublicKey {
    * @param signature_len length of the signature in bytes.
    * @return true if the signature is valid, false otherwise.
    */
-  virtual bool verify(const std::string &msg, const uint8_t *signature,
-                      size_t signature_len) = 0;
+  virtual bool verify(const uint8_t *msg, size_t msg_len,
+                      const uint8_t *signature, size_t signature_len) = 0;
 
   /**
    * @brief Return the key size in bytes.

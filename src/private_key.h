@@ -30,7 +30,8 @@ class PrivateKey {
    *
    * @return int 0 on success, an error code otherwise.
    */
-  virtual int sign(const std::string &msg, uint8_t *signature, size_t len) = 0;
+  virtual int sign(const uint8_t *msg, size_t msg_len, uint8_t *signature,
+                   size_t len) = 0;
 
   /**
    * @brief Return key size in bytes.

@@ -48,16 +48,15 @@ int RsaPrivateKey::decrypt(const uint8_t *ciphertext, size_t len, char *dest,
       reinterpret_cast<unsigned char *>(dest), dest_len);
 }
 
-int RsaPrivateKey::sign(const std::string &msg, uint8_t *signature,
+int RsaPrivateKey::sign(const uint8_t *msg, size_t msg_len, uint8_t *signature,
                         size_t len) {
   if (signature == nullptr || len < size()) {
     return EINVAL;
   }
 
   // TODO: use hash instead of the whole raw message
-  return mbedtls_rsa_pkcs1_sign(
-      ctx_, mbedtls_ctr_drbg_random, rng_ctx_, MBEDTLS_MD_NONE, msg.length(),
-      reinterpret_cast<const unsigned char *>(msg.c_str()), signature);
+  return mbedtls_rsa_pkcs1_sign(ctx_, mbedtls_ctr_drbg_random, rng_ctx_,
+                                MBEDTLS_MD_NONE, msg_len, msg, signature);
 }
 
 size_t RsaPrivateKey::size() const { return mbedtls_rsa_get_len(ctx_); }
