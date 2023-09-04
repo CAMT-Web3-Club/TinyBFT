@@ -49,7 +49,6 @@ class Client : public Node {
 
  private:
   Request *out_req;    // Outstanding request
-  bool need_auth;      // Whether to compute new authenticator for out_req
   Request_id out_rid;  // Identifier of the outstanding request
   int n_retrans;       // Number of retransmissions of out_req
   int rtimeout;        // Timeout period in msecs

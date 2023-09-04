@@ -445,11 +445,10 @@ void Replica::handle(Request *m) {
 
   if (has_new_view() && m->verify()) {
     // Replica's requests must be signed and cannot be read-only.
-    if (!is_replica(cid) || (m->is_signed() & !ro)) {
+    if (!is_replica(cid) || !ro) {
       if (ro) {
         // Read-only requests.
         if (execute_read_only(m) || !ro_rqueue.append(m)) delete m;
-
         return;
       }
 

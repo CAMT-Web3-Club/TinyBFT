@@ -53,7 +53,6 @@ bool Client::send_request(Request *req) {
       send(req, primary());
     }
     out_req = req;
-    need_auth = false;
     n_retrans = 0;
 
 #ifdef ADJUST_RTIMEOUT
@@ -149,18 +148,6 @@ void Client::retransmit() {
     if (n_retrans == nk_thresh || n_retrans % nk_thresh_1 == 0) {
       send_new_key();
     }
-
-    bool ro = out_req->is_read_only();
-    bool change = (ro || out_req->replier() >= 0) && n_retrans > thresh;
-    //    printf("%d %d %d %d\n", id(), n_retrans, ro, out_req->replier());
-
-    if (need_auth || change) {
-      // Compute new authenticator for request
-      out_req->re_authenticate(change);
-      need_auth = false;
-      if (ro && change) t_reps.clear();
-    }
-
     if (out_req->is_read_only() || n_retrans > thresh ||
         out_req->size() > Request::big_req_thresh) {
       // read-only requests, requests retransmitted more than
@@ -186,8 +173,6 @@ void Client::retransmit() {
 
 void Client::send_new_key() {
   Node::send_new_key();
-  need_auth = true;
-
   // Cleanup reply messages authenticated with old keys.
   t_reps.clear();
   c_reps.clear();

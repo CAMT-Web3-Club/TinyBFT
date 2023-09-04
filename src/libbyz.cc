@@ -63,10 +63,10 @@ int Byz_alloc_request(Byz_req *req, [[maybe_unused]] int size) {
   return 0;
 }
 
-int Byz_send_request(Byz_req *req, bool ro) {
+int Byz_send_request(Byz_req *req, [[maybe_unused]] bool ro) {
   libbyzea::Request *request = (libbyzea::Request *)req->opaque;
   request->request_id() = ((libbyzea::Client *)libbyzea::node)->get_rid();
-  request->authenticate(req->size, ro);
+  request->sign(req->size);
 
   bool retval = ((libbyzea::Client *)libbyzea::node)->send_request(request);
   return (retval) ? 0 : -1;

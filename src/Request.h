@@ -31,7 +31,8 @@ struct Request_rep : public Message_rep {
 };
 
 constexpr int max_request_size =
-    MAX_REQUEST_SIZE + sizeof(Request_rep) + AUTHENTICATOR_SIZE;
+    MAX_REQUEST_SIZE + sizeof(Request_rep) +
+    256;  // For now, we assume an RSA keysize of 2048 bit
 
 class Request : public Message {
   //
@@ -70,18 +71,6 @@ class Request : public Message {
   // bytes available to store the reply. The caller can copy any command
   // with length less than "max_len" into the returned buffer.
 
-  void authenticate(int act_len, bool read_only = false);
-  // Effects: Terminates the construction of a request message by
-  // setting the length of the command to "act_len", and appending an
-  // authenticator. read-only should be true iff the request is read-only
-  // (i.e., it will not change the service state).
-
-  void re_authenticate(bool change = false, Principal *p = 0);
-  // Effects: Recomputes the authenticator in the request using the
-  // most recent keys. If "change" is true, it marks the request
-  // read-write and changes the replier to -1. If "p" is not null, may
-  // only update "p"'s entry.
-
   void sign(int act_len);
   // Effects: Terminates the construction of a request message by
   // setting the length of the command to "act_len", and appending a
@@ -116,7 +105,7 @@ class Request : public Message {
 
   bool verify();
   // Effects: Verifies if the message is authenticated by the client
-  // "client_id()" using an authenticator, or a signature.
+  // "client_id()" using a signature.
 
   static bool convert(Message *m1, Request *&m2);
   // Effects: If "m1" has the right size and tag of a "Request",
@@ -162,7 +151,7 @@ inline int Request::replier() const { return rep().replier; }
 
 inline bool Request::is_read_only() const { return rep().extra & 1; }
 
-inline bool Request::is_signed() const { return rep().extra & 2; }
+inline bool Request::is_signed() const { return true; }
 
 inline Digest &Request::digest() const { return rep().od; }
 

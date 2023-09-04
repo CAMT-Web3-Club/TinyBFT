@@ -11,7 +11,6 @@
 #include "th_assert.h"
 
 // extra & 1 = read only
-// extra & 2 = signed
 
 namespace libbyzea {
 
@@ -50,37 +49,6 @@ inline void Request::comp_digest(Digest &d) {
   STOP_CC(digest_cycles);
 }
 
-void Request::authenticate(int act_len, bool read_only) {
-  th_assert(
-      (unsigned)act_len <= msize() - sizeof(Request_rep) - node->auth_size(),
-      "Invalid request size");
-
-  rep().extra = ((read_only) ? 1 : 0);
-  rep().command_size = act_len;
-  if (rep().replier == -1) rep().replier = lrand48() % node->n();
-  comp_digest(rep().od);
-
-  int old_size = sizeof(Request_rep) + act_len;
-  set_size(old_size + node->auth_size());
-  node->gen_auth_in(contents(), sizeof(Request_rep), contents() + old_size);
-}
-
-void Request::re_authenticate(bool change, [[maybe_unused]] Principal *p) {
-  if (change) {
-    rep().extra &= ~1;
-  }
-  int new_rep = lrand48() % node->n();
-  rep().replier =
-      (new_rep != rep().replier) ? new_rep : (new_rep + 1) % node->n();
-
-  size_t old_size = sizeof(Request_rep) + rep().command_size;
-  if ((rep().extra & 2) == 0) {
-    node->gen_auth_in(contents(), sizeof(Request_rep), contents() + old_size);
-  } else {
-    node->gen_signature(contents(), sizeof(Request_rep), contents() + old_size);
-  }
-}
-
 void Request::sign(int act_len) {
   th_assert((unsigned)act_len <=
                 msize() - sizeof(Request_rep) - node->principal()->sig_size(),
@@ -98,7 +66,6 @@ void Request::sign(int act_len) {
 Request::Request(Request_rep *contents) : Message(contents) {}
 
 bool Request::verify() {
-  const int nid = node->id();
   const int cid = client_id();
   const size_t old_size = sizeof(Request_rep) + rep().command_size;
   Principal *p = node->i_to_p(cid);
@@ -106,18 +73,9 @@ bool Request::verify() {
 
   comp_digest(d);
   if (p != 0 && d == rep().od) {
-    if ((rep().extra & 2) == 0) {
-      // Message has an authenticator.
-      if (cid != nid && cid >= node->n() &&
-          size() - old_size >= static_cast<size_t>(node->auth_size(cid)))
-        return node->verify_auth_out(cid, contents(), sizeof(Request_rep),
-                                     contents() + old_size);
-    } else {
-      // Message is signed.
-      if (size() - old_size >= p->sig_size())
-        return p->verify_signature(contents(), sizeof(Request_rep),
-                                   contents() + old_size, true);
-    }
+    if (size() - old_size >= p->sig_size())
+      return p->verify_signature(contents(), sizeof(Request_rep),
+                                 contents() + old_size, true);
   }
   return false;
 }
