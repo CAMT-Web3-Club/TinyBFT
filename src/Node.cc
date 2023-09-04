@@ -25,8 +25,6 @@
 #include "special_region.h"
 #include "th_assert.h"
 
-#define NO_IP_MULTICAST
-
 #ifndef NDEBUG
 #define NDEBUG
 #endif
