@@ -18,8 +18,7 @@ static char scratch_region[scratch_size] __attribute__((aligned(ALIGNMENT)));
 static unsigned char scratch_bitmap[(SLOTS + 7) / 8];
 
 size_t memory_demand() {
-  return sizeof(scratch_size) + sizeof(scratch_region) +
-         sizeof(scratch_bitmap);
+  return sizeof(scratch_size) + sizeof(scratch_region) + sizeof(scratch_bitmap);
 }
 
 static inline void *scratch_end() {
@@ -61,7 +60,8 @@ void *realloc(void *msg, [[maybe_unused]] size_t size) { return msg; }
 
 void free(void *msg, [[maybe_unused]] size_t size) {
   th_assert(msg >= (void *)scratch_region &&
-                msg < (void *)(scratch_region + sizeof(scratch_region)), "Message is not part of scratch region");
+                msg < (void *)(scratch_region + sizeof(scratch_region)),
+            "Message is not part of scratch region");
 
   auto offset = (uintptr_t)msg - (uintptr_t)scratch_region;
   auto i = offset / Max_message_size;

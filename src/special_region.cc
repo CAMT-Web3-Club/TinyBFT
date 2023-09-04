@@ -6,9 +6,9 @@
 #include "Meta_data_d.h"
 #include "New_key.h"
 #include "New_view.h"
+#include "Request.h"
 #include "View_change.h"
 #include "View_change_ack.h"
-#include "Request.h"
 #include "parameters.h"
 #include "th_assert.h"
 
@@ -134,13 +134,13 @@ void free_new_key([[maybe_unused]] New_key_rep *msg) {
 }
 
 Request_rep *load_request(int client_id) {
-  return &requests[client_id-4].msg;
+  return &requests[client_id - 4].msg;
 }
 
 void store_request(Request_rep *req) {
-	th_assert((size_t)req->size <= sizeof(RequestBlock), "Request too large");
-	int i = req->cid - 4;
-	std::memcpy(&requests[i].raw, req, req->size);
+  th_assert((size_t)req->size <= sizeof(RequestBlock), "Request too large");
+  int i = req->cid - 4;
+  std::memcpy(&requests[i].raw, req, req->size);
 }
 
 }  // namespace special_region
