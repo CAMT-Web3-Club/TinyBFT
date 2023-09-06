@@ -297,7 +297,7 @@ Digest::Digest(char *s, unsigned n) {
 
   STOP_CC(digest_cycles);
 #else
-  for (int i = 0; i < 4; i++) d[i] = 3;
+  for (int i = 0; i < num_words(); i++) d[i] = 3;
 #endif  // NODIGESTS
 }
 
