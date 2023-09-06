@@ -16,6 +16,7 @@
 #include "Replica.h"
 #include "State_defs.h"
 #include "Statistics.h"
+#include "libbyz.h"
 #include "map.h"
 #include "th_assert.h"
 #include "valuekey.h"
@@ -454,7 +455,10 @@ State::State(MEM_STATS_PARAM Replica* rep, char* memory, int num_bytes)
   }
 
   // The random modulus for computing sums in AdHASH.
-  DSum::init("d2a10a09a80bc599b4d60bbec06c05d5e9f9c369954940145b63a1e2");
+  // This was generated using: openssl prime -safe -generate -bits 384 -hex
+  DSum::init(
+      "DF8A46D4E777C4B3090A3389839E4F8653C4B6CFFFEA2A8D81DEDF1149D11D558C54BFB6"
+      "76FCFE28BCC07ABA057CAB9F");
 
   for (int i = 0; i < PLevels - 1; i++) {
     MEM_STATS_GUARD_PUSH(DSum);
@@ -572,17 +576,6 @@ void State::cow(char* m, int size) {
 #endif
 }
 
-void State::digest(Digest& d, int i, Seqno lm, char* data, int size) {
-  // Compute digest for partition p:
-  // MD5(i, last modification seqno, (data,size)
-  MD5_CTX ctx;
-  MD5Init(&ctx);
-  MD5Update(&ctx, (char*)&i, sizeof(i));
-  MD5Update(&ctx, (char*)&lm, sizeof(Seqno));
-  MD5Update(&ctx, data, size);
-  MD5Final(d.udigest(), &ctx);
-}
-
 inline int State::digest(Digest& d, int l, int i) {
   char* data;
   uint8_t raw_sum[DSum::nbytes];
@@ -623,8 +616,7 @@ inline int State::digest(Digest& d, int l, int i) {
     data = reinterpret_cast<char*>(raw_sum);
     size = sizeof(raw_sum);
   }
-
-  digest(d, i, ptree[l][i].lm, data, size);
+  d.set_state_block(data, size, i, ptree[l][i].lm);
 
 #ifndef NO_STATE_TRANSLATION
   if (bcp != NULL) bcp->d = d;
@@ -1208,8 +1200,7 @@ void State::handle(Data* m) {
           Digest d;
           digest(d, i, m->last_mod(), reassemb, m->total_size());
 #else
-      Digest d;
-      digest(d, i, m->last_mod(), m->data(), Block_size);
+      Digest d(m->data(), Block_size, i, m->last_mod());
 #endif
           if (wp.c >= 0 && wp.d == d) {
             INCR_OP(num_fetched_a);
@@ -1350,7 +1341,7 @@ bool State::check_digest(Digest& d, Meta_data* m) {
       &sum.sum, reinterpret_cast<uint8_t*>(raw_sum), sizeof(raw_sum));
   th_assert(ret == 0,
             "sum is too large or an error occurred while copying sum");
-  digest(dp, i, m->last_mod(), raw_sum, sizeof(raw_sum));
+  dp.set_state_block(raw_sum, sizeof(raw_sum), i, m->last_mod());
   return d == dp;
 }
 

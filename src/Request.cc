@@ -9,6 +9,7 @@
 #include "Principal.h"
 #include "Statistics.h"
 #include "th_assert.h"
+#include "types.h"
 
 // extra & 1 = read only
 
@@ -39,12 +40,8 @@ char *Request::store_command(int &max_len) {
 inline void Request::comp_digest(Digest &d) {
   INCR_OP(num_digests);
   START_CC(digest_cycles);
-
-  MD5_CTX context;
-  MD5Init(&context);
-  MD5Update(&context, (char *)&(rep().cid),
-            sizeof(int) + sizeof(Request_id) + rep().command_size);
-  MD5Final(d.udigest(), &context);
+  d.set(reinterpret_cast<const char *>(&(rep().cid)),
+        sizeof(int) + sizeof(Request_id) + rep().command_size);
 
   STOP_CC(digest_cycles);
 }

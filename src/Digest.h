@@ -1,3 +1,4 @@
+#include "types.h"
 #ifndef _Digest_h
 #define _Digest_h 1
 
@@ -14,6 +15,9 @@ class Digest {
 
   /** @brief Creates a digest for string "s" with length "len" */
   Digest(char *s, size_t len);
+
+  /** @brief Create a digest for a state block. */
+  Digest(const char *data, size_t len, int i, Seqno last_modified);
 
   inline Digest(Digest const &x) {
     for (size_t i = 0; i < num_words(); i++) {
@@ -58,6 +62,23 @@ class Digest {
     }
     return *this;
   }
+
+  /**
+   * @brief Set digest value to the digest of msg.
+   *
+   * Compute the digest for msg and set this digest's value to the computed
+   * value.
+   */
+  void set(const char *msg, size_t len);
+
+  /**
+   * @brief Set digest value to digest of a state block.
+   *
+   * Compute the digest for a state block and set this digest's value
+   * accordingly.
+   */
+  void set_state_block(const char *data, size_t len, int i,
+                       Seqno last_modified);
 
   inline int hash() const { return d[0]; }
 

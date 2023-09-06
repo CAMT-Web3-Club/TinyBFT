@@ -13,14 +13,13 @@ namespace libbyzea {
 // Sums of digests modulo a large integer
 //
 struct DSum {
-  static const int nbits = 256;
-  static const int mp_limb_bits = sizeof(mbedtls_mpi_uint) * 8;
-  static const int nlimbs = (nbits + mp_limb_bits - 1) / mp_limb_bits;
-  static const int nbytes = nlimbs * sizeof(mbedtls_mpi_uint);
+  static constexpr int nbits = 512;
+  static constexpr int mp_limb_bits = sizeof(mbedtls_mpi_uint) * 8;
+  static constexpr int nlimbs = (nbits + mp_limb_bits - 1) / mp_limb_bits;
+  static constexpr int nbytes = nlimbs * sizeof(mbedtls_mpi_uint);
   static DSum* M;  // Modulus for sums must be at most nbits-1 long.
 
   mbedtls_mpi sum;
-  //  char dummy[56];
 
   static void init(const std::string& modulus);
 

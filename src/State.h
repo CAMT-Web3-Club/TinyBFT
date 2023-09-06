@@ -236,9 +236,6 @@ class State {
   // Effects: Sets "d" to the current digest of partition  "(l,i)"
   // Returns: size of object in partition (l,i)
 
-  void digest(Digest &d, int i, Seqno lm, char *data, int size);
-  // Effects: Sets "d" to MD5(i#lm#(data,size))
-
   bool check_digest(Digest &d, Meta_data *m);
   // Effects: Checks if the digest of the partion in "m" is "d"
 

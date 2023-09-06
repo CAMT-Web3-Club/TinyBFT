@@ -1,6 +1,7 @@
 
 #include "Digest.h"
 
+#include <mbedtls/sha256.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -284,23 +285,62 @@ void MD5Final(unsigned int digest[4], MD5_CTX *context) {
   // Does it really improve security?
 }
 
-Digest::Digest(char *s, unsigned n) {
+Digest::Digest(char *s, size_t len) {
 #ifndef NODIGESTS
   INCR_OP(num_digests);
   START_CC(digest_cycles);
-
-  // Effects: Creates a digest for string "s" with length "n"
-  MD5_CTX context;
-  MD5Init(&context);
-  MD5Update(&context, s, n);
-  MD5Final(d, &context);
-
+  set(s, len);
   STOP_CC(digest_cycles);
 #else
   for (int i = 0; i < num_words(); i++) d[i] = 3;
 #endif  // NODIGESTS
 }
 
-void Digest::print() { printf("digest=[%d,%d,%d,%d]", d[0], d[1], d[2], d[3]); }
+Digest::Digest(const char *data, size_t len, int i, Seqno last_modified) {
+#ifndef NODIGESTS
+  INCR_OP(num_digests);
+  START_CC(digest_cycles);
+  set_state_block(data, len, i, last_modified);
+  STOP_CC(digest_cycles);
+#else
+  for (int i = 0; i < num_words(); i++) d[i] = 3;
+#endif  // NODIGESTS
+}
+
+void Digest::set(const char *s, size_t len) {
+  mbedtls_sha256_context ctx;
+  mbedtls_sha256_init(&ctx);
+  mbedtls_sha256_starts(&ctx, false);
+  mbedtls_sha256_update(&ctx, reinterpret_cast<const unsigned char *>(s), len);
+  mbedtls_sha256_finish(&ctx, reinterpret_cast<unsigned char *>(&d[0]));
+}
+
+void Digest::set_state_block(const char *data, size_t len, int i,
+                             Seqno last_modified) {
+  mbedtls_sha256_context ctx;
+  mbedtls_sha256_init(&ctx);
+  mbedtls_sha256_starts(&ctx, false);
+  mbedtls_sha256_update(&ctx, reinterpret_cast<const unsigned char *>(&i),
+                        sizeof(i));
+  mbedtls_sha256_update(&ctx,
+                        reinterpret_cast<const unsigned char *>(&last_modified),
+                        sizeof(last_modified));
+  mbedtls_sha256_update(&ctx, reinterpret_cast<const unsigned char *>(data),
+                        len);
+  mbedtls_sha256_finish(&ctx, reinterpret_cast<unsigned char *>(&d[0]));
+}
+
+void Digest::print() {
+  char buf[SIZE * 2 + 1];
+  int n = 0;
+  for (size_t i = 0; i < num_words(); i++) {
+    int diff = snprintf(&buf[n], sizeof(buf) - n, "%x", d[i]);
+    th_assert(diff > 0, "Unexpected snprintf failure.");
+    n += diff - 1;
+  }
+  buf[sizeof(buf) - 1] = '\0';
+
+  printf("digest=%s", buf);
+}
 
 }  // namespace libbyzea

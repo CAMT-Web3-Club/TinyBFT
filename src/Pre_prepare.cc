@@ -1,5 +1,6 @@
 #include "Pre_prepare.h"
 
+#include "Digest.h"
 #include "MD5.h"
 #include "Message_tags.h"
 #include "Prepare.h"
@@ -7,6 +8,7 @@
 #include "Replica.h"
 #include "Req_queue.h"
 #include "Request.h"
+#include "digest_builder.h"
 #include "th_assert.h"
 
 namespace libbyzea {
@@ -31,14 +33,14 @@ Pre_prepare::Pre_prepare(View v, Seqno s, Req_queue &reqs)
   char *max_req =
       next_req + msize() - replica->max_nd_bytes() - node->sig_size();
 #endif
-  MD5_CTX context;
-  MD5Init(&context);
+
+  DigestBuilder digest_builder;
   for (Request *req = reqs.first(); req != 0; req = reqs.first()) {
     if (req->size() <= Request::big_req_thresh) {
       // Small requests are inlined in the pre-prepare message.
       if (next_req + req->size() <= max_req) {
         memcpy(next_req, req->contents(), req->size());
-        MD5Update(&context, (char *)&(req->digest()), sizeof(Digest));
+        digest_builder.update(req->digest().digest(), sizeof(Digest));
         next_req += req->size();
         th_assert(ALIGNED(next_req), "Improperly aligned pointer");
         delete reqs.remove();
@@ -78,9 +80,9 @@ Pre_prepare::Pre_prepare(View v, Seqno s, Req_queue &reqs)
   }
 
   // Finalize digest of requests and non-det-choices.
-  MD5Update(&context, (char *)big_reqs(),
-            n_big_reqs * sizeof(Digest) + rep().non_det_size);
-  MD5Final(rep().digest.udigest(), &context);
+  digest_builder.update(reinterpret_cast<const char *>(big_reqs()),
+                        n_big_reqs * sizeof(Digest) + rep().non_det_size);
+  digest_builder.finish(rep().digest);
 
   STOP_CC(pp_digest_cycles);
 
@@ -133,14 +135,14 @@ bool Pre_prepare::check_digest() {
     INCR_OP(pp_digest);
 
     // Check digest.
-    MD5_CTX context;
-    MD5Init(&context);
+    DigestBuilder digest_builder;
     Digest d;
     Request req;
     char *max_req = requests() + rep().rset_size;
     for (char *next = requests(); next < max_req; next += req.size()) {
       if (Request::convert(next, max_req - next, req)) {
-        MD5Update(&context, (char *)&(req.digest()), sizeof(Digest));
+        digest_builder.update(reinterpret_cast<const char *>(&(req.digest())),
+                              sizeof(Digest));
       } else {
         STOP_CC(pp_digest_cycles);
         return false;
@@ -148,9 +150,10 @@ bool Pre_prepare::check_digest() {
     }
 
     // Finalize digest of requests and non-det-choices.
-    MD5Update(&context, (char *)big_reqs(),
-              rep().n_big_reqs * sizeof(Digest) + rep().non_det_size);
-    MD5Final(d.udigest(), &context);
+    digest_builder.update(
+        reinterpret_cast<const char *>(big_reqs()),
+        rep().n_big_reqs * sizeof(Digest) + rep().non_det_size);
+    digest_builder.finish(d);
 
     STOP_CC(pp_digest_cycles);
     return d == rep().digest;
@@ -176,8 +179,7 @@ bool Pre_prepare::verify(int mode) {
 
     // Check digest.
     Digest d;
-    MD5_CTX context;
-    MD5Init(&context);
+    DigestBuilder digest_builder;
     Request req;
     char *max_req = requests() + rep().rset_size;
     for (char *next = requests(); next < max_req; next += req.size()) {
@@ -185,8 +187,8 @@ bool Pre_prepare::verify(int mode) {
           (mode == NRC || req.verify() ||
            replica->has_req(req.client_id(), req.digest()))) {
         START_CC(pp_digest_cycles);
-
-        MD5Update(&context, (char *)&(req.digest()), sizeof(Digest));
+        digest_builder.update(reinterpret_cast<const char *>(&(req.digest())),
+                              sizeof(Digest));
 
         STOP_CC(pp_digest_cycles);
       } else {
@@ -203,9 +205,10 @@ bool Pre_prepare::verify(int mode) {
     START_CC(pp_digest_cycles);
 
     // Finalize digest of requests and non-det-choices.
-    MD5Update(&context, (char *)big_reqs(),
-              rep().n_big_reqs * sizeof(Digest) + rep().non_det_size);
-    MD5Final(d.udigest(), &context);
+    digest_builder.update(
+        reinterpret_cast<const char *>(big_reqs()),
+        rep().n_big_reqs * sizeof(Digest) + rep().non_det_size);
+    digest_builder.finish(d);
 
     STOP_CC(pp_digest_cycles);
 
