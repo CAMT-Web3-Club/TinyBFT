@@ -320,21 +320,6 @@ void Node::gen_auth(char *s, unsigned l, bool in, char *dest) const {
   INCR_OP(num_gen_auth);
   START_CC(gen_auth_cycles);
 
-#ifdef USE_SECRET_SUFFIX_MD5
-  // Initialize context with "digest" of message.
-  MD5_CTX context, context1;
-  MD5Init(&context1);
-  MD5Update(&context1, s, l);
-
-  for (int i = 0; i < num_replicas; i++) {
-    // Skip myself.
-    if (i == node_id) continue;
-
-    memcpy((char *)&context, (char *)&context1, sizeof(MD5_CTX));
-    principals[i]->end_mac(&context, dest, in);
-    dest += MAC_size;
-  }
-#else
   long long unonce = Principal::new_umac_nonce();
   memcpy(dest, (char *)&unonce, UNonce_size);
   dest += UNonce_size;
@@ -349,7 +334,6 @@ void Node::gen_auth(char *s, unsigned l, bool in, char *dest) const {
       principals[i]->gen_mac_out(s, l, dest, (char *)&unonce);
     dest += UMAC_size;
   }
-#endif
 
   STOP_CC(gen_auth_cycles);
 }
@@ -364,12 +348,6 @@ bool Node::verify_auth(int i, char *s, unsigned l, bool in, char *dest) const {
 
   // Principal never verifies its own authenticator.
   if (p != 0 && i != node_id) {
-#ifdef USE_SECRET_SUFFIX_MD5
-    int offset = node_id * MAC_size;
-    if (node_id > i) offset -= MAC_size;
-    bool ret = (in) ? p->verify_mac_in(s, l, dest + offset)
-                    : p->verify_mac_out(s, l, dest + offset);
-#else
     long long unonce;
     memcpy((char *)&unonce, dest, UNonce_size);
     dest += UNonce_size;
@@ -377,7 +355,6 @@ bool Node::verify_auth(int i, char *s, unsigned l, bool in, char *dest) const {
     if (node_id > i) offset -= UMAC_size;
     bool ret = (in) ? p->verify_mac_in(s, l, dest + offset, (char *)&unonce)
                     : p->verify_mac_out(s, l, dest + offset, (char *)&unonce);
-#endif
 
     STOP_CC(ver_auth_cycles);
     return ret;

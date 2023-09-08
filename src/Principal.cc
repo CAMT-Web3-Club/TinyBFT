@@ -9,6 +9,7 @@
 #include "Node.h"
 #include "Reply.h"
 #include "rsa_public_key.h"
+#include "umac.h"
 
 namespace libbyzea {
 
@@ -30,10 +31,8 @@ Principal::Principal(MEM_STATS_PARAM int i, Addr a,
     kout[j] = 0;
   }
 
-#ifndef USE_SECRET_SUFFIX_MD5
-  ctx_in = 0;
+  ctx_in = nullptr;
   ctx_out = umac_new((char *)kout);
-#endif
 
   tstamp = 0;
   my_tstamp = zeroTime();
@@ -45,42 +44,12 @@ Principal::~Principal() { delete pkey; }
 void Principal::set_in_key(const unsigned *k) {
   memcpy(kin, k, Key_size);
 
-#ifndef USE_SECRET_SUFFIX_MD5
-  if (ctx_in) umac_delete(ctx_in);
+  if (ctx_in) {
+    umac_delete(ctx_in);
+  }
   ctx_in = umac_new((char *)kin);
-#endif
 }
 
-#ifdef USE_SECRET_SUFFIX_MD5
-bool Principal::verify_mac(const char *src, unsigned src_len, const char *mac,
-                           unsigned *k) {
-  // Do not accept MACs sent with uninitialized keys.
-  if (k[0] == 0) return false;
-
-  MD5_CTX context;
-  unsigned int digest[4];
-
-  MD5Init(&context);
-  MD5Update(&context, src, src_len);
-  MD5Update(&context, (char *)k, 16);
-  MD5Final(digest, &context);
-  return !memcmp(digest, mac, MAC_size);
-}
-
-void Principal::gen_mac(const char *src, unsigned src_len, char *dst,
-                        unsigned *k) {
-  MD5_CTX context;
-  unsigned int digest[4];
-
-  MD5Init(&context);
-  MD5Update(&context, src, src_len);
-  MD5Update(&context, (char *)k, 16);
-  MD5Final(digest, &context);
-
-  // Copy to destination and truncate output to MAC_size
-  memcpy(dst, (char *)digest, MAC_size);
-}
-#else
 bool Principal::verify_mac(const char *src, unsigned src_len, const char *mac,
                            const char *unonce, umac_ctx_t ctx) {
   // Do not accept MACs sent with uninitialized keys.
@@ -100,16 +69,14 @@ void Principal::gen_mac(const char *src, unsigned src_len, char *dst,
   umac_reset(ctx);
 }
 
-#endif
-
 void Principal::set_out_key(unsigned *k, ULong t) {
   if (t > tstamp) {
     memcpy(kout, k, Key_size);
 
-#ifndef USE_SECRET_SUFFIX_MD5
-    if (ctx_out) umac_delete(ctx_out);
+    if (ctx_out) {
+      umac_delete(ctx_out);
+    }
     ctx_out = umac_new((char *)kout);
-#endif
 
     tstamp = t;
     my_tstamp = currentTime();

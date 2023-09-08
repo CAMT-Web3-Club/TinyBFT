@@ -241,18 +241,11 @@ inline int Node::primary(View vi) const {
 
 inline int Node::primary() const { return cur_primary; }
 
-#ifdef USE_SECRET_SUFFIX_MD5
-inline int Node::auth_size(int id) const {
-  if (id < 0) id = node_id;
-  return ((id < num_replicas) ? num_replicas - 1 : num_replicas) * MAC_size;
-}
-#else
 inline int Node::auth_size(int id) const {
   if (id < 0) id = node_id;
   return ((id < num_replicas) ? num_replicas - 1 : num_replicas) * UMAC_size +
          UNonce_size;
 }
-#endif
 
 inline void Node::gen_auth_out(char *src, unsigned src_len, char *dest) const {
   if (dest == 0) dest = src + src_len;
