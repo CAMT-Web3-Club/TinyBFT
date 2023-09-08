@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <strings.h>
 
-#include "MD5.h"
 #include "Message_tags.h"
 #include "Node.h"
 #include "Principal.h"
