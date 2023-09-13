@@ -60,6 +60,16 @@ bool New_key::verify() {
     return false;
   }
 
+  // Check signature
+  if ((unsigned)size() < p->sig_size()) {
+    return false;
+  }
+  size_t msg_len = size() - p->sig_size();
+  char *signature = contents() + msg_len;
+  if (!p->verify_signature(contents(), msg_len, signature)) {
+    return false;
+  }
+
   char *dst = contents() + sizeof(New_key_rep);
   size_t dst_len = size() - sizeof(New_key_rep);
   unsigned k[Nonce_size_u];
@@ -80,12 +90,6 @@ bool New_key::verify() {
     dst += ssize;
     dst_len -= ssize;
   }
-
-  // Check signature
-  int aligned = ALIGNED_SIZE(dst - contents());
-  if (dst_len < p->sig_size() ||
-      !p->verify_signature(contents(), aligned, contents() + aligned))
-    return false;
 
   p->set_out_key(k, rep().rid);
 
