@@ -1334,7 +1334,9 @@ void Replica::execute_prepared(bool committed) {
           }
 
           // Change keys. TODO: could change key only for recovering replica.
-          if (cid != node_id) send_new_key();
+          if (cid != node_id) {
+            send_new_key();
+          }
 
           // Store seqno of execution.
           max_rec_n = last_tentative_execute;
