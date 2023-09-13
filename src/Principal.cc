@@ -22,7 +22,7 @@ Principal::Principal(MEM_STATS_PARAM int i, Addr a,
   if (key_filename != nullptr) {
     std::string filename(key_filename, std::strlen(key_filename));
     pkey = new libbyzea::RsaPublicKey(filename, drbg);
-    ssize = pkey->size() + sizeof(size_t) + 1;
+    ssize = ALIGNED_SIZE(pkey->size() + sizeof(uint32_t));
   }
 
   for (int j = 0; j < 4; j++) {

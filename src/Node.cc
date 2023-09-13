@@ -391,10 +391,8 @@ void Node::gen_signature(const char *src, unsigned src_len, char *sig) {
   INCR_OP(num_sig_gen);
   START_CC(sig_gen_cycles);
 
+  bzero(sig, sig_size());
   uint32_t key_size = priv_key->size();
-  th_assert(key_size + sizeof(key_size) == sig_size(),
-            "Invalid signature size");
-
   memcpy(sig, &key_size, sizeof(key_size));
   sig += sizeof(key_size);
   int err = priv_key->sign(reinterpret_cast<const uint8_t *>(src), src_len,
