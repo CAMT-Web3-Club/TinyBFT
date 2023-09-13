@@ -792,6 +792,13 @@ void Replica::handle(Status *m) {
   MEMSTATS_MEM_TYPE_VAR
   static const int max_ret_bytes = 65536;
 
+  // Ignore our own status messages, otherwise we would spam New_key messages to
+  // ourselves.
+  if (m->id() == id()) {
+    delete m;
+    return;
+  }
+
   if (m->verify() && qs == 0) {
     Time current;
     Time *t;
