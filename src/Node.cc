@@ -392,17 +392,14 @@ void Node::gen_signature(const char *src, unsigned src_len, char *sig) {
   START_CC(sig_gen_cycles);
 
   uint32_t key_size = priv_key->size();
-  if (key_size + sizeof(key_size) > sig_size()) {
-    th_fail("Signature is too big");
-  }
+  th_assert(key_size + sizeof(key_size) == sig_size(),
+            "Invalid signature size");
 
   memcpy(sig, &key_size, sizeof(key_size));
   sig += sizeof(key_size);
   int err = priv_key->sign(reinterpret_cast<const uint8_t *>(src), src_len,
                            reinterpret_cast<uint8_t *>(sig), key_size);
-  if (err) {
-    th_fail("failed to sign message");
-  }
+  th_assert(err == 0, "Faild to sign message");
 
   STOP_CC(sig_gen_cycles);
 }
@@ -425,9 +422,7 @@ unsigned Node::decrypt(char *src, unsigned src_len, char *dst,
   size_t dec_plaintext_len;
   int err = priv_key->decrypt(reinterpret_cast<uint8_t *>(src), ciphertext_len,
                               dst, dst_len, &dec_plaintext_len);
-  if (err) {
-    th_fail("failed to decrypt message");
-  }
+  th_assert(err == 0, "failed to decrypt message");
   th_assert(plaintext_len == dec_plaintext_len, "unexpected plaintext length");
 
   return plaintext_len;
