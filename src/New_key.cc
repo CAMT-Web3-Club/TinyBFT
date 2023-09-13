@@ -78,8 +78,8 @@ bool New_key::verify() {
     // Skip principal that sent message
     if (i == id()) continue;
 
-    int ssize = cipher_size(dst, dst_len);
-    if (ssize == 0) return false;
+    int csize = cipher_size(dst, dst_len);
+    if (csize == 0) return false;
 
     if (i == node->id()) {
       // found my key
@@ -87,8 +87,8 @@ bool New_key::verify() {
       if (ksize != Nonce_size) return false;
     }
 
-    dst += ssize;
-    dst_len -= ssize;
+    dst += csize;
+    dst_len -= csize;
   }
 
   p->set_out_key(k, rep().rid);
