@@ -9,7 +9,7 @@
 
 namespace libbyzea {
 
-Digest::Digest(char *s, size_t len) {
+Digest::Digest(const char *s, size_t len) {
 #ifndef NODIGESTS
   INCR_OP(num_digests);
   START_CC(digest_cycles);

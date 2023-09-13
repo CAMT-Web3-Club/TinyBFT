@@ -1,3 +1,4 @@
+#include "mbedtls/md.h"
 #include "types.h"
 #ifndef _Digest_h
 #define _Digest_h 1
@@ -8,13 +9,14 @@
 namespace libbyzea {
 
 class Digest {
+ public:
+  static constexpr mbedtls_md_type_t ALGORITHM = MBEDTLS_MD_SHA256;
   static constexpr size_t SIZE = 32;  ///< Size of a Digest in bytes.
 
- public:
   inline Digest() { zero(); }
 
   /** @brief Creates a digest for string "s" with length "len" */
-  Digest(char *s, size_t len);
+  Digest(const char *s, size_t len);
 
   /** @brief Create a digest for a state block. */
   Digest(const char *data, size_t len, int i, Seqno last_modified);

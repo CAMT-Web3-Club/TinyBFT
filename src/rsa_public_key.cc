@@ -2,6 +2,8 @@
 
 #include <mbedtls/pk.h>
 
+#include "Digest.h"
+#include "mbedtls/md.h"
 #include "mem_statistics.h"
 #include "th_assert.h"
 
@@ -52,8 +54,10 @@ bool RsaPublicKey::verify(const uint8_t *msg, size_t msg_len,
   }
 
   // TODO: use hash instead of the whole raw message
-  int err =
-      mbedtls_rsa_pkcs1_verify(ctx_, MBEDTLS_MD_NONE, msg_len, msg, signature);
+  Digest d(reinterpret_cast<const char *>(msg), msg_len);
+  int err = mbedtls_rsa_pkcs1_verify(
+      ctx_, Digest::ALGORITHM, Digest::SIZE,
+      reinterpret_cast<const unsigned char *>(d.digest()), signature);
   return err == 0;
 }
 

@@ -4,6 +4,8 @@
 
 #include <cstdio>
 
+#include "Digest.h"
+#include "mbedtls/md.h"
 #include "mem_statistics.h"
 #include "th_assert.h"
 
@@ -54,9 +56,10 @@ int RsaPrivateKey::sign(const uint8_t *msg, size_t msg_len, uint8_t *signature,
     return EINVAL;
   }
 
-  // TODO: use hash instead of the whole raw message
-  return mbedtls_rsa_pkcs1_sign(ctx_, mbedtls_ctr_drbg_random, rng_ctx_,
-                                MBEDTLS_MD_NONE, msg_len, msg, signature);
+  Digest d(reinterpret_cast<const char *>(msg), msg_len);
+  return mbedtls_rsa_pkcs1_sign(
+      ctx_, mbedtls_ctr_drbg_random, rng_ctx_, Digest::ALGORITHM, Digest::SIZE,
+      reinterpret_cast<const unsigned char *>(d.digest()), signature);
 }
 
 size_t RsaPrivateKey::size() const { return mbedtls_rsa_get_len(ctx_); }
