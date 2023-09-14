@@ -8,7 +8,7 @@
 namespace libbyzea {
 
 New_key::New_key() : Message(New_key_tag, Max_message_size) {
-  unsigned k[Nonce_size_u];
+  unsigned key[Key_size_u];
 
   rep().rid = node->new_rid();
   rep().padding = 0;
@@ -23,10 +23,10 @@ New_key::New_key() : Message(New_key_tag, Max_message_size) {
     // Skip myself.
     if (i == node->id()) continue;
 
-    random_nonce(k);
+    random_key(key);
     p = node->i_to_p(i);
-    p->set_in_key(k);
-    unsigned ssize = p->encrypt((char *)k, Nonce_size, dst, dst_len);
+    p->set_in_key(key);
+    unsigned ssize = p->encrypt((char *)key, Key_size, dst, dst_len);
     th_assert(ssize != 0U, "Message is too small");
     dst += ssize;
     dst_len -= ssize;
@@ -72,7 +72,7 @@ bool New_key::verify() {
 
   char *dst = contents() + sizeof(New_key_rep);
   size_t dst_len = size() - sizeof(New_key_rep);
-  unsigned k[Nonce_size_u];
+  unsigned k[Key_size_u];
 
   for (int i = 0; i < node->n(); i++) {
     // Skip principal that sent message
@@ -83,8 +83,8 @@ bool New_key::verify() {
 
     if (i == node->id()) {
       // found my key
-      int ksize = node->decrypt(dst, dst_len, (char *)k, Nonce_size);
-      if (ksize != Nonce_size) return false;
+      int ksize = node->decrypt(dst, dst_len, (char *)k, Key_size);
+      if (ksize != Key_size) return false;
     }
 
     dst += csize;

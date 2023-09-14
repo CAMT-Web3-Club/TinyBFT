@@ -127,9 +127,9 @@ unsigned Principal::encrypt(const char *src, uint32_t src_len, char *dst,
   return total_len;
 }
 
-void random_nonce(unsigned *n) {
+void random_key(unsigned *n) {
   int err = mbedtls_ctr_drbg_random(node->drbg_context(),
-                                    reinterpret_cast<uint8_t *>(n), Nonce_size);
+                                    reinterpret_cast<uint8_t *>(n), Key_size);
   th_assert(err == 0, "failed to generate random nonce");
 }
 

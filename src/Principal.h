@@ -25,8 +25,6 @@ const int HMAC_size = 32;
 const int UNonce_size = sizeof(long long);
 const int MAC_size = HMAC_size + UNonce_size;
 
-const int Nonce_size = 16;
-const int Nonce_size_u = Nonce_size / sizeof(unsigned);
 const int Key_size = 32;
 const int Key_size_u = Key_size / sizeof(unsigned);
 
@@ -223,9 +221,8 @@ inline Request_id Principal::last_fetch_rid() const { return last_fetch; }
 
 inline void Principal::set_last_fetch_rid(Request_id r) { last_fetch = r; }
 
-void random_nonce(unsigned *n);
-// Requires: k is an array of at least Nonce_size bytes.
-// Effects: Places a new random nonce with size Nonce_size bytes in n.
+/** @brief Place a new random secret key with size Keys_size in k. */
+void random_key(unsigned *k);
 
 int random_int();
 // Effects: Returns a new random int.
