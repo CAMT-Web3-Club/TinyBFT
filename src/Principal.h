@@ -224,8 +224,8 @@ inline void Principal::set_last_fetch_rid(Request_id r) { last_fetch = r; }
 /** @brief Place a new random secret key with size Keys_size in k. */
 void random_key(unsigned *k);
 
+/** @brief Return a new random integer. */
 int random_int();
-// Effects: Returns a new random int.
 
 }  // namespace libbyzea
 
