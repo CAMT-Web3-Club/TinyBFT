@@ -332,7 +332,7 @@ void Node::gen_auth(char *s, unsigned l, bool in, char *dest) const {
       principals[i]->gen_mac_in(s, l, dest, (char *)&unonce);
     else
       principals[i]->gen_mac_out(s, l, dest, (char *)&unonce);
-    dest += UMAC_size;
+    dest += HMAC_size;
   }
 
   STOP_CC(gen_auth_cycles);
@@ -351,8 +351,8 @@ bool Node::verify_auth(int i, char *s, unsigned l, bool in, char *dest) const {
     long long unonce;
     memcpy((char *)&unonce, dest, UNonce_size);
     dest += UNonce_size;
-    int offset = node_id * UMAC_size;
-    if (node_id > i) offset -= UMAC_size;
+    int offset = node_id * HMAC_size;
+    if (node_id > i) offset -= HMAC_size;
     bool ret = (in) ? p->verify_mac_in(s, l, dest + offset, (char *)&unonce)
                     : p->verify_mac_out(s, l, dest + offset, (char *)&unonce);
 

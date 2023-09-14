@@ -8,18 +8,21 @@
 
 #include "Node.h"
 #include "Reply.h"
+#include "hmac.h"
+#include "mbedtls/md.h"
 #include "rsa_public_key.h"
 #include "umac.h"
 
 namespace libbyzea {
 
 Principal::Principal(MEM_STATS_PARAM int i, Addr a,
-                     mbedtls_ctr_drbg_context *drbg, char *key_filename) {
-  id = i;
-  addr = a;
-  drbg_ctx = drbg;
-  last_fetch = 0;
-
+                     mbedtls_ctr_drbg_context *drbg, char *key_filename)
+    : id(i),
+      addr(a),
+      drbg_ctx(drbg),
+      last_fetch(0),
+      hmac_in(MBEDTLS_MD_SHA256),
+      hmac_out(MBEDTLS_MD_SHA256) {
   if (key_filename != nullptr) {
     std::string filename(key_filename, std::strlen(key_filename));
     pkey = new libbyzea::RsaPublicKey(filename, drbg);
@@ -30,9 +33,7 @@ Principal::Principal(MEM_STATS_PARAM int i, Addr a,
     kin[j] = 0;
     kout[j] = 0;
   }
-
-  ctx_in = nullptr;
-  ctx_out = umac_new((char *)kout);
+  hmac_out.replace_key(reinterpret_cast<const char *>(kout), Key_size);
 
   tstamp = 0;
   my_tstamp = zeroTime();
@@ -43,41 +44,36 @@ Principal::~Principal() { delete pkey; }
 
 void Principal::set_in_key(const unsigned *k) {
   memcpy(kin, k, Key_size);
-
-  if (ctx_in) {
-    umac_delete(ctx_in);
-  }
-  ctx_in = umac_new((char *)kin);
+  hmac_in.replace_key(reinterpret_cast<const char *>(kin), Key_size);
 }
 
 bool Principal::verify_mac(const char *src, unsigned src_len, const char *mac,
-                           const char *unonce, umac_ctx_t ctx) {
+                           const char *unonce, Hmac &hmac) {
   // Do not accept MACs sent with uninitialized keys.
-  if (ctx == 0) return false;
+  if (!hmac.is_initialized()) {
+    return false;
+  }
 
-  char tag[20];
-  umac(ctx, (char *)src, src_len, tag, (char *)unonce);
-  umac_reset(ctx);
-  return !memcmp(tag, mac, UMAC_size);
+  hmac.reset();
+  hmac.update(unonce, UNonce_size);
+  hmac.update(src, src_len);
+  return hmac.equals(mac);
 }
 
 long long Principal::umac_nonce = 0;
 
 void Principal::gen_mac(const char *src, unsigned src_len, char *dst,
-                        const char *unonce, umac_ctx_t ctx) {
-  umac(ctx, (char *)src, src_len, dst, (char *)unonce);
-  umac_reset(ctx);
+                        const char *unonce, Hmac &hmac) {
+  hmac.reset();
+  hmac.update(unonce, UNonce_size);
+  hmac.update(src, src_len);
+  hmac.sum(dst);
 }
 
 void Principal::set_out_key(unsigned *k, ULong t) {
   if (t > tstamp) {
     memcpy(kout, k, Key_size);
-
-    if (ctx_out) {
-      umac_delete(ctx_out);
-    }
-    ctx_out = umac_new((char *)kout);
-
+    hmac_out.replace_key(reinterpret_cast<const char *>(k), Key_size);
     tstamp = t;
     my_tstamp = currentTime();
   }
