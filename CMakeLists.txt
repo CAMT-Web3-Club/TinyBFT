@@ -155,6 +155,7 @@ target_sources(byzea PRIVATE
     src/rsa_public_key.cc
     src/fail.c
     src/umac.c
+    src/hmac.cc
     src/platform.cc
 )
 
