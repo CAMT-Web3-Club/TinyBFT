@@ -12,8 +12,13 @@ New_key::New_key() : Message(New_key_tag, Max_message_size) {
 
   rep().rid = node->new_rid();
   rep().padding = 0;
-  node->principal()->set_out_key(k, rep().rid);
   rep().id = node->id();
+
+  // We mainly update our own principal in order to store the timestamp New_key
+  // message.  The random key is not strictly necessary, because we never verify
+  // our own messages.  We are doing it anyway just to be safe.
+  random_key(key);
+  node->principal()->set_out_key(key, rep().rid);
 
   // Get new keys and encrypt them
   Principal *p;
