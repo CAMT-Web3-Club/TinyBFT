@@ -14,10 +14,6 @@
 
 namespace libbyzea {
 
-extern "C" {
-#include "umac.h"
-}
-
 class Reply;
 
 // Sizes in bytes.

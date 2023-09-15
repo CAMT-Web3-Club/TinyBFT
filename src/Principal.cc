@@ -11,7 +11,6 @@
 #include "hmac.h"
 #include "mbedtls/md.h"
 #include "rsa_public_key.h"
-#include "umac.h"
 
 namespace libbyzea {
 
