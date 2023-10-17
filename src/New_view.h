@@ -4,6 +4,7 @@
 #include "Digest.h"
 #include "Message.h"
 #include "Node.h"
+#include "parameters.h"
 #include "scratch_allocator.h"
 #include "special_region.h"
 #include "types.h"
@@ -48,6 +49,12 @@ struct New_view_rep : public Message_rep {
      // This is all followed by an authenticator.
    */
 };
+
+constexpr size_t max_new_view_size =
+    sizeof(New_view_rep) + Max_num_replicas * sizeof(VC_info) +
+    WINDOW_SIZE * sizeof(char) + AUTHENTICATOR_SIZE;
+static_assert(max_new_view_size <= MAX_MESSAGE_SIZE,
+              "New_view messages can be larger than maximum message size");
 
 class New_view : public Message {
   //

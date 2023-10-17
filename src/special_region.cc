@@ -17,7 +17,7 @@ namespace special_region {
 
 union NewViewBlock {
   New_view_rep msg;
-  char raw[Max_message_size];
+  char raw[max_new_view_size];
 };
 
 union ViewChangeBlock {
