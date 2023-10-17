@@ -50,24 +50,29 @@ class Message {
   // Generic messages
   //
  public:
+  /**
+   * Effects: Creates an untagged Message object that can hold up
+   * to "sz" bytes and holds zero bytes. Useful to create message
+   * buffers to receive messages from the network.
+   */
   Message(unsigned sz = 0);
-  // Effects: Creates an untagged Message object that can hold up
-  // to "sz" bytes and holds zero bytes. Useful to create message
-  // buffers to receive messages from the network.
 
+  /**
+   * Effects: Deallocates all storage associated with this message.
+   */
   ~Message();
-  // Effects: Deallocates all storage associated with this message.
 
+  /** Effects: Deallocates surplus storage. */
   void trim();
-  // Effects: Deallocates surplus storage.
 
+  /** Effects: Return a byte string with the message contents.
+   * TODO: should be protected here because of request iterator in
+   * Pre_prepare.cc
+   */
   char *contents();
-  // Effects: Return a byte string with the message contents.
-  // TODO: should be protected here because of request iterator in
-  // Pre_prepare.cc
 
+  /** Effects: Fetches the message size. */
   int size() const;
-  // Effects: Fetches the message size.
 
   int tag() const;
   // Effects: Fetches the message tag.
@@ -77,35 +82,51 @@ class Message {
   // its size less than or equal to "max_size", and its size is a
   // multiple of ALIGNMENT, returns true.  Otherwise, returns false.
 
+  /**
+   * Effects: Returns any view associated with the message or 0.
+   */
   View view() const;
-  // Effects: Returns any view associated with the message or 0.
 
+  /**
+   * Effects: Messages may be full or empty. Empty messages are just
+   * digests of full messages.
+   */
   bool full() const;
-  // Effects: Messages may be full or empty. Empty messages are just
-  // digests of full messages.
 
-  // Message-specific heap management operators.
+  /** Message-specific heap management operators. */
   void *operator new(size_t s);
+  void *operator new(size_t s, void *p);
   void operator delete(void *x, size_t s);
 
+  /**
+   * Effects: Should be called once to initialize the memory allocator.
+   * Before any message is allocated.
+   */
   static void init();
-  // Effects: Should be called once to initialize the memory allocator.
-  // Before any message is allocated.
 
+  /** Effects: Returns a string with tag name */
   const char *stag();
-  // Effects: Returns a string with tag name
 
+  /**
+   * Effects: Encodes object state from stream. Return
+   * true if successful and false otherwise.
+   */
   bool encode(FILE *o);
-  bool decode(FILE *i);
-  // Effects: Encodes and decodes object state from stream. Return
-  // true if successful and false otherwise.
 
+  /**
+   * Effects: Decodes object state from stream. Return
+   * true if successful and false otherwise.
+   */
+  bool decode(FILE *i);
+
+  /**
+   * Effects: Prints debug information for memory allocator.
+   */
   static void debug_alloc() {
 #ifndef STATIC_LOG_ALLOCATOR
     if (a) a->debug_print();
 #endif
   }
-  // Effects: Prints debug information for memory allocator.
 
  protected:
   Message(int t, unsigned sz);
@@ -183,6 +204,10 @@ inline void *Message::operator new(size_t s) {
 #endif
   th_assert(ret != 0, "Ran out of memory\n");
   return ret;
+}
+
+inline void *Message::operator new([[maybe_unused]] size_t s, void *p) {
+  return p;
 }
 
 inline void Message::operator delete(void *x, [[maybe_unused]] size_t s) {
