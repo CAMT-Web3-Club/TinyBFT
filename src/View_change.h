@@ -69,6 +69,12 @@ struct View_change_rep : public Message_rep {
    */
 };
 
+constexpr size_t max_view_change_size = sizeof(View_change_rep) +
+                                        WINDOW_SIZE * sizeof(Req_info) +
+                                        AUTHENTICATOR_SIZE;
+static_assert(max_view_change_size <= MAX_MESSAGE_SIZE,
+              "maximum view-change size is larger than maximum message size");
+
 class View_change : public Message {
   //
   //  View_change messages

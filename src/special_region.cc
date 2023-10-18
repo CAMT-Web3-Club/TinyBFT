@@ -22,7 +22,7 @@ union NewViewBlock {
 
 union ViewChangeBlock {
   View_change_rep msg;
-  char raw[Max_message_size];
+  char raw[max_view_change_size];
 
   ViewChangeBlock() { new (&msg) View_change_rep(); }
   ~ViewChangeBlock() {}
