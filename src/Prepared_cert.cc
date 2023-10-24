@@ -13,15 +13,19 @@ size_t Prepared_cert::memory_consumption() {
 
 Prepared_cert::Prepared_cert() : pc(node->f() * 2), primary(false) {}
 
-Prepared_cert::~Prepared_cert() { pi.clear(); }
+Prepared_cert::~Prepared_cert() {
+  if (pp != nullptr) {
+    delete pp;
+  }
+}
 
 bool Prepared_cert::is_pp_correct() {
-  if (pi.pre_prepare()) {
+  if (pp != nullptr) {
     Certificate<Prepare>::Val_iter viter(&pc);
     int vc;
     Prepare* val;
     while (viter.get(val, vc)) {
-      if (vc >= node->f() && pi.pre_prepare()->match(val)) {
+      if (vc >= node->f() && pp->match(val)) {
         return true;
       }
     }
@@ -30,15 +34,15 @@ bool Prepared_cert::is_pp_correct() {
 }
 
 bool Prepared_cert::add(Pre_prepare* m) {
-  if (pi.pre_prepare() == 0) {
+  if (pp == nullptr) {
     Prepare* p = pc.mine();
 
-    if (p == 0) {
+    if (p == nullptr) {
       if (m->verify()) {
 #ifdef STATIC_LOG_ALLOCATOR
         m->persist();
 #endif
-        pi.add(m);
+        pp = m;
         return true;
       }
 
@@ -53,7 +57,7 @@ bool Prepared_cert::add(Pre_prepare* m) {
 #ifdef STATIC_LOG_ALLOCATOR
             m->persist();
 #endif
-            pi.add(m);
+            pp = m;
             return true;
           }
         }
@@ -64,7 +68,7 @@ bool Prepared_cert::add(Pre_prepare* m) {
 #ifdef STATIC_LOG_ALLOCATOR
         m->persist();
 #endif
-        pi.add(m);
+        pp = m;
         return true;
       }
     }
@@ -75,7 +79,7 @@ bool Prepared_cert::add(Pre_prepare* m) {
 
 bool Prepared_cert::encode(FILE* o) {
   bool ret = pc.encode(o);
-  ret &= pi.encode(o);
+  ret &= pp->encode(o);
   int sz = fwrite(&primary, sizeof(bool), 1, o);
   return ret & (sz == 1);
 }
@@ -84,15 +88,13 @@ bool Prepared_cert::decode(FILE* i) {
   th_assert(pi.pre_prepare() == 0, "Invalid state");
 
   bool ret = pc.decode(i);
-  ret &= pi.decode(i);
+  ret &= pp->decode(i);
   int sz = fread(&primary, sizeof(bool), 1, i);
   t_sent = zeroTime();
 
   return ret & (sz == 1);
 }
 
-bool Prepared_cert::is_empty() const {
-  return pi.pre_prepare() == 0 && pc.is_empty();
-}
+bool Prepared_cert::is_empty() const { return pp == nullptr && pc.is_empty(); }
 
 }  // namespace libbyzea

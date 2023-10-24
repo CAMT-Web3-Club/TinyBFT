@@ -705,10 +705,9 @@ void NV_info::set_missing_pps(Status* m) {
           cur.n_le >= node->n_f()) {
         vpp = cur.v;
 
-        if (cur.n_pproofs <= node->f())
+        if (cur.n_pproofs <= node->f()) {
           need_proofs = true;
-        else if (cur.pi.pre_prepare())
-          mrmap &= cur.pi.missing_reqs();
+        }
       }
     }
 
@@ -738,19 +737,6 @@ void NV_info::add_missing(Pre_prepare* pp) {
   }
 
   delete pp;
-}
-
-void NV_info::add_missing(Digest& rd, Seqno ppn, int i) {
-  if (chosen_ckpt >= 0 && ppn > min && ppn < max && comp_reqs[ppn - base] < 0) {
-    Array<Req_sum>& reqspp = reqs[ppn - base];
-
-    for (int j = 0; j < reqspp.size(); j++) {
-      Req_sum& cur = reqspp[j];
-      cur.pi.add(rd, i);
-      check_comp(cur, ppn, j);
-      if (complete()) break;
-    }
-  }
 }
 
 void NV_info::add_missing(Prepare* p) {

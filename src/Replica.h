@@ -1,7 +1,6 @@
 #ifndef _Replica_h
 #define _Replica_h 1
 
-#include "Big_req_table.h"
 #include "Certificate.h"
 #include "Digest.h"
 #include "Log.h"
@@ -159,9 +158,6 @@ class Replica : public Node {
 
   bool delay_vc();
   // Effects: Returns true iff view change should be delayed.
-
-  Big_req_table *big_reqs();
-  // Effects: Returns the replica's big request table.
 
 #ifndef NO_STATE_TRANSLATION
   char *get_cached_obj(int i);
@@ -342,9 +338,6 @@ class Replica : public Node {
 
   Log<Prepared_cert> plog;
 
-  Big_req_table brt;  // Table with big requests
-  friend class Big_req_table;
-
   Log<Certificate<Commit> > clog;
 #ifdef ALTERNATIVE_CHECKPOINT_LOG
   CheckpointLog elog;
@@ -471,9 +464,6 @@ inline bool Replica::delay_vc() {
 #ifndef NO_STATE_TRANSLATION
 inline char *Replica::rep_info_mem() { return replies.rep_info_mem(); }
 #endif
-
-inline Big_req_table *Replica::big_reqs() { return &brt; }
-
 }  // namespace libbyzea
 
 #endif  //_Replica_h

@@ -99,11 +99,6 @@ class NV_info {
   // complete a view-change. If it is stores "pp", otherwise deletes
   // "pp".
 
-  void add_missing(Digest &rd, Seqno n, int i);
-  // Effects: Records that the big request with digest "rd" that is
-  // referenced by a pre-prepare with sequence number "n" as the i-th
-  // big request is cached.
-
   void add_missing(Prepare *p);
   // Effects: Checks if "p" is a prepare that is needed to
   // complete a view-change. If it is stores "pp", otherwise deletes "pp".

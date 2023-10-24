@@ -1,7 +1,6 @@
 #include "View_info.h"
 
 #include "Array.t"
-#include "Big_req_table.h"
 #include "K_max.h"
 #include "Log.t"
 #include "New_view.h"
@@ -207,8 +206,6 @@ void View_info::view_change(View vi, Seqno last_executed, State *state) {
     if (state->digest(i, dc)) vc->add_checkpoint(i, dc);
   }
 
-  Big_req_table *brt = replica->big_reqs();
-
   // Add request information to the message.
   for (Seqno i = last_stable + 1; i <= last_stable + max_out; i++) {
     OReq_info &ri = oplog.fetch(i);
@@ -216,18 +213,8 @@ void View_info::view_change(View vi, Seqno last_executed, State *state) {
     // Null requests are not added to message.
     if (ri.v >= 0) {
       vc->add_request(i, ri.v, ri.lv, ri.d, ri.m != 0);
-
-      if (ri.m) {
-        // Update replica's brt to prevent discarding of big requests
-        // referenced by logged pre-prepares.
-        for (int j = 0; j < ri.m->num_big_reqs(); j++)
-          brt->add_pre_prepare(ri.m->big_req_digest(j), j, i, v);
-      }
     }
   }
-
-  // Discard stale big reqs.
-  brt->view_change(v);
 
   vc->re_authenticate();
   vc_sent = currentTime();

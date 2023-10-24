@@ -190,7 +190,6 @@ Replica::Replica(MEM_STATS_PARAM FILE *config_file,
       rqueue(MEM_STATS_GUARD_PUSH(Req_queue)),
       ro_rqueue(MEM_STATS_GUARD_PUSH(Req_queue)),
       plog(MEM_STATS_ARG_PUSH(Log<Prepared_cert>) max_out),
-      brt(MEM_STATS_GUARD_PUSH(Big_req_table)),
       clog(MEM_STATS_ARG_PUSH(Log<Certificate<Commit>>) max_out),
 #ifdef ALTERNATIVE_CHECKPOINT_LOG
       elog(MEM_STATS_GUARD_PUSH(CheckpointLog)),
@@ -470,10 +469,6 @@ void Replica::handle(Request *m) {
             return;
           }
         } else {
-          if (m->size() > Request::big_req_thresh && brt.add_request(m)) {
-            return;
-          }
-
           if (rqueue.append(m)) {
 #ifdef STATIC_LOG_ALLOCATOR
             m->persist();
@@ -498,11 +493,6 @@ void Replica::handle(Request *m) {
           return;
         }
       }
-    }
-  } else {
-    if (m->size() > Request::big_req_thresh && !ro &&
-        brt.add_request(m, false)) {
-      return;
     }
   }
 
@@ -880,28 +870,6 @@ void Replica::handle(Status *m) {
             }
           }
         }
-
-        if (id() == primary()) {
-          // For now only primary retransmits big requests.
-          Status::BRS_iter gen(m);
-
-          int count = 0;
-          Seqno ppn;
-          BR_map mrmap;
-          while (gen.get(ppn, mrmap) && count <= max_ret_bytes) {
-            MEMSTATS_SET_MEM_TYPE(MEM_TYPE_CERTIFICATE_LOGS);
-            if (plog.within_range(ppn)) {
-              Pre_prepare_info::BRS_iter gen(plog.fetch(ppn).prep_info(),
-                                             mrmap);
-              MEMSTATS_RESTORE_MEM_TYPE();
-              Request *r;
-              while (gen.get(r)) {
-                send(r, m->id());
-                count += r->size();
-              }
-            }
-          }
-        }
       } else {
         // m->has_nv_info() == false
         if (!m->has_vc(node_id)) {
@@ -970,13 +938,6 @@ void Replica::handle(Status *m) {
               if (count < max_ret_bytes && mrmap != ~0) {
                 Pre_prepare_info pi;
                 pi.add_complete(pp);
-
-                Pre_prepare_info::BRS_iter gen(&pi, mrmap);
-                Request *r;
-                while (gen.get(r)) {
-                  send(r, m->id());
-                  count += r->size();
-                }
                 pi.zero();  // Make sure pp does not get deallocated
               }
             }
@@ -1605,7 +1566,6 @@ void Replica::mark_stable(Seqno n, bool have_state) {
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_STATE_MANAGEMENT);
   state.discard_checkpoint(last_stable, last_executed);
   MEMSTATS_RESTORE_MEM_TYPE();
-  brt.mark_stable(last_stable);
 
   if (have_state) {
     // Re-authenticate my checkpoint message to mark it as stable or
@@ -1768,11 +1728,6 @@ void Replica::send_status() {
               state.in_check_state()) {  // XXXXXXadded state.in_check_state()
             s.mark_committed(n);
           }
-        } else {
-          // Ask for missing big requests
-          if (!pc.is_pp_complete() && pc.pre_prepare() &&
-              pc.num_correct() >= f())
-            s.add_breqs(n, pc.missing_reqs());
         }
       }
     } else {

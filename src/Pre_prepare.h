@@ -21,14 +21,13 @@ struct Pre_prepare_rep : public Message_rep {
   View view;
   Seqno seqno;
   Digest digest;       // digest of request set concatenated with
-                       // big reqs and non-deterministic choices
+                       // non-deterministic choices
   int rset_size;       // size in bytes of request set
-  short n_big_reqs;    // number of big requests
   short non_det_size;  // size in bytes of non-deterministic choices
 
-  // Followed by "rset_size" bytes of the request set, "n_big_reqs"
-  // Digest's, "non_det_size" bytes of non-deterministic choices, and
-  // a variable length signature in the above order.
+  // Followed by "rset_size" bytes of the request set "non_det_size" bytes of
+  // non-deterministic choices, and a variable length signature in the above
+  // order.
 };
 
 class Prepare;
@@ -77,8 +76,7 @@ class Pre_prepare : public Message {
   class Requests_iter {
     // An iterator for yielding the Requests in a Pre_prepare message.
     // Requires: A Pre_prepare message cannot be modified while it is
-    // being iterated on and all the big requests referred to by "m"
-    // must be cached.
+    // being iterated on.
    public:
     Requests_iter(Pre_prepare* m);
     // Requires: Pre_prepare is known to be valid
@@ -92,18 +90,8 @@ class Pre_prepare : public Message {
    private:
     Pre_prepare* msg;
     char* next_req;
-    int big_req;
   };
   friend class Requests_iter;
-
-  // Maximum number of big reqs in pre-prepares.
-  static const int big_req_max = sizeof(BR_map) * 8;
-  int num_big_reqs() const;
-  // Effects: Returns the number of big request digests in this
-
-  Digest& big_req_digest(int i);
-  // Requires: 0 <= "i" < "num_big_reqs()"
-  // Effects: Returns the digest of the i-th big request in this
 
   static const int NAC = 1;
   static const int NRC = 2;
@@ -134,10 +122,6 @@ class Pre_prepare : public Message {
   char* requests();
   // Effects: Returns a pointer to the first request contents.
 
-  Digest* big_reqs();
-  // Effects: Returns a pointer to the first digest of a big request
-  // in this.
-
   char* non_det_choices();
   // Effects: Returns a pointer to the buffer with non-deterministic
   // choices.
@@ -154,14 +138,8 @@ inline char* Pre_prepare::requests() {
   return ret;
 }
 
-inline Digest* Pre_prepare::big_reqs() {
-  char* ret = requests() + rep().rset_size;
-  th_assert(ALIGNED(ret), "Improperly aligned pointer");
-  return (Digest*)ret;
-}
-
 inline char* Pre_prepare::non_det_choices() {
-  char* ret = ((char*)big_reqs()) + rep().n_big_reqs * sizeof(Digest);
+  char* ret = requests() + rep().rset_size;
   th_assert(ALIGNED(ret), "Improperly aligned pointer");
   return ret;
 }
@@ -181,13 +159,6 @@ inline bool Pre_prepare::match(const Prepare* p) const {
 }
 
 inline Digest& Pre_prepare::digest() const { return rep().digest; }
-
-inline int Pre_prepare::num_big_reqs() const { return rep().n_big_reqs; }
-
-inline Digest& Pre_prepare::big_req_digest(int i) {
-  th_assert(i >= 0 && i < num_big_reqs(), "Invalid argument");
-  return *(big_reqs() + i);
-}
 
 #ifdef STATIC_LOG_ALLOCATOR
 inline void Pre_prepare::persist() {

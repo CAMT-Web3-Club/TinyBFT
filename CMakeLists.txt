@@ -149,7 +149,6 @@ target_sources(byzea PRIVATE
     src/Stable_estimator.cc
     src/Statistics.cc
     src/Time.cc
-    src/Big_req_table.cc
     src/Pre_prepare_info.cc
     src/rsa_private_key.cc
     src/rsa_public_key.cc

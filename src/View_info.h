@@ -159,11 +159,6 @@ class View_info {
   // complete the new-view information. If it is stores pp, otherwise
   // deletes pp.
 
-  void add_missing(Digest& rd, Seqno n, int i);
-  // Effects: Records that the big request with digest "rd" that is
-  // referenced by a pre-prepare with sequence number "n" as the i-th
-  // big request is cached.
-
   void add_missing(Prepare* p);
   // Effects: Checks if p is a prepare that the replica needs to
   // complete the new-view information. If it is stores p, otherwise
@@ -293,10 +288,6 @@ inline View_change_ack* View_info::my_vc_ack(int id) {
 
 inline void View_info::add_missing(Pre_prepare* pp) {
   last_nvs[node->primary(view())].add_missing(pp);
-}
-
-inline void View_info::add_missing(Digest& rd, Seqno n, int i) {
-  last_nvs[node->primary(view())].add_missing(rd, n, i);
 }
 
 inline void View_info::add_missing(Prepare* p) {

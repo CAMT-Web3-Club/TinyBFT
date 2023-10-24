@@ -87,19 +87,12 @@ class Prepared_cert {
   // Effects: Returns the pre-prepare in the certificate (or null if
   // the certificate contains no such message.)
 
-  BR_map missing_reqs() const;
-  // Effects: Returns a bit map with a bit reset for each request that is
-  // missing in pre-prepare.
-
   Pre_prepare *rem_pre_prepare();
   // Effects: Returns the pre-prepare in the certificate and removes it
 
   Prepare *prepare() const;
   // Effects: If there is a correct prepare value returns it;
   // otherwise returns 0.
-
-  Pre_prepare_info const *prep_info() const;
-  // Effects: Returns a pointer to the pre-prepare info in this.
 
   void mark_stale();
   // Effects: Discards all messages in certificate except mine.
@@ -117,7 +110,7 @@ class Prepared_cert {
 
  private:
   Certificate<Prepare> pc;
-  Pre_prepare_info pi;
+  Pre_prepare *pp;
   Time t_sent;   // time at which pp was sent (if I am primary)
   bool primary;  // true iff pp was added with add_mine
 };
@@ -131,57 +124,53 @@ inline bool Prepared_cert::add_mine(Prepare *m) {
 
 inline bool Prepared_cert::add_mine(Pre_prepare *m) {
   th_assert(node->id() == node->primary(m->view()), "Invalid Argument");
-  th_assert(pi.pre_prepare() == nullptr, "Invalid state");
+  th_assert(pp == nullptr, "Invalid state");
 
 #ifdef STATIC_LOG_ALLOCATOR
   m->persist();
 #endif
-  pi.add_complete(m);
+
+  pp = m;
   primary = true;
   t_sent = currentTime();
   return true;
 }
 
 inline void Prepared_cert::add_old(Pre_prepare *m) {
-  th_assert(pi.pre_prepare() == nullptr, "Invalid state");
+  th_assert(pp == nullptr, "Invalid state");
 #ifdef STATIC_LOG_ALLOCATOR
   m->persist();
 #endif
-  pi.add(m);
+  pp = m;
 }
-
-inline void Prepared_cert::add(Digest &d, int i) { pi.add(d, i); }
 
 inline Prepare *Prepared_cert::my_prepare(Time **t) { return pc.mine(t); }
 
 inline Pre_prepare *Prepared_cert::my_pre_prepare(Time **t) {
   if (primary) {
-    if (t && pi.pre_prepare()) *t = &t_sent;
-    return pi.pre_prepare();
+    if (t != nullptr && pp != nullptr) {
+      *t = &t_sent;
+    }
+    return pp;
   }
-  return 0;
-}
 
-inline const Pre_prepare_info *Prepared_cert::prep_info() const { return &pi; }
+  return nullptr;
+}
 
 inline int Prepared_cert::num_correct() { return pc.num_correct(); }
 
 inline bool Prepared_cert::is_complete() {
-  return pi.is_complete() && pc.is_complete() &&
-         pi.pre_prepare()->match(pc.cvalue());
+  return pp != nullptr && pc.is_complete() && pp->match(pc.cvalue());
 }
 
-inline bool Prepared_cert::is_pp_complete() { return pi.is_complete(); }
+inline bool Prepared_cert::is_pp_complete() { return pp != nullptr; }
 
-inline Pre_prepare *Prepared_cert::pre_prepare() const {
-  return pi.pre_prepare();
-}
-
-inline BR_map Prepared_cert::missing_reqs() const { return pi.missing_reqs(); }
+inline Pre_prepare *Prepared_cert::pre_prepare() const { return pp; }
 
 inline Pre_prepare *Prepared_cert::rem_pre_prepare() {
-  Pre_prepare *ret = pi.pre_prepare();
-  pi.zero();
+  Pre_prepare *ret = pp;
+  pp = nullptr;
+
   return ret;
 }
 
@@ -190,14 +179,16 @@ inline Prepare *Prepared_cert::prepare() const { return pc.cvalue(); }
 inline void Prepared_cert::mark_stale() {
   if (!is_complete()) {
     if (node->primary() != node->id()) {
-      pi.clear();
+      delete pp;
+      pp = nullptr;
     }
     pc.mark_stale();
   }
 }
 
 inline void Prepared_cert::clear() {
-  pi.clear();
+  delete pp;
+  pp = nullptr;
   t_sent = zeroTime();
   pc.clear();
   primary = false;
