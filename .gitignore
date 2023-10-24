@@ -2,3 +2,5 @@
 *.o
 /build/
 .vscode/
+/build-pbft/
+/build-tinybft/
