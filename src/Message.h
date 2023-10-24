@@ -6,6 +6,7 @@
 
 #include <cstdlib>
 
+#include "Digest.h"
 #include "Log_allocator.h"
 #include "Message_tags.h"
 #include "mem_statistics.h"
@@ -28,9 +29,7 @@ constexpr int F = MAX_NUM_REPLICAS / 3;
 // Assume a maximum RSA key-size of 2048 bit
 constexpr unsigned AUTHENTICATOR_SIZE = 256;
 #else
-// UNonce_size + n * UMac_size
-constexpr unsigned AUTHENTICATOR_SIZE =
-    sizeof(long long) + 8 * (MAX_NUM_REPLICAS);
+constexpr unsigned AUTHENTICATOR_SIZE = Digest::SIZE * (MAX_NUM_REPLICAS - 1);
 #endif
 
 //
