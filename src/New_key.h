@@ -2,6 +2,7 @@
 #define _New_key_h 1
 
 #include "Digest.h"
+#include "Log_allocator.h"
 #include "Message.h"
 #include "Principal.h"
 #include "scratch_allocator.h"
@@ -24,6 +25,9 @@ struct New_key_rep : public Message_rep {
   // replica. This is all followed by a signature from principal id
 };
 
+constexpr size_t max_new_key_size =
+    ALIGNED_SIZE(sizeof(New_key_rep) + MAX_NUM_REPLICAS * (256 + 4 + 4));
+
 class New_key : public Message {
   //
   //  New_key messages
@@ -32,6 +36,8 @@ class New_key : public Message {
   New_key();
   // Effects: Creates a new signed New_key message and updates "node"
   // accordingly (i.e., updates the in-keys for all principals.)
+
+  New_key(New_key_rep *msg) : Message(msg) {}
 
 #ifdef STATIC_LOG_ALLOCATOR
   ~New_key();
@@ -46,7 +52,7 @@ class New_key : public Message {
   // rep().id accordingly (i.e., out-key, tstamp.)
 
 #ifdef STATIC_LOG_ALLOCATOR
-  void persist();
+  New_key *persist();
 #endif
 
   static bool convert(Message *m1, New_key *&m2);
@@ -68,13 +74,9 @@ inline New_key_rep &New_key::rep() const {
 inline int New_key::id() const { return rep().id; }
 
 #ifdef STATIC_LOG_ALLOCATOR
-inline void New_key::persist() {
-  th_assert(in_scratch_, "Already in special region");
-  special_region::store_new_key(&(rep()));
-  scratch_allocator::free(msg, max_size);
-
-  msg = (Message_rep *)special_region::load_new_key();
-  in_scratch_ = false;
+inline New_key *New_key::persist() {
+  special_region::store_new_key(this);
+  return special_region::load_new_key();
 }
 #endif
 }  // namespace libbyzea

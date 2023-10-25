@@ -39,6 +39,8 @@ class Pre_prepare : public Message {
  public:
   Pre_prepare() : Message() {}
 
+  Pre_prepare(Pre_prepare_rep* msg) : Message(msg) {}
+
   Pre_prepare(View v, Seqno s, Req_queue& reqs);
   // Effects: Creates a new signed Pre_prepare message with view
   // number "v", sequence number "s", the requests in "reqs" (up to a
@@ -107,7 +109,7 @@ class Pre_prepare : public Message {
   // Effects: Verifies if the digest is correct.
 
 #ifdef STATIC_LOG_ALLOCATOR
-  void persist();
+  Pre_prepare* persist();
 #endif
 
   static bool convert(Message* m1, Pre_prepare*& m2);
@@ -161,13 +163,10 @@ inline bool Pre_prepare::match(const Prepare* p) const {
 inline Digest& Pre_prepare::digest() const { return rep().digest; }
 
 #ifdef STATIC_LOG_ALLOCATOR
-inline void Pre_prepare::persist() {
-  th_assert(in_scratch_, "Message is already persisted in another certificate");
+inline Pre_prepare* Pre_prepare::persist() {
   Seqno sn = seqno();
-  agreement_region::store_pre_prepare(&(rep()));
-  scratch_allocator::free(msg, max_size);
-  msg = (Message_rep*)agreement_region::load_pre_prepare(sn);
-  in_scratch_ = false;
+  agreement_region::store_pre_prepare(this);
+  return agreement_region::load_pre_prepare(sn);
 }
 #endif
 

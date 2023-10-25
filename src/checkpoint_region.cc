@@ -10,17 +10,18 @@
 namespace libbyzea {
 namespace checkpoint_region {
 
-union Block {
-  Checkpoint_rep msg;
-  char raw[sizeof(Checkpoint_rep) + AUTHENTICATOR_SIZE];
+struct Block {
+  Checkpoint checkpoint_;
+  char msg_[sizeof(Checkpoint_rep) + AUTHENTICATOR_SIZE]
+      __attribute__((aligned(ALIGNMENT)));
 
-  Block() { new (&msg) Checkpoint_rep(); }
+  Block() : checkpoint_(reinterpret_cast<Checkpoint_rep *>(msg_)) {}
 
   ~Block() {}
-} __attribute__((aligned(ALIGNMENT)));
+};
 
 struct Certificate {
-  Block checkpoints_[MAX_NUM_REPLICAS];
+  Block checkpoints_[F + 1];
 };
 
 static constexpr size_t NUM_CERTS = max_out / checkpoint_interval + 1;
@@ -49,35 +50,36 @@ static inline int replica_index(int replica_id) {
   return (replica_id <= replica->id()) ? replica_id : replica_id - 1;
 }
 
-Checkpoint_rep *load_checkpoint(Seqno seqno, size_t i) {
+Checkpoint *load_checkpoint(Seqno seqno, size_t i) {
   th_assert(within_range(seqno) || seqno > max_seqno(),
             "Sequence number not in range");
   if (!within_range(seqno)) {
-    auto &msg = above_window_checkpoints[replica_index(i)].msg;
-    th_assert(seqno == msg.seqno, "Invalid state");
+    auto &msg = above_window_checkpoints[replica_index(i)].checkpoint_;
+    th_assert(seqno == msg.seqno(), "Invalid state");
     return &msg;
   }
 
   size_t cert = certificate_index(seqno);
-  return &checkpoint_certs[cert].checkpoints_[i].msg;
+  return &checkpoint_certs[cert].checkpoints_[i].checkpoint_;
 }
 
-void store_checkpoint(Checkpoint_rep *checkpoint, size_t i) {
-  th_assert(within_range(checkpoint->seqno) || checkpoint->seqno > max_seqno(),
-            "Sequence number not in range");
-  th_assert((size_t)checkpoint->size <= sizeof(Block),
+void store_checkpoint(Checkpoint *checkpoint, size_t i) {
+  th_assert(
+      within_range(checkpoint->seqno()) || checkpoint->seqno() > max_seqno(),
+      "Sequence number not in range");
+  th_assert((size_t)checkpoint->size() <= sizeof(Block),
             "Checkpoint message is too large");
 
   char *store;
-  if (within_range(checkpoint->seqno)) {
-    size_t cert_index = certificate_index(checkpoint->seqno);
-    store = checkpoint_certs[cert_index].checkpoints_[i].raw;
+  if (within_range(checkpoint->seqno())) {
+    size_t cert_index = certificate_index(checkpoint->seqno());
+    store = checkpoint_certs[cert_index].checkpoints_[i].msg_;
   } else {
-    auto &cur = above_window_checkpoints[replica_index(i)].msg;
-    th_assert(checkpoint->seqno > cur.seqno, "Invalid state");
-    store = above_window_checkpoints[replica_index(i)].raw;
+    auto &cur = above_window_checkpoints[replica_index(i)].checkpoint_;
+    th_assert(checkpoint->seqno() > cur.seqno(), "Invalid state");
+    store = above_window_checkpoints[replica_index(i)].msg_;
   }
-  std::memcpy(store, checkpoint, checkpoint->size);
+  std::memcpy(store, checkpoint->contents(), checkpoint->size());
 }
 
 void truncate(Seqno new_head) {

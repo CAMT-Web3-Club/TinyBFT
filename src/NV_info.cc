@@ -130,7 +130,7 @@ bool NV_info::add(New_view* m, View_info* parent) {
   if (v != 0) clear();
 
 #ifdef STATIC_LOG_ALLOCATOR
-  m->persist();
+  m = m->persist();
 #endif
   // Add m to this.
   v = m->view();

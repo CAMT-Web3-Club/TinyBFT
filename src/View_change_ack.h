@@ -27,6 +27,8 @@ class View_change_ack : public Message {
   // View_change_ack messages
   //
  public:
+  View_change_ack(View_change_ack_rep* msg) : Message(msg) {}
+
   View_change_ack(View v, int id, int vcid, Digest const& vcd);
   // Effects: Creates a new authenticated View_change_ack message for
   // replica "id" stating that replica "vcid" sent out a view-change
@@ -64,7 +66,7 @@ class View_change_ack : public Message {
   // true. Otherwise, it returns false.
 
 #ifdef STATIC_LOG_ALLOCATOR
-  void persist();
+  View_change_ack* persist();
 #endif
 
  private:
@@ -91,16 +93,13 @@ inline bool View_change_ack::match(const View_change_ack* p) const {
 }
 
 #ifdef STATIC_LOG_ALLOCATOR
-inline void View_change_ack::persist() {
+inline View_change_ack* View_change_ack::persist() {
   th_assert(in_scratch_, "Message is already persisted in another certificate");
 
   int replica_id = id();
   int vc_replica_id = vc_id();
-  special_region::store_view_change_ack(&(rep()));
-  scratch_allocator::free(msg, max_size);
-  msg = (Message_rep*)special_region::load_view_change_ack(replica_id,
-                                                           vc_replica_id);
-  in_scratch_ = false;
+  special_region::store_view_change_ack(this);
+  return special_region::load_view_change_ack(replica_id, vc_replica_id);
 }
 #endif
 

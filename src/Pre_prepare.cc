@@ -41,7 +41,11 @@ Pre_prepare::Pre_prepare(View v, Seqno s, Req_queue &reqs)
     digest_builder.update(req->digest().digest(), sizeof(Digest));
     next_req += req->size();
     th_assert(ALIGNED(next_req), "Improperly aligned pointer");
+#ifndef STATIC_LOG_ALLOCATOR
     delete reqs.remove();
+#else
+    reqs.remove();
+#endif
   }
   rep().rset_size = next_req - requests();
   th_assert(rep().rset_size >= 0, "Request too big");

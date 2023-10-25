@@ -199,6 +199,11 @@ void View_info::view_change(View vi, Seqno last_executed, State *state) {
 
   // Create my view-change message for "v".
   View_change *vc = new View_change(v, last_stable, id);
+#ifdef STATIC_LOG_ALLOCATOR
+  auto tmp = vc->persist();
+  delete vc;
+  vc = tmp;
+#endif
 
   // Add checkpoint information to the message.
   for (Seqno i = last_stable; i <= last_executed; i += checkpoint_interval) {
@@ -221,9 +226,6 @@ void View_info::view_change(View vi, Seqno last_executed, State *state) {
   node->send(vc, Node::All_replicas);
 
   // Record that this message was sent.
-#ifdef STATIC_LOG_ALLOCATOR
-  vc->persist();
-#endif
   last_vcs[id] = vc;
   last_views[id] = v;
 
@@ -236,7 +238,9 @@ void View_info::view_change(View vi, Seqno last_executed, State *state) {
       if (lvc && lvc->view() == v && i != id && i != primv) {
         View_change_ack *vack = new View_change_ack(v, id, i, lvc->digest());
 #ifdef STATIC_LOG_ALLOCATOR
-        vack->persist();
+        auto tmp = vack->persist();
+        delete vack;
+        vack = tmp;
 #endif
         my_vacks[i] = vack;
         node->send(vack, primv);
@@ -250,13 +254,17 @@ void View_info::view_change(View vi, Seqno last_executed, State *state) {
     // Create an empty new-view message and add it to "n". Information
     // will later be added to "n/nv".
     New_view *nv = new New_view(v);
-    n.add(nv, this);
+    if (n.add(nv, this)) {
+#ifdef STATIC_LOG_ALLOCATOR
+      delete nv;
+#endif
+    }
 
     // Move any view-change messages for view "v" to "n".
     for (int i = 0; i < node->n(); i++) {
       View_change *vc = last_vcs[i];
       if (vc && vc->view() == v && n.add(vc, true)) {
-        last_vcs[i] = 0;
+        last_vcs[i] = nullptr;
       }
     }
 
@@ -307,6 +315,9 @@ bool View_info::add(View_change *vc) {
     // There is no matching new-view.
     if (vcv > last_views[vci] && vc->verify()) {
       delete last_vcs[vci];
+#ifdef STATIC_LOG_ALLOCATOR
+      vc = vc->persist();
+#endif
       last_vcs[vci] = vc;
       last_views[vci] = vcv;
       stored = true;
@@ -314,10 +325,12 @@ bool View_info::add(View_change *vc) {
       if (id != primv && vci != primv && vcv == v) {
         // Send view-change ack.
         View_change_ack *vack = new View_change_ack(v, id, vci, vc->digest());
-        th_assert(my_vacks[vci] == 0, "Invalid state");
+        th_assert(my_vacks[vci] == nullptr, "Invalid state");
 
 #ifdef STATIC_LOG_ALLOCATOR
-        vack->persist();
+        auto tmp = vack->persist();
+        delete vack;
+        vack = tmp;
 #endif
         my_vacks[vci] = vack;
         node->send(vack, primv);
@@ -327,10 +340,6 @@ bool View_info::add(View_change *vc) {
 
   if (!stored) {
     delete vc;
-  } else {
-#ifdef STATIC_LOG_ALLOCATOR
-    vc->persist();
-#endif
   }
 
   return stored;
@@ -382,7 +391,9 @@ void View_info::add(View_change_ack *vca) {
 
         delete vcai.vacks[vci];
 #ifdef STATIC_LOG_ALLOCATOR
-        vca->persist();
+        auto tmp = vca->persist();
+        delete vca;
+        vca = tmp;
 #endif
         vcai.vacks[vci] = vca;
         vcai.v = v;

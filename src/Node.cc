@@ -38,6 +38,8 @@ Node *node = 0;
 // Enable statistics
 #include "Statistics.h"
 
+#define NO_IP_MULTICAST
+
 namespace libbyzea {
 
 static const char *DRBG_PERSONALIZATION_STRING =
@@ -438,7 +440,9 @@ void Node::send_new_key() {
   // Multicast new key to all replicas.
   last_new_key = new New_key();
 #ifdef STATIC_LOG_ALLOCATOR
-  last_new_key->persist();
+  auto tmp = last_new_key->persist();
+  delete last_new_key;
+  last_new_key = tmp;
 #endif
   send(last_new_key, All_replicas);
 

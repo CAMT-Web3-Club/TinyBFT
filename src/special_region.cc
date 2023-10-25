@@ -3,6 +3,7 @@
 #include <cstring>
 #include <new>
 
+#include "Log_allocator.h"
 #include "Meta_data_d.h"
 #include "New_key.h"
 #include "New_view.h"
@@ -15,45 +16,54 @@
 namespace libbyzea {
 namespace special_region {
 
-union NewViewBlock {
-  New_view_rep msg;
-  char raw[max_new_view_size];
+struct NewViewBlock {
+  New_view new_view_;
+  char msg_[max_new_view_size] __attribute__((aligned(ALIGNMENT)));
+
+  NewViewBlock() : new_view_(reinterpret_cast<New_view_rep *>(msg_)) {}
 };
 
-union ViewChangeBlock {
-  View_change_rep msg;
-  char raw[max_view_change_size];
+struct ViewChangeBlock {
+  View_change view_change_;
+  char msg_[max_view_change_size] __attribute__((aligned(ALIGNMENT)));
 
-  ViewChangeBlock() { new (&msg) View_change_rep(); }
+  ViewChangeBlock() : view_change_(reinterpret_cast<View_change_rep *>(msg_)) {}
   ~ViewChangeBlock() {}
 };
 
-union ViewChangeAckBlock {
-  View_change_ack_rep msg;
-  char raw[sizeof(View_change_ack_rep) + AUTHENTICATOR_SIZE];
+struct ViewChangeAckBlock {
+  View_change_ack view_change_ack_;
+  char msg_[sizeof(View_change_ack_rep) + AUTHENTICATOR_SIZE]
+      __attribute__((aligned(ALIGNMENT)));
 
-  ViewChangeAckBlock() { new (&msg) View_change_ack_rep(); }
+  ViewChangeAckBlock()
+      : view_change_ack_(reinterpret_cast<View_change_ack_rep *>(msg_)) {}
   ~ViewChangeAckBlock() {}
 };
 
-union MetaDataDBlock {
-  Meta_data_d_rep msg;
-  char raw[sizeof(Meta_data_d_rep) + AUTHENTICATOR_SIZE];
+struct MetaDataDBlock {
+  Meta_data_d meta_data_digest_;
+  char msg_[sizeof(Meta_data_d_rep) + AUTHENTICATOR_SIZE]
+      __attribute__((aligned(ALIGNMENT)));
 
-  MetaDataDBlock() { new (&msg) Meta_data_d_rep(); }
+  MetaDataDBlock()
+      : meta_data_digest_(reinterpret_cast<Meta_data_d_rep *>(msg_)) {}
   ~MetaDataDBlock() {}
 };
 
-union NewKeyBlock {
-  New_key_rep msg;
-  char raw[1400];
+struct NewKeyBlock {
+  New_key new_key_;
+  char msg_[max_new_key_size] __attribute__((aligned(ALIGNMENT)));
+
+  NewKeyBlock() : new_key_(reinterpret_cast<New_key_rep *>(msg_)) {}
+  ~NewKeyBlock() {}
 };
 
-union RequestBlock {
-  Request_rep msg;
-  char raw[max_request_size];
+struct RequestBlock {
+  Request request_;
+  char msg_[max_request_size] __attribute__((aligned(ALIGNMENT)));
 
-  RequestBlock() { new (&msg) Request_rep(); }
+  RequestBlock() : request_(reinterpret_cast<Request_rep *>(msg_)) {}
   ~RequestBlock() {}
 };
 
@@ -67,80 +77,92 @@ static RequestBlock requests[max_num_clients];
 static constexpr int MAGIC = 0xaa5555aa;
 
 size_t memory_demand() {
-  return sizeof(view_changes) + sizeof(view_change_acks) + sizeof(metadata_ds) +
-         sizeof(new_key);
+  return sizeof(new_views) + sizeof(view_changes) + sizeof(view_change_acks) +
+         sizeof(metadata_ds) + sizeof(new_key) + sizeof(requests);
 }
 
-void init() { new_key.msg.id = MAGIC; }
+void init() { free_new_key(&new_key.new_key_); }
 
-New_view_rep *load_new_view(Seqno view) {
-  return &new_views[node->primary(view)].msg;
+New_view *load_new_view(Seqno view) {
+  return &new_views[node->primary(view)].new_view_;
 }
 
-void store_new_view(New_view_rep *new_view) {
-  std::memcpy(&new_views[node->primary(new_view->v)].raw, new_view,
-              new_view->size);
+void store_new_view(New_view *new_view) {
+  th_assert(size_t(new_view->size()) <= max_new_view_size,
+            "invalid New_view size");
+
+  std::memcpy(&new_views[node->primary(new_view->view())].msg_,
+              new_view->contents(), new_view->size());
 }
 
-View_change_rep *load_view_change(int replica_id) {
+View_change *load_view_change(int replica_id) {
   th_assert(replica_id <= MAX_NUM_REPLICAS, "Invalid replica id");
-  return &view_changes[replica_id].msg;
+  return &view_changes[replica_id].view_change_;
 }
 
-void store_view_change(View_change_rep *view_change) {
-  th_assert(view_change->id <= MAX_NUM_REPLICAS, "Invalid replica id");
-  std::memcpy(&view_changes[view_change->id].raw, view_change,
-              view_change->size);
+void store_view_change(View_change *view_change) {
+  th_assert(view_change->id() <= MAX_NUM_REPLICAS, "Invalid replica id");
+  th_assert(size_t(view_change->size()) <= max_view_change_size,
+            "invalid View_change size");
+
+  std::memcpy(&view_changes[view_change->id()].msg_, view_change->contents(),
+              view_change->size());
 }
 
-View_change_ack_rep *load_view_change_ack(int replica_id, int vc_replica_id) {
+View_change_ack *load_view_change_ack(int replica_id, int vc_replica_id) {
   th_assert(replica_id <= MAX_NUM_REPLICAS, "Invalid replica id");
-  return &view_change_acks[replica_id][vc_replica_id].msg;
+  return &view_change_acks[replica_id][vc_replica_id].view_change_ack_;
 }
 
-void store_view_change_ack(View_change_ack_rep *view_change_ack) {
-  th_assert(view_change_ack->id <= MAX_NUM_REPLICAS, "Invalid replica id");
-  std::memcpy(&view_change_acks[view_change_ack->id][view_change_ack->vcid].raw,
-              view_change_ack, view_change_ack->size);
+void store_view_change_ack(View_change_ack *view_change_ack) {
+  th_assert(view_change_ack->id() <= MAX_NUM_REPLICAS, "Invalid replica id");
+  th_assert(
+      size_t(view_change_ack->size()) <= sizeof(view_change_acks[0][0].msg_),
+      "invalid View_change_ack size");
+  std::memcpy(
+      view_change_acks[view_change_ack->id()][view_change_ack->vc_id()].msg_,
+      view_change_ack->contents(), view_change_ack->size());
 }
 
-Meta_data_d_rep *load_metadata_d(int replica_id) {
+Meta_data_d *load_metadata_d(int replica_id) {
   th_assert(replica_id <= MAX_NUM_REPLICAS, "Invalid replica id");
-  return &metadata_ds[replica_id].msg;
+  return &metadata_ds[replica_id].meta_data_digest_;
 }
 
-void store_metadata_d(Meta_data_d_rep *meta_data_d) {
-  th_assert(meta_data_d->id <= MAX_NUM_REPLICAS, "Invalid replica id");
-  std::memcpy(&metadata_ds[meta_data_d->id].raw, meta_data_d,
-              meta_data_d->size);
+void store_metadata_d(Meta_data_d *meta_data_d) {
+  th_assert(meta_data_d->id() <= MAX_NUM_REPLICAS, "Invalid replica id");
+  std::memcpy(&metadata_ds[meta_data_d->id()].msg_, meta_data_d->contents(),
+              meta_data_d->size());
 }
 
-New_key_rep *load_new_key() {
-  th_assert(new_key.msg.id != MAGIC, "New_key is freed");
-  return &new_key.msg;
+New_key *load_new_key() {
+  th_assert(new_key.new_key_.id() != MAGIC, "New_key is freed");
+  return &new_key.new_key_;
 }
 
-void store_new_key(New_key_rep *msg) {
-  th_assert(new_key.msg.id == MAGIC, "New_key already in use");
-  th_assert((size_t)msg->size <= sizeof(NewKeyBlock), "New_key_rep too large");
-  std::memcpy(&new_key.raw, msg, msg->size);
+void store_new_key(New_key *msg) {
+  th_assert(new_key.new_key_.id() == MAGIC, "New_key already in use");
+  th_assert((size_t)msg->size() <= max_new_key_size, "New_key_rep too large");
+  std::memcpy(&new_key.msg_, msg->contents(), msg->size());
 }
 
-void free_new_key([[maybe_unused]] New_key_rep *msg) {
-  th_assert(msg == &new_key.msg, "Invalid free pointer");
-  th_assert(new_key.msg.id != MAGIC, "Double free");
+void free_new_key([[maybe_unused]] New_key *msg) {
+  th_assert(msg == &new_key.new_key_, "Invalid free pointer");
+  th_assert(new_key.new_key_.id() != MAGIC, "Double free");
 
-  new_key.msg.id = MAGIC;
+  auto rep = reinterpret_cast<New_key_rep *>(new_key.msg_);
+  rep->id = MAGIC;
 }
 
-Request_rep *load_request(int client_id) {
-  return &requests[client_id - 4].msg;
+Request *load_request(int client_id) {
+  return &requests[client_id - 4].request_;
 }
 
-void store_request(Request_rep *req) {
-  th_assert((size_t)req->size <= sizeof(RequestBlock), "Request too large");
-  int i = req->cid - 4;
-  std::memcpy(&requests[i].raw, req, req->size);
+void store_request(Request *req) {
+  int i = req->client_id() - 4;
+  th_assert((size_t)req->size() <= sizeof(requests[i].msg_),
+            "Request too large");
+  std::memcpy(&requests[i].msg_, req->contents(), req->size());
 }
 
 }  // namespace special_region

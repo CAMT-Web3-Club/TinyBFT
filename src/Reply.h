@@ -99,7 +99,9 @@ class Reply : public Message {
   bool is_tentative() const;
   // Effects: Returns true iff the reply is tentative.
 
-  void persist();
+#ifdef STATIC_LOG_ALLOCATOR
+  Reply *persist(size_t slot);
+#endif
 
   static bool convert(Message *m1, Reply *&m2);
   // Effects: If "m1" has the right size and tag of a "Reply", casts
@@ -137,12 +139,12 @@ inline bool Reply::full() const { return rep().reply_size >= 0; }
 inline bool Reply::is_tentative() const { return rep().extra; }
 
 inline bool Reply::match(Reply *r) {
-  return (rep().digest == r->rep().digest) &
-         (!is_tentative() | r->is_tentative() | (view() == r->view()));
+  return (rep().digest == r->rep().digest) &&
+         (!is_tentative() || r->is_tentative() || (view() == r->view()));
 }
 
 #ifdef STATIC_LOG_ALLOCATOR
-inline void Reply::persist() {}
+inline Reply *Reply::persist([[maybe_unused]] size_t slot) { return nullptr; }
 #endif
 
 }  // namespace libbyzea

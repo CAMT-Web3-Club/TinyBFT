@@ -38,6 +38,8 @@ class Meta_data_d : public Message {
   //  Meta_data_d messages
   //
  public:
+  Meta_data_d(Meta_data_d_rep *msg) : Message(msg) {}
+
   Meta_data_d(Request_id r, int l, int i, Seqno ls);
   // Effects: Creates a new un-authenticated Meta_data_d message with no
   // partition digests.
@@ -82,7 +84,7 @@ class Meta_data_d : public Message {
   // replica rep().id.
 
 #ifdef STATIC_LOG_ALLOCATOR
-  void persist();
+  Meta_data_d *persist();
 #endif
 
   static bool convert(Message *m1, Meta_data_d *&m2);
@@ -119,14 +121,10 @@ inline int Meta_data_d::index() const { return rep().i; }
 inline int Meta_data_d::id() const { return rep().id; }
 
 #ifdef STATIC_LOG_ALLOCATOR
-inline void Meta_data_d::persist() {
-  th_assert(in_scratch_, "Message is already persisted in another certificate");
-
+inline Meta_data_d *Meta_data_d::persist() {
   int replica_id = id();
-  special_region::store_metadata_d(&(rep()));
-  scratch_allocator::free(msg, max_size);
-  msg = (Message_rep *)special_region::load_metadata_d(replica_id);
-  in_scratch_ = false;
+  special_region::store_metadata_d(this);
+  return special_region::load_metadata_d(replica_id);
 }
 #endif
 }  // namespace libbyzea

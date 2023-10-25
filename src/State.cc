@@ -1035,7 +1035,11 @@ void State::send_fetch(bool change_replier) {
         mdd->add_digest(n, q.d);
       }
 
-      cert->add(mdd, true);
+      if (cert->add(mdd, true)) {
+#ifdef STATIC_LOG_ALLOCATOR
+        delete mdd;
+#endif
+      }
     }
   }
 
@@ -1435,6 +1439,9 @@ void State::handle(Meta_data_d* m) {
       Digest cd;
       Seqno cc;
       if (cert->add(m)) {
+#ifdef STATIC_LOG_ALLOCATOR
+        delete m;
+#endif
         if (cert->last_stable() > lc) keep_ckpts = false;
 
         if (cert->cvalue(cc, cd)) {

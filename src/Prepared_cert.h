@@ -127,7 +127,7 @@ inline bool Prepared_cert::add_mine(Pre_prepare *m) {
   th_assert(pp == nullptr, "Invalid state");
 
 #ifdef STATIC_LOG_ALLOCATOR
-  m->persist();
+  m = m->persist();
 #endif
 
   pp = m;
@@ -139,7 +139,8 @@ inline bool Prepared_cert::add_mine(Pre_prepare *m) {
 inline void Prepared_cert::add_old(Pre_prepare *m) {
   th_assert(pp == nullptr, "Invalid state");
 #ifdef STATIC_LOG_ALLOCATOR
-  m->persist();
+  th_assert(!m->in_scratch(), "Invalid state");
+  // m = m->persist();
 #endif
   pp = m;
 }
@@ -179,7 +180,9 @@ inline Prepare *Prepared_cert::prepare() const { return pc.cvalue(); }
 inline void Prepared_cert::mark_stale() {
   if (!is_complete()) {
     if (node->primary() != node->id()) {
+#ifndef STATIC_LOG_ALLOCATOR
       delete pp;
+#endif
       pp = nullptr;
     }
     pc.mark_stale();
@@ -187,7 +190,9 @@ inline void Prepared_cert::mark_stale() {
 }
 
 inline void Prepared_cert::clear() {
+#ifndef STATIC_LOG_ALLOCATOR
   delete pp;
+#endif
   pp = nullptr;
   t_sent = zeroTime();
   pc.clear();

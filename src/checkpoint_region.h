@@ -6,7 +6,7 @@
 
 namespace libbyzea {
 
-class Checkpoint_rep;
+class Checkpoint;
 
 namespace checkpoint_region {
 
@@ -16,8 +16,8 @@ Seqno max_seqno();
 
 bool within_range(Seqno seqno);
 
-Checkpoint_rep *load_checkpoint(Seqno seqno, size_t i);
-void store_checkpoint(Checkpoint_rep *checkpoint, size_t i);
+Checkpoint *load_checkpoint(Seqno seqno, size_t i);
+void store_checkpoint(Checkpoint *checkpoint, size_t i);
 
 void truncate(Seqno seqno);
 

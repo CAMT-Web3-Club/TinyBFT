@@ -28,6 +28,8 @@ class Checkpoint : public Message {
  public:
   static size_t memory_consumption();
 
+  Checkpoint(Checkpoint_rep *msg) : Message(msg) {}
+
   Checkpoint(Seqno s, Digest &d, bool stable = false);
   // Effects: Creates a new signed Checkpoint message with sequence
   // number "s" and digest "d". "stable" should be true iff the checkpoint
@@ -59,7 +61,7 @@ class Checkpoint : public Message {
   // Effects: Verifies if the message is signed by the replica rep().id.
 
 #ifdef STATIC_LOG_ALLOCATOR
-  void persist();
+  Checkpoint *persist(size_t slot);
   // Effects: persists this message in an underlying storage.
 #endif
 
@@ -94,15 +96,10 @@ inline bool Checkpoint::match(const Checkpoint *c) const {
 }
 
 #ifdef STATIC_LOG_ALLOCATOR
-inline void Checkpoint::persist() {
+inline Checkpoint *Checkpoint::persist(size_t slot) {
   Seqno sn = seqno();
-  int replica_id = id();
-  checkpoint_region::store_checkpoint(&(rep()), replica_id);
-  if (in_scratch_) {
-    scratch_allocator::free(msg, max_size);
-    in_scratch_ = false;
-  }
-  msg = (Message_rep *)checkpoint_region::load_checkpoint(sn, replica_id);
+  checkpoint_region::store_checkpoint(this, slot);
+  return checkpoint_region::load_checkpoint(sn, slot);
 }
 #endif
 

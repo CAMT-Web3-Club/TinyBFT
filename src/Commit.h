@@ -61,7 +61,7 @@ class Commit : public Message {
   // Effects: Verifies if the message is signed by the replica rep().id.
 
 #ifdef STATIC_LOG_ALLOCATOR
-  void persist();
+  Commit *persist(size_t cert_slot);
 #endif
 
   static bool convert(Message *m1, Commit *&m2);
@@ -100,15 +100,12 @@ inline bool Commit::match(const Commit *c) const {
 }
 
 #ifdef STATIC_LOG_ALLOCATOR
-inline void Commit::persist() {
+inline Commit *Commit::persist(size_t cert_slot) {
   th_assert(in_scratch_, "Message is already persisted in another certificate");
 
   Seqno sn = seqno();
-  int replica_id = id();
-  agreement_region::store_commit(&(rep()), replica_id);
-  scratch_allocator::free(msg, max_size);
-  msg = (Message_rep *)agreement_region::load_commit(sn, replica_id);
-  in_scratch_ = false;
+  agreement_region::store_commit(this, cert_slot);
+  return agreement_region::load_commit(sn, cert_slot);
 }
 #endif
 

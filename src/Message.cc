@@ -11,14 +11,19 @@ namespace libbyzea {
 Log_allocator *Message::a = nullptr;
 
 Message::Message(unsigned sz)
+#ifdef STATIC_LOG_ALLOCATOR
     : msg(0), max_size(ALIGNED_SIZE(sz)), in_scratch_(false) {
+#else
+    : msg(0), max_size(ALIGNED_SIZE(sz)) {
+#endif
   if (sz != 0) {
 #ifndef STATIC_LOG_ALLOCATOR
     msg = (Message_rep *)a->malloc(max_size);
 #else
     msg = (Message_rep *)scratch_allocator::malloc(max_size);
-#endif
     in_scratch_ = true;
+#endif
+
     th_assert(ALIGNED(msg), "Improperly aligned pointer");
     msg->tag = -1;
     msg->size = 0;
@@ -32,9 +37,10 @@ Message::Message(int t, unsigned sz) {
   msg = (Message_rep *)a->malloc(max_size);
 #else
   msg = (Message_rep *)scratch_allocator::malloc(max_size);
-#endif
-  th_assert(ALIGNED(msg), "Improperly aligned pointer");
   in_scratch_ = true;
+#endif
+
+  th_assert(ALIGNED(msg), "Improperly aligned pointer");
   msg->tag = t;
   msg->size = max_size;
   msg->extra = 0;
@@ -43,9 +49,7 @@ Message::Message(int t, unsigned sz) {
 Message::Message(Message_rep *cont) {
   th_assert(ALIGNED(cont), "Improperly aligned pointer");
 
-#ifndef STATIC_LOG_ALLOCATOR
-  in_scratch_ = false;
-#else
+#ifdef STATIC_LOG_ALLOCATOR
   in_scratch_ = scratch_allocator::is_in_scratch(cont);
 #endif
   msg = cont;
@@ -59,7 +63,7 @@ Message::~Message() {
   }
 #else
   if (max_size > 0 && in_scratch_) {
-    scratch_allocator::free(msg, max_size);
+    scratch_allocator::free(msg, size_t(max_size));
   }
 #endif
 }

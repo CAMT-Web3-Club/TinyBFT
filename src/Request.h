@@ -120,7 +120,7 @@ class Request : public Message {
   // if "m2" is later deleted.
 
 #ifdef STATIC_LOG_ALLOCATOR
-  void persist();
+  Request *persist();
 #endif
 
  private:
@@ -154,14 +154,11 @@ inline bool Request::is_signed() const { return true; }
 inline Digest &Request::digest() const { return rep().od; }
 
 #ifdef STATIC_LOG_ALLOCATOR
-inline void Request::persist() {
+inline Request *Request::persist() {
   th_assert(in_scratch_, "Request is already persisted");
 
-  special_region::store_request(&rep());
-  auto *tmp = msg;
-  msg = (Message_rep *)special_region::load_request(client_id());
-  scratch_allocator::free(tmp, tmp->size);
-  in_scratch_ = false;
+  special_region::store_request(this);
+  return special_region::load_request(client_id());
 }
 #endif
 

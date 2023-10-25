@@ -139,12 +139,14 @@ class Certificate {
     int count;
 
     inline Message_val() {
-      m = 0;
+      m = nullptr;
       count = 0;
     }
     inline void clear() {
+#ifndef STATIC_LOG_ALLOCATOR
       delete m;
-      m = 0;
+#endif
+      m = nullptr;
       count = 0;
     }
     inline ~Message_val() { clear(); }
@@ -155,6 +157,9 @@ class Certificate {
 
   int correct;  // value is correct if it appears in at least "correct" messages
   Message_val *c;  // correct certificate value or 0 if unknown.
+#ifdef STATIC_LOG_ALLOCATOR
+  int correct_id;  // array index of correct value in vals.
+#endif
 
   int complete;  // certificate is complete if "num_correct() >= complete"
 
@@ -200,9 +205,14 @@ inline bool Certificate<T>::is_empty() const {
 
 template <class T>
 inline void Certificate<T>::clear() {
-  for (int i = 0; i < cur_size; i++) vals[i].clear();
+  for (int i = 0; i < cur_size; i++) {
+    vals[i].clear();
+  }
   bmap.clear();
-  c = 0;
+  c = nullptr;
+#ifdef STATIC_LOG_ALLOCATOR
+  correct_id = -1;
+#endif
   mym = 0;
   t_sent = zeroTime();
   cur_size = 0;

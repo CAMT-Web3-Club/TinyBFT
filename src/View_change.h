@@ -80,6 +80,8 @@ class View_change : public Message {
   //  View_change messages
   //
  public:
+  View_change(View_change_rep *msg) : Message(msg) {}
+
   View_change(View v, Seqno ls, int id);
   // Effects: Creates a new (unauthenticated) View_change message for
   // replica "id" in view "v". The message states that "ls" is the
@@ -148,7 +150,7 @@ class View_change : public Message {
   // Effects: Returns true iff digest() is correct.
 
 #ifdef STATIC_LOG_ALLOCATOR
-  void persist();
+  View_change *persist();
 #endif
 
   static bool convert(Message *m1, View_change *&m2);
@@ -222,14 +224,12 @@ inline bool View_change::last_ckpt(Digest &d, Seqno &n) {
 }
 
 #ifdef STATIC_LOG_ALLOCATOR
-inline void View_change::persist() {
+inline View_change *View_change::persist() {
   th_assert(in_scratch_, "Message is already persisted in another certificate");
 
   int replica_id = id();
-  special_region::store_view_change(&(rep()));
-  scratch_allocator::free(msg, max_size);
-  msg = (Message_rep *)special_region::load_view_change(replica_id);
-  in_scratch_ = false;
+  special_region::store_view_change(this);
+  return special_region::load_view_change(replica_id);
 }
 #endif
 

@@ -1,5 +1,11 @@
+#include <typeinfo>
+
 #include "Certificate.h"
 #include "Node.h"
+
+// TODO: Certificates already only use f+1 distinct messages to be considered
+// correct. Therefore, we can simply use cur_size as the slot and reduce number
+// of entries in static allocators to f+1.
 
 namespace libbyzea {
 template <class T>
@@ -21,8 +27,11 @@ Certificate<T>::Certificate(MEM_STATS_PARAM int comp) : bmap(Max_num_replicas) {
   cur_size = 0;
   correct = node->f() + 1;
   complete = (comp == 0) ? node->f() * 2 + 1 : comp;
-  c = 0;
-  mym = 0;
+  c = nullptr;
+#ifdef STATIC_LOG_ALLOCATOR
+  correct_id = -1;
+#endif
+  mym = nullptr;
   MEM_STATS_GUARD_POP();
 }
 
@@ -37,23 +46,27 @@ bool Certificate<T>::add(T *m) {
   if (node->is_replica(id) && !bmap.test(id)) {
     // "m" was sent by a replica that does not have a message in
     // the certificate
-    if ((c == 0 || (c->count < complete && c->m->match(m))) && m->verify()) {
+    if ((c == nullptr || (c->count < complete && c->m->match(m))) &&
+        m->verify()) {
       // add "m" to the certificate
       th_assert(id != node->id(),
                 "verify should return false for messages from self");
 
       bmap.set(id);
-      if (c) {
+      if (c != nullptr) {
         c->count++;
         if (!c->m->full() && m->full()) {
           // if c->m is not full and m is, replace c->m
-          delete c->m;
 #ifdef STATIC_LOG_ALLOCATOR
-          m->persist();
+          m = m->persist(correct_id);
+#else
+          delete c->m;
 #endif
           c->m = m;
         } else {
+#ifndef STATIC_LOG_ALLOCATOR
           delete m;
+#endif
         }
         return true;
       }
@@ -64,16 +77,24 @@ bool Certificate<T>::add(T *m) {
         Message_val &val = vals[i];
         if (val.m->match(m)) {
           val.count++;
-          if (val.count >= correct) c = vals + i;
-          if (!val.m->full() && m->full()) {
+          if (val.count >= correct) {
+            c = vals + i;
 #ifdef STATIC_LOG_ALLOCATOR
-            m->persist();
+            correct_id = i;
 #endif
+          }
+          if (!val.m->full() && m->full()) {
             // if val.m is not full and m is, replace val.m
+#ifdef STATIC_LOG_ALLOCATOR
+            m = m->persist(i);
+#else
             delete val.m;
+#endif
             val.m = m;
           } else {
+#ifndef STATIC_LOG_ALLOCATOR
             delete m;
+#endif
           }
           return true;
         }
@@ -82,7 +103,7 @@ bool Certificate<T>::add(T *m) {
       // "m" has a new value.
       if (cur_size < max_size) {
 #ifdef STATIC_LOG_ALLOCATOR
-        m->persist();
+        m = m->persist(cur_size);
 #endif
         vals[cur_size].m = m;
         vals[cur_size++].count = 1;
@@ -106,41 +127,50 @@ bool Certificate<T>::add_mine(T *m) {
   th_assert(m->id() == node->id(), "Invalid argument");
   th_assert(m->full(), "Invalid argument");
 
-  if (c != 0 && !c->m->match(m)) {
+  if (c != nullptr && !c->m->match(m)) {
     fprintf(
         stderr,
-        "Node is faulty, more than f faulty replicas or faulty primary%s \n",
+        "Node is faulty, more than f faulty replicas or faulty primary %s\n",
         m->stag());
     delete m;
     return false;
   }
 
-#ifdef STATIC_LOG_ALLOCATOR
-  m->persist();
-#endif
-
-  if (c == 0) {
+  if (c == nullptr) {
     // Set m to be the correct value.
     int i;
     for (i = 0; i < cur_size; i++) {
       if (vals[i].m->match(m)) {
         c = vals + i;
+#ifdef STATIC_LOG_ALLOCATOR
+        correct_id = i;
+#endif
         break;
       }
     }
 
-    if (c == 0) {
+    if (c == nullptr) {
       c = vals;
       vals->count = 0;
+#ifdef STATIC_LOG_ALLOCATOR
+      correct_id = 0;
+#endif
     }
   }
 
-  if (c->m == 0) {
+  if (c->m == nullptr) {
     th_assert(cur_size == 0, "Invalid state");
     cur_size = 1;
   }
 
+#ifdef STATIC_LOG_ALLOCATOR
+  m = m->persist(correct_id);
+  bmap.set(node->id());
+#endif
+
+#ifndef STATIC_LOG_ALLOCATOR
   delete c->m;
+#endif
   c->m = m;
   c->count++;
   mym = m;
@@ -173,14 +203,19 @@ void Certificate<T>::mark_stale() {
 
 template <class T>
 T *Certificate<T>::cvalue_clear() {
-  if (c == 0) {
+  if (c == nullptr) {
     return 0;
   }
 
   T *ret = c->m;
-  c->m = 0;
+  c->m = nullptr;
+#ifdef STATIC_LOG_ALLOCATOR
+  correct_id = -1;
+#endif
   for (int i = 0; i < cur_size; i++) {
-    if (vals[i].m == ret) vals[i].m = 0;
+    if (vals[i].m == ret) {
+      vals[i].m = nullptr;
+    }
   }
   clear();
 

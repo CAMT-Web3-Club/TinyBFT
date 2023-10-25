@@ -30,6 +30,9 @@ bool Req_queue::append(Request *r) {
   }
 
   // Append request to queue.
+#ifdef STATIC_LOG_ALLOCATOR
+  r = r->persist();
+#endif
   cn.r = r;
   nbytes += r->size();
   nelems++;

@@ -13,40 +13,45 @@ namespace libbyzea {
 
 namespace agreement_region {
 
-union PrePrepareBlock {
-  Pre_prepare_rep msg;
-  char raw[MAX_MESSAGE_SIZE];
+struct PrePrepareBlock {
+  Pre_prepare pre_prepare_;
+  char msg_[MAX_MESSAGE_SIZE] __attribute__((aligned(ALIGNMENT)));
 
-  PrePrepareBlock() { new (&msg) Pre_prepare_rep(); }
+  PrePrepareBlock() : pre_prepare_(reinterpret_cast<Pre_prepare_rep *>(msg_)) {}
 
   ~PrePrepareBlock() {}
-} __attribute__((aligned(ALIGNMENT)));
-
-union PrepareBlock {
-  Prepare_rep msg;
-  char raw[sizeof(Prepare_rep) + AUTHENTICATOR_SIZE];
-
-  PrepareBlock() { new (&msg) Prepare_rep(); }
-
-  ~PrepareBlock() {}
-} __attribute__((aligned(ALIGNMENT)));
-;
-
-struct PreparedCert {
-  PrePrepareBlock pre_prepare_;
-  PrepareBlock prepares_[MAX_NUM_REPLICAS];
 };
 
-union CommitBlock {
-  Commit_rep msg;
-  char raw[sizeof(Commit_rep) + AUTHENTICATOR_SIZE];
+struct PrepareBlock {
+  Prepare prepare_;
+  char msg_[sizeof(Prepare_rep) + AUTHENTICATOR_SIZE]
+      __attribute__((aligned(ALIGNMENT)));
 
-  CommitBlock() { new (&msg) Commit_rep(); }
+  PrepareBlock() : prepare_(reinterpret_cast<Prepare_rep *>(msg_)) {}
+
+  ~PrepareBlock() {}
+};
+
+struct PreparedCert {
+  PrePrepareBlock pre_prepare_block_;
+  PrepareBlock prepares_[F + 1];
+
+  PreparedCert() : pre_prepare_block_(), prepares_() {}
+};
+
+struct CommitBlock {
+  Commit commit_;
+  char msg_[sizeof(Commit_rep) + AUTHENTICATOR_SIZE]
+      __attribute__((aligned(ALIGNMENT)));
+
+  CommitBlock() : commit_(reinterpret_cast<Commit_rep *>(msg_)) {}
   ~CommitBlock() {}
 } __attribute__((aligned(ALIGNMENT)));
 
 struct CommitCert {
-  CommitBlock commits_[MAX_NUM_REPLICAS];
+  CommitBlock commits_[F + 1];
+
+  CommitCert() : commits_() {}
 };
 
 struct AgreementSlice {
@@ -68,50 +73,50 @@ static inline size_t cert_index(Seqno n) {
   return (head_index + (n - head)) % max_out;
 }
 
-Pre_prepare_rep *load_pre_prepare(Seqno n) {
+Pre_prepare *load_pre_prepare(Seqno n) {
   th_assert(within_range(n), "Sequence number not in range");
-  return &slices[cert_index(n)].prepared_cert.pre_prepare_.msg;
+  return &slices[cert_index(n)].prepared_cert.pre_prepare_block_.pre_prepare_;
 }
 
-void store_pre_prepare(Pre_prepare_rep *pre_prepare) {
-  th_assert(within_range(pre_prepare->seqno),
+void store_pre_prepare(Pre_prepare *pre_prepare) {
+  th_assert(within_range(pre_prepare->seqno()),
             "Pre-Prepare sequence number not in range");
-  th_assert((size_t)pre_prepare->size <= Max_message_size,
+  th_assert((size_t)pre_prepare->size() <= Max_message_size,
             "Pre-Prepare is too large");
 
-  size_t i = cert_index(pre_prepare->seqno);
-  auto *store = &slices[i].prepared_cert.pre_prepare_.raw;
-  std::memcpy(store, pre_prepare, pre_prepare->size);
+  size_t i = cert_index(pre_prepare->seqno());
+  auto *store = &slices[i].prepared_cert.pre_prepare_block_.msg_;
+  std::memcpy(store, pre_prepare->contents(), pre_prepare->size());
 }
 
-Prepare_rep *load_prepare(Seqno n, size_t i) {
+Prepare *load_prepare(Seqno n, size_t i) {
   th_assert(within_range(n), "Sequence number out of range");
-  th_assert(MAX_NUM_REPLICAS, "Prepare index out of range");
-  return &slices[cert_index(n)].prepared_cert.prepares_[i].msg;
+  th_assert(i < (F + 1), "Prepare index out of range");
+  return &slices[cert_index(n)].prepared_cert.prepares_[i].prepare_;
 }
 
-void store_prepare(Prepare_rep *prepare, size_t i) {
-  th_assert(within_range(prepare->seqno), "Sequence number out of range");
-  th_assert(MAX_NUM_REPLICAS, "Prepare index out of range");
+void store_prepare(Prepare *prepare, size_t i) {
+  th_assert(within_range(prepare->seqno()), "Sequence number out of range");
+  th_assert(i < (F + 1), "Prepare index out of range");
 
-  size_t sn = cert_index(prepare->seqno);
-  auto *store = &slices[sn].prepared_cert.prepares_[i].raw;
-  std::memcpy(store, prepare, prepare->size);
+  size_t sn = cert_index(prepare->seqno());
+  auto *store = &slices[sn].prepared_cert.prepares_[i].msg_;
+  std::memcpy(store, prepare->contents(), prepare->size());
 }
 
-Commit_rep *load_commit(Seqno n, size_t i) {
+Commit *load_commit(Seqno n, size_t i) {
   th_assert(within_range(n), "Sequence number out of range");
-  th_assert(MAX_NUM_REPLICAS, "Prepare index out of range");
-  return &slices[cert_index(n)].commit_cert.commits_[i].msg;
+  th_assert(i < (F + 1), "Prepare index out of range");
+  return &slices[cert_index(n)].commit_cert.commits_[i].commit_;
 }
 
-void store_commit(Commit_rep *commit, size_t i) {
-  th_assert(within_range(commit->seqno), "Sequence number out of range");
-  th_assert(MAX_NUM_REPLICAS, "Prepare index out of range");
+void store_commit(Commit *commit, size_t i) {
+  th_assert(within_range(commit->seqno()), "Sequence number out of range");
+  th_assert(i < (F + 1), "Prepare index out of range");
 
-  size_t sn = cert_index(commit->seqno);
-  auto *store = &slices[sn].commit_cert.commits_[i].msg;
-  std::memcpy(store, commit, commit->size);
+  size_t sn = cert_index(commit->seqno());
+  auto *store = &slices[sn].commit_cert.commits_[i].msg_;
+  std::memcpy(store, commit->contents(), commit->size());
 }
 
 bool within_range(Seqno seqno) {

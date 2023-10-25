@@ -463,20 +463,20 @@ void Replica::handle(Request *m) {
           if (!rqueue.in_progress(cid, rid, v) && rqueue.append(m)) {
             //	    fprintf(stderr, "RID %qd. ", rid);
 #ifdef STATIC_LOG_ALLOCATOR
-            m->persist();
+            delete m;
 #endif
             send_pre_prepare();
             return;
           }
         } else {
           if (rqueue.append(m)) {
-#ifdef STATIC_LOG_ALLOCATOR
-            m->persist();
-#endif
             if (!limbo) {
               send(m, primary());
               vtimer->start();
             }
+#ifdef STATIC_LOG_ALLOCATOR
+            delete m;
+#endif
             return;
           }
         }
@@ -487,7 +487,7 @@ void Replica::handle(Request *m) {
         if (id() != primary() && !replies.is_committed(cid) &&
             rqueue.append(m)) {
 #ifdef STATIC_LOG_ALLOCATOR
-          m->persist();
+          delete m;
 #endif
           vtimer->start();
           return;
@@ -537,6 +537,9 @@ void Replica::send_pre_prepare() {
     MEMSTATS_SET_MEM_TYPE(MEM_TYPE_CERTIFICATE_LOGS);
     plog.fetch(seqno).add_mine(pp);
     MEMSTATS_RESTORE_MEM_TYPE();
+#ifdef STATIC_LOG_ALLOCATOR
+    delete pp;
+#endif
   }
 }
 
@@ -590,6 +593,9 @@ void Replica::handle(Pre_prepare *m) {
     // Only accept message if we never accepted another pre-prepare
     // for the same view and sequence number and the message is valid.
     if (pc.add(m)) {
+#ifdef STATIC_LOG_ALLOCATOR
+      delete m;
+#endif
       send_prepare(pc);
       if (pc.is_complete()) send_commit(ms);
     }
@@ -614,7 +620,11 @@ void Replica::send_prepare(Prepared_cert &pc) {
     Pre_prepare *pp = pc.pre_prepare();
     Prepare *p = new Prepare(v, pp->seqno(), pp->digest());
     send(p, All_replicas);
-    pc.add_mine(p);
+    if (pc.add_mine(p)) {
+#ifdef STATIC_LOG_ALLOCATOR
+      delete p;
+#endif
+    }
   }
 }
 
@@ -631,7 +641,13 @@ void Replica::send_commit(Seqno s) {
 
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_CERTIFICATE_LOGS);
   Certificate<Commit> &cs = clog.fetch(s);
-  if (cs.add_mine(c) && cs.is_complete()) {
+  auto added = cs.add_mine(c);
+#ifdef STATIC_LOG_ALLOCATOR
+  if (added) {
+    delete c;
+  }
+#endif
+  if (added && cs.is_complete()) {
     MEMSTATS_RESTORE_MEM_TYPE();
     execute_committed();
   }
@@ -647,8 +663,13 @@ void Replica::handle(Prepare *m) {
   if (in_wv(m) && ms > low_bound && primary() != m->id() && has_new_view()) {
     MEMSTATS_SET_MEM_TYPE(MEM_TYPE_CERTIFICATE_LOGS);
     Prepared_cert &ps = plog.fetch(ms);
-    if (ps.add(m) && ps.is_complete()) {
-      send_commit(ms);
+    if (ps.add(m)) {
+      if (ps.is_complete()) {
+        send_commit(ms);
+      }
+#ifdef STATIC_LOG_ALLOCATOR
+      delete m;
+#endif
     }
     MEMSTATS_RESTORE_MEM_TYPE();
     return;
@@ -676,7 +697,13 @@ void Replica::handle(Commit *m) {
   if (in_wv(m) && ms > low_bound) {
     MEMSTATS_SET_MEM_TYPE(MEM_TYPE_CERTIFICATE_LOGS);
     Certificate<Commit> &cs = clog.fetch(m->seqno());
-    if (cs.add(m) && cs.is_complete()) {
+    auto added = cs.add(m);
+#if STATIC_LOG_ALLOCATOR
+    if (added) {
+      delete m;
+    }
+#endif
+    if (added && cs.is_complete()) {
       MEMSTATS_RESTORE_MEM_TYPE();
       execute_committed();
     }
@@ -708,19 +735,19 @@ void Replica::handle(Checkpoint *m) {
 
       if (!late) {
         Certificate<Checkpoint> &cs = elog.fetch(ms);
-        if (cs.add(m) && cs.mine() && cs.is_complete()) {
-          // I have enough Checkpoint messages for m->seqno() to make it stable.
-          // Truncate logs, discard older stable state versions.
-          //	  fprintf(stderr, "CP MSG call MS %qd!!!\n", last_executed);
-          mark_stable(ms, true);
+        auto added = cs.add(m);
+        if (added) {
+#ifdef STATIC_LOG_ALLOCATOR
+          delete m;
+#endif
+
+          if (cs.mine() && cs.is_complete()) {
+            // I have enough Checkpoint messages for m->seqno() to make it
+            // stable. Truncate logs, discard older stable state versions.
+            //	  fprintf(stderr, "CP MSG call MS %qd!!!\n", last_executed);
+            mark_stable(ms, true);
+          }
         }
-        //	else {
-        //	  fprintf(stderr, "CP msg %qd not yet. Reason: ", ms);
-        //	  if (!cs.mine())
-        //	    fprintf(stderr, "does not have mine\n");
-        //	  else if (!cs.is_complete())
-        //	    fprintf(stderr, "Not complete\n");
-        //	}
         return;
       }
     }
@@ -738,10 +765,12 @@ void Replica::handle(Checkpoint *m) {
 
       // Stable checkpoint message above my last_executed.
       Checkpoint *c = sset.fetch(m->id());
-      if (c == 0 || c->seqno() < ms) {
+      if (c == nullptr || c->seqno() < ms) {
         delete sset.remove(m->id());
 #ifdef STATIC_LOG_ALLOCATOR
-        m->persist();
+        auto tmp = m->persist(m->id());
+        delete m;
+        m = tmp;
 #endif
         sset.store(m);
         if (sset.size() > f()) {
@@ -982,7 +1011,13 @@ void Replica::handle(View_change *m) {
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_VIEW_INFO);
   bool modified = vi.add(m);
   MEMSTATS_RESTORE_MEM_TYPE();
-  if (!modified) return;
+  if (!modified) {
+    return;
+  } else {
+#ifdef STATIC_LOG_ALLOCATOR
+    delete m;
+#endif
+  }
 
   // TODO: memoize maxv and avoid this computation if it cannot change i.e.
   // m->view() <= last maxv. This also holds for the next check.
@@ -1141,8 +1176,11 @@ void Replica::process_new_view(Seqno min, Digest d, Seqno max, Seqno ms) {
       pc.add_mine(p);
       send(p, All_replicas);
 
-      th_assert(pp != 0 && pp->digest() == p->digest(), "Invalid state");
+      th_assert(pp != nullptr && pp->digest() == p->digest(), "Invalid state");
       pc.add_old(pp);
+#ifdef STATIC_LOG_ALLOCATOR
+      delete p;
+#endif
     }
     MEMSTATS_RESTORE_MEM_TYPE();
   }
@@ -1407,6 +1445,9 @@ void Replica::execute_committed() {
           //	    fprintf(stderr, "CP exec %qd not yet. ", last_executed);
 
           send(e, All_replicas);
+#ifdef STATIC_LOG_ALLOCATOR
+          delete e;
+#endif
           //	  printf(">>>>Checkpointing "); d_state.print(); printf("
           //<<<<\n"); fflush(stdout);
         }
@@ -1483,6 +1524,9 @@ void Replica::new_state(Seqno c) {
     Checkpoint *ck = new Checkpoint(c, d);
     elog.fetch(c).add_mine(ck);
     send(ck, All_replicas);
+#ifdef STATIC_LOG_ALLOCATOR
+    delete ck;
+#endif
   }
 
   // Check if c is known to be stable.
@@ -1572,7 +1616,7 @@ void Replica::mark_stable(Seqno n, bool have_state) {
     // if I do not have one put one in and make the corresponding
     // certificate complete.
     Checkpoint *c = elog.fetch(last_stable).mine();
-    if (c == 0) {
+    if (c == nullptr) {
       Digest d_state;
       MEMSTATS_SET_MEM_TYPE(MEM_TYPE_STATE_MANAGEMENT);
       state.digest(last_stable, d_state);
@@ -1580,6 +1624,9 @@ void Replica::mark_stable(Seqno n, bool have_state) {
       c = new Checkpoint(last_stable, d_state, true);
       elog.fetch(last_stable).add_mine(c);
       elog.fetch(last_stable).make_complete();
+#ifdef STATIC_LOG_ALLOCATOR
+      delete c;
+#endif
     } else {
       c->re_authenticate(0, true);
     }
@@ -2033,6 +2080,9 @@ void Replica::handle(Reply *m, bool mine) {
     // Only accept recovery request replies that are not tentative.
     bool added = (mine) ? rr_reps.add_mine(m) : rr_reps.add(m);
     if (added) {
+#ifdef STATIC_LOG_ALLOCATOR
+      delete m;
+#endif
       if (rr_views[mid] < mv) rr_views[mid] = mv;
 
       if (rr_reps.is_complete()) {

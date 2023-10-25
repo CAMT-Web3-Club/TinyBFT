@@ -127,6 +127,13 @@ class Message {
 #endif
   }
 
+#ifdef STATIC_LOG_ALLOCATOR
+  /**
+   * @brief Return, wether message is allocated in scratch region or not.
+   */
+  bool in_scratch() const;
+#endif
+
  protected:
   Message(int t, unsigned sz);
   // Effects: Creates a message with tag "t" that can hold up to "sz"
@@ -165,7 +172,9 @@ class Message {
                      // or "-1" if this instance is not responsible for
                      // deallocating the storage in msg.
                      // Invariant: max_size <= 0 || 0 < msg->size <= max_size
+#ifdef STATIC_LOG_ALLOCATOR
   bool in_scratch_;
+#endif
 
  private:
   //
@@ -191,6 +200,10 @@ inline bool Message::has_tag(int t, int sz) const {
 inline View Message::view() const { return 0; }
 
 inline bool Message::full() const { return true; }
+
+#ifdef STATIC_LOG_ALLOCATOR
+inline bool Message::in_scratch() const { return in_scratch_; }
+#endif
 
 inline void *Message::operator new(size_t s) {
 #ifndef STATIC_LOG_ALLOCATOR

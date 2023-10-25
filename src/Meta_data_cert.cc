@@ -35,8 +35,10 @@ Meta_data_cert::~Meta_data_cert() {
 
 void Meta_data_cert::clear() {
   for (int i = 0; i < node->n(); i++) {
+#ifndef STATIC_LOG_ALLOCATOR
     delete last_mdds[i];
-    last_mdds[i] = 0;
+#endif
+    last_mdds[i] = nullptr;
     last_stables[i] = 0;
   }
   ls = 0;
@@ -64,6 +66,11 @@ bool Meta_data_cert::add(Meta_data_d* m, bool mine) {
       return false;
     }
 
+#ifdef STATIC_LOG_ALLOCATOR
+    auto tmp = m;
+    m = m->persist();
+#endif
+
     // new message is more recent
     last_mdds[id] = m;
 
@@ -71,13 +78,14 @@ bool Meta_data_cert::add(Meta_data_d* m, bool mine) {
       ls = K_max<Seqno>(node->f() + 1, last_stables, node->n(), Seqno_max);
     else if (m->last_stable() < ls) {
       delete om;
+#ifdef STATIC_LOG_ALLOCATOR
+      delete tmp;
+#else
       delete m;
-      last_mdds[id] = 0;
+#endif
+      last_mdds[id] = nullptr;
       return false;
     }
-#ifdef STATIC_LOG_ALLOCATOR
-    m->persist();
-#endif
 
     // Update vals to adjust for digests in m and om, and delete vals
     // with seqno less than ls.

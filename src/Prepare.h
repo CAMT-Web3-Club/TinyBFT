@@ -28,6 +28,8 @@ class Prepare : public Message {
   // Prepare messages
   //
  public:
+  Prepare(Prepare_rep *msg) : Message(msg){};
+
   Prepare(View v, Seqno s, Digest &d, Principal *dst = 0);
   // Effects: Creates a new signed Prepare message with view number
   // "v", sequence number "s" and digest "d". "dst" should be non-null
@@ -62,7 +64,7 @@ class Prepare : public Message {
   // Effects: Verifies if the message is signed by the replica rep().id.
 
 #ifdef STATIC_LOG_ALLOCATOR
-  void persist();
+  Prepare *persist(size_t cert_slot);
 #endif
 
   static bool convert(Message *m1, Prepare *&m2);
@@ -96,15 +98,12 @@ inline bool Prepare::match(const Prepare *p) const {
 }
 
 #ifdef STATIC_LOG_ALLOCATOR
-inline void Prepare::persist() {
+inline Prepare *Prepare::persist(size_t cert_slot) {
   th_assert(in_scratch_, "Message is already persisted in another certificate");
 
   Seqno sn = seqno();
-  int replica_id = id();
-  agreement_region::store_prepare(&(rep()), replica_id);
-  scratch_allocator::free(msg, max_size);
-  msg = (Message_rep *)agreement_region::load_prepare(sn, replica_id);
-  in_scratch_ = false;
+  agreement_region::store_prepare(this, cert_slot);
+  return agreement_region::load_prepare(sn, cert_slot);
 }
 #endif
 

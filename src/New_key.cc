@@ -52,8 +52,9 @@ New_key::~New_key() {
   if (msg == nullptr) {
     return;
   }
+
   if (!in_scratch_) {
-    special_region::free_new_key(&(rep()));
+    special_region::free_new_key(this);
   }
 }
 #endif

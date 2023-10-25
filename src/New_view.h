@@ -61,6 +61,8 @@ class New_view : public Message {
   //  New_view messages
   //
  public:
+  New_view(New_view_rep* msg) : Message(msg) {}
+
   New_view(View v);
   // Effects: Creates a new (unsigned) New_view message with an empty
   // set of view change messages.
@@ -130,7 +132,7 @@ class New_view : public Message {
   // If the conversion is successful it trims excess allocation.
 
 #ifdef STATIC_LOG_ALLOCATOR
-  void persist();
+  New_view* persist();
 #endif
 
  private:
@@ -179,13 +181,11 @@ inline bool New_view::view_change(int id) {
 }
 
 #ifdef STATIC_LOG_ALLOCATOR
-inline void New_view::persist() {
+inline New_view* New_view::persist() {
   th_assert(in_scratch_, "Message is already persisted in another certificate");
   auto v = view();
-  special_region::store_new_view(&(rep()));
-  scratch_allocator::free(msg, max_size);
-  msg = (Message_rep*)special_region::load_new_view(v);
-  in_scratch_ = false;
+  special_region::store_new_view(this);
+  return special_region::load_new_view(v);
 }
 #endif
 

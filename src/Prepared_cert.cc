@@ -1,5 +1,7 @@
 #include "Prepared_cert.h"
 
+#include <cstddef>
+
 #include "Certificate.t"
 #include "Node.h"
 
@@ -11,7 +13,8 @@ size_t Prepared_cert::memory_consumption() {
   return Certificate<Prepare>::memory_consumption();
 }
 
-Prepared_cert::Prepared_cert() : pc(node->f() * 2), primary(false) {}
+Prepared_cert::Prepared_cert()
+    : pc(node->f() * 2), pp(nullptr), primary(false) {}
 
 Prepared_cert::~Prepared_cert() {
   if (pp != nullptr) {
@@ -40,7 +43,7 @@ bool Prepared_cert::add(Pre_prepare* m) {
     if (p == nullptr) {
       if (m->verify()) {
 #ifdef STATIC_LOG_ALLOCATOR
-        m->persist();
+        m = m->persist();
 #endif
         pp = m;
         return true;
@@ -55,7 +58,7 @@ bool Prepared_cert::add(Pre_prepare* m) {
         while (viter.get(val, vc)) {
           if (vc >= node->f() && m->match(val)) {
 #ifdef STATIC_LOG_ALLOCATOR
-            m->persist();
+            m = m->persist();
 #endif
             pp = m;
             return true;
@@ -66,7 +69,7 @@ bool Prepared_cert::add(Pre_prepare* m) {
       // If we sent a prepare, we only accept a matching pre-prepare.
       if (m->match(p) && m->verify(Pre_prepare::NRC)) {
 #ifdef STATIC_LOG_ALLOCATOR
-        m->persist();
+        m = m->persist();
 #endif
         pp = m;
         return true;
@@ -85,7 +88,7 @@ bool Prepared_cert::encode(FILE* o) {
 }
 
 bool Prepared_cert::decode(FILE* i) {
-  th_assert(pi.pre_prepare() == 0, "Invalid state");
+  th_assert(pp != nullptr, "Invalid state");
 
   bool ret = pc.decode(i);
   ret &= pp->decode(i);
