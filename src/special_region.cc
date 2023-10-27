@@ -83,6 +83,12 @@ size_t memory_demand() {
          sizeof(metadata_ds) + sizeof(new_key) + sizeof(requests);
 }
 
+New_view *new_new_view(View v) {
+  auto &b = new_views[node->id()];
+  auto nvr = reinterpret_cast<New_view_rep *>(b.msg_);
+  return new (&b.new_view_) New_view(nvr, v);
+}
+
 New_view *load_new_view(Seqno view) {
   return &new_views[node->primary(view)].new_view_;
 }
@@ -91,8 +97,15 @@ void store_new_view(New_view *new_view) {
   th_assert(size_t(new_view->size()) <= max_new_view_size,
             "invalid New_view size");
 
+  fprintf(stderr, "%d %d\n", new_view->size(), max_new_view_size);
   std::memcpy(&new_views[node->primary(new_view->view())].msg_,
               new_view->contents(), new_view->size());
+}
+
+View_change *new_view_change(View v, Seqno ls, int replica_id) {
+  auto &b = view_changes[replica_id];
+  auto vcr = reinterpret_cast<View_change_rep *>(b.msg_);
+  return new (&b.view_change_) View_change(vcr, v, ls, replica_id);
 }
 
 View_change *load_view_change(int replica_id) {
@@ -109,6 +122,15 @@ void store_view_change(View_change *view_change) {
               view_change->size());
 }
 
+View_change_ack *new_view_change_ack(View v, int vc_replica_id,
+                                     Digest const &digest) {
+  th_assert(replica_id == node->id(), "invalid state");
+  auto &b = view_change_acks[node->id()][vc_replica_id];
+  auto vcar = reinterpret_cast<View_change_ack_rep *>(b.msg_);
+
+  return new (&b.view_change_ack_)
+      View_change_ack(vcar, v, vc_replica_id, digest);
+}
 View_change_ack *load_view_change_ack(int replica_id, int vc_replica_id) {
   th_assert(replica_id <= MAX_NUM_REPLICAS, "Invalid replica id");
   return &view_change_acks[replica_id][vc_replica_id].view_change_ack_;

@@ -48,6 +48,12 @@ class Pre_prepare : public Message {
   // removes the elements of "reqs" that are included in the message
   // from "reqs" and deletes them.
 
+#ifdef STATIC_LOG_ALLOCATOR
+  Pre_prepare(Pre_prepare_rep* msg, View v, Seqno s, Req_queue& reqs);
+#endif
+
+  void fill(View v, Seqno s, Req_queue& requests);
+
   char* choices(int& len);
   // Effects: Returns a buffer that can be filled with non-deterministic choices
 

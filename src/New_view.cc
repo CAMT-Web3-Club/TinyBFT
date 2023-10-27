@@ -2,6 +2,7 @@
 
 #include <string.h>
 
+#include "Message.h"
 #include "Message_tags.h"
 #include "Principal.h"
 #include "Replica.h"
@@ -18,7 +19,22 @@ New_view::New_view(View v) : Message(New_view_tag, Max_message_size) {
   for (int i = 0; i < node->n(); i++) {
     vc_info()[i].d.zero();
   }
+
+  msg->size = sizeof(New_view_rep) + node->n() * sizeof(VC_info);
 }
+
+#ifdef STATIC_LOG_ALLOCATOR
+New_view::New_view(New_view_rep *msg, View v) : Message(New_view_tag, msg) {
+  rep().v = v;
+  rep().min = -1;
+  rep().max = -1;
+
+  // Initialize vc_info
+  for (int i = 0; i < node->n(); i++) {
+    vc_info()[i].d.zero();
+  }
+}
+#endif
 
 void New_view::add_view_change(int id, Digest &d) {
   th_assert(node->is_replica(id), "Not a replica");
@@ -54,7 +70,7 @@ void New_view::re_authenticate([[maybe_unused]] Principal *p) {
 
   // Compute authenticator and update size.
   th_assert(
-      Max_message_size - old_size >= static_cast<size_t>(node->auth_size()),
+      max_new_view_size - old_size >= static_cast<size_t>(node->auth_size()),
       "Message is too small");
   set_size(old_size + node->auth_size());
   node->gen_auth_out(contents(), old_size, contents() + old_size);

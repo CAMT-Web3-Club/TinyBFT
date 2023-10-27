@@ -125,9 +125,9 @@ inline bool Prepared_cert::add_mine(Prepare *m) {
 inline bool Prepared_cert::add_mine(Pre_prepare *m) {
   th_assert(node->id() == node->primary(m->view()), "Invalid Argument");
   th_assert(pp == nullptr, "Invalid state");
-
 #ifdef STATIC_LOG_ALLOCATOR
-  m = m->persist();
+  th_assert(!scratch_allocator::in_scratch(),
+            "Own messages should never be in scratch region");
 #endif
 
   pp = m;
@@ -140,7 +140,6 @@ inline void Prepared_cert::add_old(Pre_prepare *m) {
   th_assert(pp == nullptr, "Invalid state");
 #ifdef STATIC_LOG_ALLOCATOR
   th_assert(!m->in_scratch(), "Invalid state");
-  // m = m->persist();
 #endif
   pp = m;
 }

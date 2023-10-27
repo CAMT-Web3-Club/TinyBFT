@@ -1,5 +1,7 @@
 #include "NV_info.h"
 
+#include <cstddef>
+
 #include "Array.t"
 #include "K_max.h"
 #include "New_view.h"
@@ -9,6 +11,7 @@
 #include "View_change.h"
 #include "View_change_ack.h"
 #include "View_info.h"
+#include "special_region.h"
 
 namespace libbyzea {
 
@@ -19,11 +22,17 @@ namespace libbyzea {
 NV_info::VC_info::VC_info()
     : vc(0), ack_count(0), ack_reps(node->n()), req_sum(false) {}
 
-NV_info::VC_info::~VC_info() { delete vc; }
+NV_info::VC_info::~VC_info() {
+#ifndef STATIC_LOG_ALLOCATOR
+  delete vc;
+#endif
+}
 
 void NV_info::VC_info::clear() {
+#ifndef STATIC_LOG_ALLOCATOR
   delete vc;
-  vc = 0;
+#endif
+  vc = nullptr;
   ack_count = 0;
   ack_reps.clear();
   req_sum = false;
@@ -42,7 +51,7 @@ NV_info::Req_sum::~Req_sum() { pi.zero(); }
 
 NV_info::NV_info()
     : v(0),
-      nv(0),
+      nv(nullptr),
       vc_target(0),
       vc_cur(0),
       vcs(MEM_STATS_ARG_INIT_PUSH(Array<NV_info::VC_info>) node->n()) {
@@ -59,8 +68,10 @@ NV_info::~NV_info() { clear(); }
 
 void NV_info::clear() {
   v = 0;
+#ifndef STATIC_LOG_ALLOCATOR
   delete nv;
-  nv = 0;
+#endif
+  nv = nullptr;
   vc_target = 0;
 
   for (int i = 0; i < vcs.size(); i++) {
@@ -104,7 +115,11 @@ View_change* NV_info::mark_stale(int id) {
     if (ov > 0 && node->primary(ov) == id) {
       // The primary recreates its state to allow the construction of
       // a complete new-view for this view.
+#ifndef STATIC_LOG_ALLOCATOR
       New_view* nv = new New_view(ov);
+#else
+      New_view* nv = special_region::new_new_view(ov);
+#endif
       add(nv, vi);
 
       th_assert(pres != 0, "Invalid state");
@@ -122,7 +137,11 @@ bool NV_info::add(New_view* m, View_info* parent) {
   th_assert(parent != 0, "Invalid argument");
 
   if (m->view() <= v) {
-    delete m;
+#ifdef STATIC_LOG_ALLOCATOR
+    if (m->id() != node->id()) {
+      delete m;
+    }
+#endif
     return false;
   }
 
@@ -130,7 +149,9 @@ bool NV_info::add(New_view* m, View_info* parent) {
   if (v != 0) clear();
 
 #ifdef STATIC_LOG_ALLOCATOR
-  m = m->persist();
+  if (m->id() != node->id()) {
+    m = m->persist();
+  }
 #endif
   // Add m to this.
   v = m->view();
@@ -150,7 +171,7 @@ bool NV_info::add(View_change* m, bool verified) {
   th_assert(m->view() == v, "Invalid argument");
 
   int vcid = m->id();
-  if (vcs[vcid].vc != 0 || is_complete) {
+  if (vcs[vcid].vc != nullptr || is_complete) {
     return false;
   }
 
@@ -169,6 +190,9 @@ bool NV_info::add(View_change* m, bool verified) {
     }
   }
 
+#ifdef STATIC_LOG_ALLOCATOR
+  m = m->persist();
+#endif
   vcs[vcid].vc = m;
   vc_cur++;
 

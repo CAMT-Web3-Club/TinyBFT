@@ -1,6 +1,7 @@
 #include "Pre_prepare.h"
 
 #include "Digest.h"
+#include "Message.h"
 #include "Message_tags.h"
 #include "Prepare.h"
 #include "Principal.h"
@@ -9,11 +10,23 @@
 #include "Request.h"
 #include "digest_builder.h"
 #include "th_assert.h"
+#include "types.h"
 
 namespace libbyzea {
 
 Pre_prepare::Pre_prepare(View v, Seqno s, Req_queue &reqs)
     : Message(Pre_prepare_tag, Max_message_size) {
+  fill(v, s, reqs);
+}
+
+#ifdef STATIC_LOG_ALLOCATOR
+Pre_prepare::Pre_prepare(Pre_prepare_rep *msg, View v, Seqno s, Req_queue &reqs)
+    : Message(Pre_prepare_tag, msg) {
+  fill(v, s, reqs);
+}
+#endif
+
+void Pre_prepare::fill(View v, Seqno s, Req_queue &reqs) {
   rep().view = v;
   rep().seqno = s;
 

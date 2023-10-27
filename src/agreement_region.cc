@@ -7,7 +7,9 @@
 #include "Log_allocator.h"
 #include "Pre_prepare.h"
 #include "Prepare.h"
+#include "Req_queue.h"
 #include "th_assert.h"
+#include "types.h"
 
 namespace libbyzea {
 
@@ -71,6 +73,13 @@ static Seqno max_seqno() { return head + max_out - 1; }
 
 static inline size_t cert_index(Seqno n) {
   return (head_index + (n - head)) % max_out;
+}
+
+Pre_prepare *new_pre_prepare(View v, Seqno n, Req_queue &requests) {
+  auto &b = slices[cert_index(n)].prepared_cert.pre_prepare_block_;
+  auto pp = new (&b.pre_prepare_)
+      Pre_prepare(reinterpret_cast<Pre_prepare_rep *>(b.msg_), v, n, requests);
+  return pp;
 }
 
 Pre_prepare *load_pre_prepare(Seqno n) {

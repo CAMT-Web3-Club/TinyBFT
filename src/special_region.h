@@ -3,6 +3,7 @@
 
 #include <cstddef>
 
+#include "Digest.h"
 #include "types.h"
 
 namespace libbyzea {
@@ -19,11 +20,18 @@ namespace special_region {
 
 size_t memory_demand();
 
-New_view *load_new_view(Seqno view);
+New_view *new_new_view(View v);
+
+New_view *load_new_view(View view);
 void store_new_view(New_view *new_view);
+
+View_change *new_view_change(View v, Seqno ls, int id);
 
 View_change *load_view_change(int replica_id);
 void store_view_change(View_change *view_change);
+
+View_change_ack *new_view_change_ack(View v, int vc_replica_id,
+                                     Digest const &digest);
 
 View_change_ack *load_view_change_ack(int replica_id, int vc_replica_id);
 void store_view_change_ack(View_change_ack *view_change_ack);

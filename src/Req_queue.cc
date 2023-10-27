@@ -76,8 +76,10 @@ bool Req_queue::remove(int cid, Request_id rid) {
     nelems--;
     nbytes -= cn.r->size();
 
+#ifndef STATIC_LOG_ALLOCATOR
     delete cn.r;
-    cn.r = 0;
+#endif
+    cn.r = nullptr;
 
     if (cn.prev == 0) {
       th_assert(head == &cn, "Invalid state");

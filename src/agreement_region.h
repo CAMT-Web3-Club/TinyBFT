@@ -3,6 +3,7 @@
 
 #include <cstddef>
 
+#include "Req_queue.h"
 #include "parameters.h"
 #include "types.h"
 
@@ -15,6 +16,8 @@ class Commit;
 namespace agreement_region {
 
 size_t memory_demand();
+
+Pre_prepare *new_pre_prepare(View v, Seqno n, Req_queue &requests);
 
 Pre_prepare *load_pre_prepare(Seqno n);
 void store_pre_prepare(Pre_prepare *Pre_prepare);

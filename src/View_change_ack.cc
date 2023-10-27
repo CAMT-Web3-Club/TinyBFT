@@ -10,6 +10,18 @@ namespace libbyzea {
 View_change_ack::View_change_ack(View v, [[maybe_unused]] int id, int vcid,
                                  Digest const &vcd)
     : Message(View_change_ack_tag, sizeof(View_change_ack_rep) + MAC_size) {
+  init(v, vcid, vcd);
+}
+
+#ifdef STATIC_LOG_ALLOCATOR
+View_change_ack::View_change_ack(View_change_ack_rep *cont, View v, int vcid,
+                                 Digest const &vcd)
+    : Message(View_change_ack_tag, cont) {
+  init(v, vcid, vcd);
+}
+#endif
+
+void View_change_ack::init(View v, int vcid, Digest const &vcd) {
   rep().v = v;
   rep().id = node->id();
   rep().vcid = vcid;

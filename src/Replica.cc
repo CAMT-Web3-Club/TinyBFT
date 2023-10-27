@@ -528,7 +528,11 @@ void Replica::send_pre_prepare() {
     // in rqueue, log message and multicast the pre_prepare.
     seqno++;
     //    fprintf(stderr, "Sending PP seqno %qd\n", seqno);
+#ifndef STATIC_LOG_ALLOCATOR
     Pre_prepare *pp = new Pre_prepare(view(), seqno, rqueue);
+#else
+    Pre_prepare *pp = agreement_region::new_pre_prepare(view(), seqno, rqueue);
+#endif
 
     // TODO: should make code match my proof with request removed
     // only when executed rather than removing them from rqueue when the
@@ -538,9 +542,6 @@ void Replica::send_pre_prepare() {
     MEMSTATS_SET_MEM_TYPE(MEM_TYPE_CERTIFICATE_LOGS);
     plog.fetch(seqno).add_mine(pp);
     MEMSTATS_RESTORE_MEM_TYPE();
-#ifdef STATIC_LOG_ALLOCATOR
-    delete pp;
-#endif
   }
 }
 

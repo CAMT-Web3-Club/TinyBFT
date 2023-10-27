@@ -1,5 +1,6 @@
 #include "Prepare.h"
 
+#include "Message.h"
 #include "Message_tags.h"
 #include "Node.h"
 #include "Principal.h"
@@ -15,6 +16,27 @@ Prepare::Prepare(View v, Seqno s, Digest &d, Principal *dst)
 #else
               +((dst) ? MAC_size : node->sig_size()))) {
 #endif
+  init(v, s, d, dst);
+}
+
+#ifdef STATIC_LOG_ALLOCATOR
+Prepare::Prepare(Prepare_rep *cont, View v, Seqno s, Digest &d, Principal *dst)
+    : Message(Prepare_tag, cont) {
+  init(v, s, d, dst);
+  msg->size = sizeof(Prepare_rep);
+#ifndef USE_PKEY
+  if (dst != nullptr) {
+    msg->size += MAC_size;
+  } else {
+    msg->size += node->auth_size();
+  }
+#else
+  msg->size += node->sig_size();
+#endif
+}
+#endif
+
+void Prepare::init(View v, Seqno s, Digest &d, Principal *dst) {
   rep().extra = (dst) ? 1 : 0;
   rep().view = v;
   rep().seqno = s;

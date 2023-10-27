@@ -29,6 +29,11 @@ class View_change_ack : public Message {
  public:
   View_change_ack(View_change_ack_rep* msg) : Message(msg) {}
 
+#ifdef STATIC_LOG_ALLOCATOR
+  View_change_ack(View_change_ack_rep* msg, View v, int vcid,
+                  Digest const& vcd);
+#endif
+
   View_change_ack(View v, int id, int vcid, Digest const& vcd);
   // Effects: Creates a new authenticated View_change_ack message for
   // replica "id" stating that replica "vcid" sent out a view-change
@@ -70,6 +75,8 @@ class View_change_ack : public Message {
 #endif
 
  private:
+  void init(View v, int vcid, Digest const& vcd);
+
   View_change_ack_rep& rep() const;
   // Effects: Casts contents to a View_change_ack_rep&
 };

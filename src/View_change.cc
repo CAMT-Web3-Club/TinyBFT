@@ -11,6 +11,18 @@ namespace libbyzea {
 
 View_change::View_change(View v, Seqno ls, int id)
     : Message(View_change_tag, Max_message_size) {
+  init(v, ls, id);
+}
+
+#ifdef STATIC_LOG_ALLOCATOR
+View_change::View_change(View_change_rep *cont, View v, Seqno ls, int id)
+    : Message(View_change_tag, cont) {
+  init(v, ls, id);
+  msg->size = sizeof(View_change_rep);
+}
+#endif
+
+void View_change::init(View v, Seqno ls, int id) {
   rep().v = v;
   rep().ls = ls;
   rep().id = id;

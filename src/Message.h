@@ -139,12 +139,19 @@ class Message {
   // Effects: Creates a message with tag "t" that can hold up to "sz"
   // bytes. Useful to create messages to send to the network.
 
-  Message(Message_rep *contents);
   // Requires: "contents" contains a valid Message_rep.
   // Effects: Creates a message from "contents". No copy is made of
   // "contents" and the storage associated with "contents" is not
   // deallocated if the message is later deleted. Useful to create
   // messages from reps contained in other messages.
+  Message(Message_rep *contents);
+
+#ifdef STATIC_LOG_ALLOCATOR
+  /**
+   * Works just like the above constructor, except it also sets the tag.
+   */
+  Message(int t, Message_rep *contents);
+#endif
 
   void set_size(int size);
   // Effects: Sets message size to the smallest multiple of 8 bytes

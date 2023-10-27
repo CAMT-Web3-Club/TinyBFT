@@ -36,6 +36,10 @@ class Prepare : public Message {
   // iff prepare is sent to a single replica "dst" as proof of
   // authenticity for a request.
 
+#ifdef STATIC_LOG_ALLOCATOR
+  Prepare(Prepare_rep *cont, View v, Seqno s, Digest &d, Principal *dst = 0);
+#endif
+
   void re_authenticate(Principal *p = 0);
   // Effects: Recomputes the authenticator in the message using the
   // most recent keys. If "p" is not null, may only update "p"'s
@@ -73,6 +77,8 @@ class Prepare : public Message {
   // true. Otherwise, it returns false.
 
  private:
+  void init(View v, Seqno s, Digest &d, Principal *dst = nullptr);
+
   Prepare_rep &rep() const;
   // Effects: Casts contents to a Prepare_rep&
 };

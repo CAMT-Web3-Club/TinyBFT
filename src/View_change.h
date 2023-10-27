@@ -82,6 +82,8 @@ class View_change : public Message {
  public:
   View_change(View_change_rep *msg) : Message(msg) {}
 
+  View_change(View_change_rep *cont, View v, Seqno ls, int id);
+
   View_change(View v, Seqno ls, int id);
   // Effects: Creates a new (unauthenticated) View_change message for
   // replica "id" in view "v". The message states that "ls" is the
@@ -160,6 +162,8 @@ class View_change : public Message {
   // If the conversion is successful it trims excess allocation.
 
  private:
+  void init(View v, Seqno ls, int id);
+
   View_change_rep &rep() const;
   // Effects: Casts "msg" to a View_change_rep&
 

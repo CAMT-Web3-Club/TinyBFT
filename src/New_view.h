@@ -67,6 +67,10 @@ class New_view : public Message {
   // Effects: Creates a new (unsigned) New_view message with an empty
   // set of view change messages.
 
+#ifdef STATIC_LOG_ALLOCATOR
+  New_view(New_view_rep* msg, View v);
+#endif
+
   void add_view_change(int id, Digest& d);
   // Requires: Only one view-change per id may be added and id must be
   // a valid replica id.
