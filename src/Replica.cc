@@ -365,6 +365,7 @@ void Replica::recv() {
 #endif
 
     // TODO: This should probably be a jump table.
+    // fprintf(stderr, "%s\n", m->stag());
     switch (m->tag()) {
       case Request_tag:
         gen_handle<Request>(m);
