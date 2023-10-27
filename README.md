@@ -128,20 +128,6 @@ Note that a larger amount of checkpoints means that potentially more memory has
 to be allocated to safe checkpoint state if there exist many checkpoints that
 are not stable, yet.
 
-#### Tuning the Log Allocator (LOG_CHUNK_SIZE, LOG_NUM_CHUNKS)
-
-```sh
-cmake -DLOG_CHUNK_SIZE=4096 -DLOG_NUM_CHUNKS=8 ..
-```
-
-The original PBFT library came with a special memory allocator used for
-messages. This allocator allocates the memory it manages via `mmap(2)` in chunks
-of size `LOG_CHUNK_SIZE * LOG_NUM_CHUNKS`. Furthermore, it requires the memory
-returned by `mmap(2)` to be aligned to `LOG_CHUNK_SIZE`. This can be problematic
-on architectures that do not have virtual memory (e.g. embedded platforms).
-Therefore, it can be useful to reduce the chunk size and number of chunks
-allocated by a single mmap.
-
 #### Enable Recovery Suppport (ENABLE_RECOVERY)
 
 ```sh

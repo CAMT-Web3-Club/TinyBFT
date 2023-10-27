@@ -50,14 +50,6 @@ if (DEFINED CHECKPOINT_INTERVAL)
     target_compile_definitions(byzea PUBLIC CHECKPOINT_INTERVAL=${CHECKPOINT_INTERVAL})
 endif()
 
-if (DEFINED LOG_CHUNK_SIZE)
-    target_compile_definitions(byzea PUBLIC LOG_CHUNK_SIZE=${LOG_CHUNK_SIZE})
-endif()
-
-if (DEFINED LOG_NUM_CHUNKS)
-    target_compile_definitions(byzea PUBLIC LOG_NUM_CHUNKS=${LOG_NUM_CHUNKS})
-endif()
-
 if (DEFINED ENABLE_RECOVERY)
     target_compile_definitions(byzea PUBLIC RECOVERY=1)
 endif()
