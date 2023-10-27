@@ -47,14 +47,13 @@ void Principal::set_in_key(const unsigned *k) {
 }
 
 bool Principal::verify_mac(const char *src, unsigned src_len, const char *mac,
-                           const char *unonce, Hmac &hmac) {
+                           Hmac &hmac) {
   // Do not accept MACs sent with uninitialized keys.
   if (!hmac.is_initialized()) {
     return false;
   }
 
   hmac.reset();
-  hmac.update(unonce, UNonce_size);
   hmac.update(src, src_len);
   return hmac.equals(mac);
 }
@@ -62,9 +61,8 @@ bool Principal::verify_mac(const char *src, unsigned src_len, const char *mac,
 long long Principal::umac_nonce = 0;
 
 void Principal::gen_mac(const char *src, unsigned src_len, char *dst,
-                        const char *unonce, Hmac &hmac) {
+                        Hmac &hmac) {
   hmac.reset();
-  hmac.update(unonce, UNonce_size);
   hmac.update(src, src_len);
   hmac.sum(dst);
 }

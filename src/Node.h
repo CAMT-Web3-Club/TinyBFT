@@ -243,8 +243,7 @@ inline int Node::primary() const { return cur_primary; }
 
 inline int Node::auth_size(int id) const {
   if (id < 0) id = node_id;
-  return ((id < num_replicas) ? num_replicas - 1 : num_replicas) * HMAC_size +
-         UNonce_size;
+  return ((id < num_replicas) ? num_replicas - 1 : num_replicas) * HMAC_size;
 }
 
 inline void Node::gen_auth_out(char *src, unsigned src_len, char *dest) const {

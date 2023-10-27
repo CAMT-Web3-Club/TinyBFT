@@ -322,18 +322,20 @@ void Node::gen_auth(char *s, unsigned l, bool in, char *dest) const {
   INCR_OP(num_gen_auth);
   START_CC(gen_auth_cycles);
 
+#if 0
   long long unonce = Principal::new_umac_nonce();
   memcpy(dest, (char *)&unonce, UNonce_size);
   dest += UNonce_size;
+#endif
 
   for (int i = 0; i < num_replicas; i++) {
     // Skip myself.
     if (i == node_id) continue;
 
     if (in)
-      principals[i]->gen_mac_in(s, l, dest, (char *)&unonce);
+      principals[i]->gen_mac_in(s, l, dest);
     else
-      principals[i]->gen_mac_out(s, l, dest, (char *)&unonce);
+      principals[i]->gen_mac_out(s, l, dest);
     dest += HMAC_size;
   }
 
@@ -350,13 +352,15 @@ bool Node::verify_auth(int i, char *s, unsigned l, bool in, char *dest) const {
 
   // Principal never verifies its own authenticator.
   if (p != 0 && i != node_id) {
+#if 0
     long long unonce;
     memcpy((char *)&unonce, dest, UNonce_size);
     dest += UNonce_size;
+#endif
     int offset = node_id * HMAC_size;
     if (node_id > i) offset -= HMAC_size;
-    bool ret = (in) ? p->verify_mac_in(s, l, dest + offset, (char *)&unonce)
-                    : p->verify_mac_out(s, l, dest + offset, (char *)&unonce);
+    bool ret = (in) ? p->verify_mac_in(s, l, dest + offset)
+                    : p->verify_mac_out(s, l, dest + offset);
 
     STOP_CC(ver_auth_cycles);
     return ret;
