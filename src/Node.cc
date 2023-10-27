@@ -49,10 +49,6 @@ Node::Node(MEM_STATS_PARAM FILE *config_file,
            const std::string &private_key_file, short req_port) {
   node = this;
 
-#ifdef STATIC_LOG_ALLOCATOR
-  special_region::init();
-#endif
-
 #ifdef NO_IP_MULTICAST
   fprintf(stderr, "WARNING: disabled multicast\n");
 #endif
@@ -210,7 +206,11 @@ Node::Node(MEM_STATS_PARAM FILE *config_file,
   // Compute new timestamp for cur_rid
   new_tstamp();
 
-  last_new_key = 0;
+#ifdef STATIC_LOG_ALLOCATOR
+  last_new_key = special_region::load_new_key();
+#else
+  last_new_key = nullptr;
+#endif
   atimer = new ITimer(at, atimer_handler);
   MEM_STATS_GUARD_POP();
 }
@@ -439,14 +439,13 @@ void atimer_handler() {
 }
 
 void Node::send_new_key() {
+#ifdef STATIC_LOG_ALLOCATOR
+  last_new_key->refresh_keys();
+#else
   delete last_new_key;
 
   // Multicast new key to all replicas.
   last_new_key = new New_key();
-#ifdef STATIC_LOG_ALLOCATOR
-  auto tmp = last_new_key->persist();
-  delete last_new_key;
-  last_new_key = tmp;
 #endif
   send(last_new_key, All_replicas);
 

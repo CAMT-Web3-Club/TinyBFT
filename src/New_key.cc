@@ -7,57 +7,7 @@
 
 namespace libbyzea {
 
-New_key::New_key() : Message(New_key_tag, Max_message_size) {
-  unsigned key[Key_size_u];
-
-  rep().rid = node->new_rid();
-  rep().padding = 0;
-  rep().id = node->id();
-
-  // We mainly update our own principal in order to store the timestamp New_key
-  // message.  The random key is not strictly necessary, because we never verify
-  // our own messages.  We are doing it anyway just to be safe.
-  random_key(key);
-  node->principal()->set_out_key(key, rep().rid);
-
-  // Get new keys and encrypt them
-  Principal *p;
-  char *dst = contents() + sizeof(New_key_rep);
-  size_t dst_len = Max_message_size - sizeof(New_key_rep);
-  for (int i = 0; i < node->n(); i++) {
-    // Skip myself.
-    if (i == node->id()) continue;
-
-    random_key(key);
-    p = node->i_to_p(i);
-    p->set_in_key(key);
-    unsigned ssize = p->encrypt((char *)key, Key_size, dst, dst_len);
-    th_assert(ssize != 0U, "Message is too small");
-    dst += ssize;
-    dst_len -= ssize;
-  }
-  // set my size to reflect the amount of space in use
-  set_size(Max_message_size - dst_len);
-
-  // Compute signature and update size.
-  p = node->principal();
-  int old_size = size();
-  th_assert(dst_len >= p->sig_size(), "Message is too small");
-  set_size(size() + p->sig_size());
-  node->gen_signature(contents(), old_size, contents() + old_size);
-}
-
-#ifdef STATIC_LOG_ALLOCATOR
-New_key::~New_key() {
-  if (msg == nullptr) {
-    return;
-  }
-
-  if (!in_scratch_) {
-    special_region::free_new_key(this);
-  }
-}
-#endif
+New_key::New_key() : Message(New_key_tag, Max_message_size) { refresh_keys(); }
 
 bool New_key::verify() {
   // If bad principal or old message discard.
@@ -108,6 +58,46 @@ bool New_key::convert(Message *m1, New_key *&m2) {
   m1->trim();
   m2 = (New_key *)m1;
   return true;
+}
+
+void New_key::refresh_keys() {
+  unsigned key[Key_size_u];
+
+  rep().rid = node->new_rid();
+  rep().padding = 0;
+  rep().id = node->id();
+
+  // We mainly update our own principal in order to store the timestamp New_key
+  // message.  The random key is not strictly necessary, because we never verify
+  // our own messages.  We are doing it anyway just to be safe.
+  random_key(key);
+  node->principal()->set_out_key(key, rep().rid);
+
+  // Get new keys and encrypt them
+  Principal *p;
+  char *dst = contents() + sizeof(New_key_rep);
+  size_t dst_len = Max_message_size - sizeof(New_key_rep);
+  for (int i = 0; i < node->n(); i++) {
+    // Skip myself.
+    if (i == node->id()) continue;
+
+    random_key(key);
+    p = node->i_to_p(i);
+    p->set_in_key(key);
+    unsigned ssize = p->encrypt((char *)key, Key_size, dst, dst_len);
+    th_assert(ssize != 0U, "Message is too small");
+    dst += ssize;
+    dst_len -= ssize;
+  }
+  // set my size to reflect the amount of space in use
+  set_size(Max_message_size - dst_len);
+
+  // Compute signature and update size.
+  p = node->principal();
+  int old_size = size();
+  th_assert(dst_len >= p->sig_size(), "Message is too small");
+  set_size(size() + p->sig_size());
+  node->gen_signature(contents(), old_size, contents() + old_size);
 }
 
 }  // namespace libbyzea

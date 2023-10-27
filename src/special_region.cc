@@ -4,6 +4,7 @@
 #include <new>
 
 #include "Log_allocator.h"
+#include "Message_tags.h"
 #include "Meta_data_d.h"
 #include "New_key.h"
 #include "New_view.h"
@@ -55,7 +56,10 @@ struct NewKeyBlock {
   New_key new_key_;
   char msg_[max_new_key_size] __attribute__((aligned(ALIGNMENT)));
 
-  NewKeyBlock() : new_key_(reinterpret_cast<New_key_rep *>(msg_)) {}
+  NewKeyBlock() : new_key_(reinterpret_cast<New_key_rep *>(msg_)) {
+    auto nkr = reinterpret_cast<New_key_rep *>(msg_);
+    nkr->tag = New_key_tag;
+  }
   ~NewKeyBlock() {}
 };
 
@@ -74,14 +78,10 @@ static MetaDataDBlock metadata_ds[MAX_NUM_REPLICAS];
 static NewKeyBlock new_key;
 static RequestBlock requests[max_num_clients];
 
-static constexpr int MAGIC = 0xaa5555aa;
-
 size_t memory_demand() {
   return sizeof(new_views) + sizeof(view_changes) + sizeof(view_change_acks) +
          sizeof(metadata_ds) + sizeof(new_key) + sizeof(requests);
 }
-
-void init() { free_new_key(&new_key.new_key_); }
 
 New_view *load_new_view(Seqno view) {
   return &new_views[node->primary(view)].new_view_;
@@ -135,24 +135,7 @@ void store_metadata_d(Meta_data_d *meta_data_d) {
               meta_data_d->size());
 }
 
-New_key *load_new_key() {
-  th_assert(new_key.new_key_.id() != MAGIC, "New_key is freed");
-  return &new_key.new_key_;
-}
-
-void store_new_key(New_key *msg) {
-  th_assert(new_key.new_key_.id() == MAGIC, "New_key already in use");
-  th_assert((size_t)msg->size() <= max_new_key_size, "New_key_rep too large");
-  std::memcpy(&new_key.msg_, msg->contents(), msg->size());
-}
-
-void free_new_key([[maybe_unused]] New_key *msg) {
-  th_assert(msg == &new_key.new_key_, "Invalid free pointer");
-  th_assert(new_key.new_key_.id() != MAGIC, "Double free");
-
-  auto rep = reinterpret_cast<New_key_rep *>(new_key.msg_);
-  rep->id = MAGIC;
-}
+New_key *load_new_key() { return &new_key.new_key_; }
 
 Request *load_request(int client_id) {
   return &requests[client_id - 4].request_;

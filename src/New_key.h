@@ -39,10 +39,6 @@ class New_key : public Message {
 
   New_key(New_key_rep *msg) : Message(msg) {}
 
-#ifdef STATIC_LOG_ALLOCATOR
-  ~New_key();
-#endif
-
   int id() const;
   // Effects: Fetches the identifier of the replica from the message.
 
@@ -51,15 +47,16 @@ class New_key : public Message {
   // rep().id. If the message is correct updates the entry for
   // rep().id accordingly (i.e., out-key, tstamp.)
 
-#ifdef STATIC_LOG_ALLOCATOR
-  New_key *persist();
-#endif
-
   static bool convert(Message *m1, New_key *&m2);
   // Effects: If "m1" has the right size and tag of a "New_key",
   // casts "m1" to a "New_key" pointer, returns the pointer in
   // "m2" and returns true. Otherwise, it returns false.
   // If the conversion is successful it trims excess allocation.
+
+  /**
+   * Refresh secret key material.
+   */
+  void refresh_keys();
 
  private:
   New_key_rep &rep() const;
@@ -73,12 +70,6 @@ inline New_key_rep &New_key::rep() const {
 
 inline int New_key::id() const { return rep().id; }
 
-#ifdef STATIC_LOG_ALLOCATOR
-inline New_key *New_key::persist() {
-  special_region::store_new_key(this);
-  return special_region::load_new_key();
-}
-#endif
 }  // namespace libbyzea
 
 #endif  // _New_key_h
