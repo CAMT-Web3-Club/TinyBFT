@@ -3,12 +3,15 @@
 
 #include "Digest.h"
 #include "Message.h"
+#include "Pre_prepare.h"
 #include "scratch_allocator.h"
 #include "special_region.h"
 #include "types.h"
 
 #ifndef MAX_REQUEST_SIZE
-#define MAX_REQUEST_SIZE 8
+#define MAX_REQUEST_SIZE                                             \
+  (MAX_MESSAGE_SIZE - sizeof(Pre_prepare_rep) - AUTHENTICATOR_SIZE - \
+   sizeof(Request_rep) - 256)
 #endif
 
 namespace libbyzea {
