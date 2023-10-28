@@ -38,6 +38,7 @@
 #include "View_change_ack.h"
 #include "checkpoint_record.h"
 #include "checkpoint_record_log.h"
+#include "special_region.h"
 #include "th_assert.h"
 
 // TODO check if includes are necessary at their positions or can be moved to
@@ -158,6 +159,10 @@ void Replica::print_memory_consumption([[maybe_unused]] const size_t mem_size) {
           checkpoint_region::memory_demand());
   fprintf(stderr, "sizeof(special_region) = %zu\n",
           special_region::memory_demand());
+  fprintf(stderr, "sizeof(special_region::view) = %zu\n",
+          special_region::memory_demand_view());
+  fprintf(stderr, "sizeof(special_region::checkpoints) = %zu\n",
+          special_region::memory_demand_checkpoints());
   fprintf(stderr, "sizeof(scratch_region) = %zu\n",
           scratch_allocator::memory_demand());
 #endif

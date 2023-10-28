@@ -18,6 +18,13 @@ class Request;
 
 namespace special_region {
 
+size_t memory_demand_checkpoints();
+
+size_t memory_demand_view();
+
+size_t memory_demand_crypto();
+
+size_t memory_demand_requests();
 size_t memory_demand();
 
 New_view *new_new_view(View v);

@@ -78,6 +78,16 @@ static MetaDataDBlock metadata_ds[MAX_NUM_REPLICAS];
 static NewKeyBlock new_key;
 static RequestBlock requests[max_num_clients];
 
+size_t memory_demand_checkpoints() { return sizeof(metadata_ds); }
+
+size_t memory_demand_view() {
+  return sizeof(new_views) + sizeof(view_changes) + sizeof(view_change_acks);
+}
+
+size_t memory_demand_crypto() { return sizeof(new_key); }
+
+size_t memory_demand_requests() { return sizeof(requests); }
+
 size_t memory_demand() {
   return sizeof(new_views) + sizeof(view_changes) + sizeof(view_change_acks) +
          sizeof(metadata_ds) + sizeof(new_key) + sizeof(requests);
