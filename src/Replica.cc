@@ -99,59 +99,27 @@ void Replica::retransmit(T *m, Time &cur, Time *tsent, Principal *p) {
 }
 
 void Replica::print_memory_consumption([[maybe_unused]] const size_t mem_size) {
-#if 0
-  State::print_memory_consumption(mem_size);
-
-  size_t size = sizeof(Replica) + 4 * sizeof(ITimer) + 4 * sizeof(View) +
-                4 * sizeof(Checkpoint *);
-  fprintf(stderr, "Replica: %lu\n", size);
-  size = sizeof(Node) + sizeof(RsaPrivateKey) + sizeof(ITimer) +
-         // sizeof(umac_ctx) = 1528
-         6 * (sizeof(Principal) +
-              (sizeof(RsaPublicKey) + sizeof(mbedtls_rsa_context)) + 1528);
-  fprintf(stderr, "Node: %lu\n", size);
-
-  size = Log<Prepared_cert>::memory_consumption(max_out) +
-         sizeof(Log<Prepared_cert>);
-  fprintf(stderr, "Log<Prepared_cert>: %lu\n", size);
-  size = Log<Certificate<Commit>>::memory_consumption(max_out) +
-         sizeof(Log<Certificate<Commit>>);
-  fprintf(stderr, "Log<Certificate<Commit>>: %lu\n", size);
-  size = Log<Certificate<Checkpoint>>::memory_consumption(2 * max_out) +
-         sizeof(Log<Certificate<Checkpoint>>);
-  fprintf(stderr, "Log<Certificate<Checkpoint>>: %lu\n", size);
-
-  fprintf(stderr, "Pre-Prepare: %lu\n", Max_message_size);
-  fprintf(stderr, "Prepare: %lu\n",
-          sizeof(Prepare) + sizeof(Prepare_rep) + (4 * (MAC_size)));
-  fprintf(stderr, "Commit: %lu\n",
-          sizeof(Commit) + sizeof(Commit_rep) + (4 * (MAC_size)));
-  fprintf(stderr, "Checkpoint: %lu\n",
-          sizeof(Checkpoint) + sizeof(Checkpoint_rep) + (4 * (MAC_size)));
-#endif
-
-  fprintf(stderr, "\n\n\n");
   fprintf(stderr, "sizeof(Replica) = %zu\n", sizeof(Replica));
-  fprintf(stderr, "sizeof(Node) = %zu\n", sizeof(Node));
-  fprintf(stderr, "sizeof(Prepared_cert) = %zu\n", sizeof(Prepared_cert));
+
   fprintf(stderr, "sizeof(State) = %zu\n", sizeof(State));
+  fprintf(stderr, "sizeof(Set<Checkpoint>) = %zu\n", sizeof(Set<Checkpoint>));
+
   fprintf(stderr, "sizeof(View_info) = %zu\n", sizeof(View_info));
-  fprintf(stderr, "sizeof(CheckpointRecordLog) = %zu\n",
-          sizeof(CheckpointRecordLog));
-  // fprintf(stderr, "sizeof(Checkpoint_rec) = %u\n", sizeof(Checkpoint_rec));
-  fprintf(stderr, "sizeof(CheckpointRecord) = %zu\n", sizeof(CheckpointRecord));
+
   fprintf(stderr, "sizeof(Log<Prepared_cert>) = %zu\n",
           sizeof(Log<Prepared_cert>));
-  fprintf(stderr, "sizeof(Certificate<Commit>) = %zu\n",
-          sizeof(Certificate<Commit>));
   fprintf(stderr, "sizeof(Log<Certificate<Commit>>) = %zu\n",
           sizeof(Log<Certificate<Commit>>));
-  fprintf(stderr, "sizeof(Certificate<Checkpoint>) = %zu\n",
-          sizeof(Certificate<Checkpoint>));
+#ifdef ALTERNATIVE_CHECKPOINT_LOG
+  fprintf(stderr, "sizeof(CheckpointLog) = %zu\n", sizeof(CheckpointLog));
+#else
   fprintf(stderr, "sizeof(Log<Certificate<Checkpoint>>) = %zu\n",
           sizeof(Log<Certificate<Checkpoint>>));
-  fprintf(stderr, "sizeof(CheckpointLog) = %zu\n", sizeof(CheckpointLog));
-  fprintf(stderr, "sizeof(OReq_info) = %zu", sizeof(View_info::OReq_info));
+#endif
+
+  fprintf(stderr, "sizeof(Certificate<Reply>) = %zu\n",
+          sizeof(Certificate<Reply>));
+
 #ifdef STATIC_LOG_ALLOCATOR
   fprintf(stderr, "sizeof(agreement_region) = %zu\n",
           agreement_region::memory_demand());
@@ -159,9 +127,9 @@ void Replica::print_memory_consumption([[maybe_unused]] const size_t mem_size) {
           checkpoint_region::memory_demand());
   fprintf(stderr, "sizeof(special_region) = %zu\n",
           special_region::memory_demand());
-  fprintf(stderr, "sizeof(special_region::view) = %zu\n",
+  fprintf(stderr, "sizeof(special_region_view) = %zu\n",
           special_region::memory_demand_view());
-  fprintf(stderr, "sizeof(special_region::checkpoints) = %zu\n",
+  fprintf(stderr, "sizeof(special_region_checkpoints) = %zu\n",
           special_region::memory_demand_checkpoints());
   fprintf(stderr, "sizeof(scratch_region) = %zu\n",
           scratch_allocator::memory_demand());
