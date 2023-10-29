@@ -5,6 +5,7 @@
 
 #include "Array.h"
 #include "Digest.h"
+#include "Principal.h"
 #include "Reply.h"
 #include "State_defs.h"
 #include "Time.h"
@@ -101,7 +102,7 @@ class Rep_info {
   int nps;
   char *mem;
   Array<Reply *> reps;  // Array of replies indexed by principal id.
-  static const int Max_rep_size = MAX_REPLY_SIZE;
+  static const int Max_rep_size = MAX_REPLY_SIZE + sizeof(Reply_rep) + MAC_size;
 
   struct Rinfo {
     bool tentative;  // True if last reply is tentative and was not committed.
