@@ -30,6 +30,7 @@
 #include "Query_stable.h"
 #include "Reply.h"
 #include "Reply_stable.h"
+#include "Req_queue.h"
 #include "Request.h"
 #include "State_defs.h"
 #include "Statistics.h"
@@ -120,6 +121,7 @@ void Replica::print_memory_consumption([[maybe_unused]] const size_t mem_size) {
   fprintf(stderr, "sizeof(Certificate<Reply>) = %zu\n",
           sizeof(Certificate<Reply>));
 
+  fprintf(stderr, "sizeof(Req_queue) = %zu\n", sizeof(Req_queue));
 #ifdef STATIC_LOG_ALLOCATOR
   fprintf(stderr, "sizeof(agreement_region) = %zu\n",
           agreement_region::memory_demand());
@@ -704,7 +706,9 @@ void Replica::handle(Checkpoint *m) {
         Time *t = nullptr;
         clog.fetch(last_executed).mine(&t);
         MEMSTATS_RESTORE_MEM_TYPE();
-        late &= diffTime(currentTime(), *t) > 200000;
+        if (t != nullptr) {
+          late &= diffTime(currentTime(), *t) > 200000;
+        }
       }
       MEMSTATS_RESTORE_MEM_TYPE();
 
@@ -1618,7 +1622,9 @@ void Replica::mark_stable(Seqno n, bool have_state) {
       Seqno cn = c->seqno();
       if (cn < last_stable) {
         c = sset.remove(i);
+#ifndef STATIC_LOG_ALLOCATOR
         delete c;
+#endif
         continue;
       }
 

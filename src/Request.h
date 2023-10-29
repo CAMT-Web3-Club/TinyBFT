@@ -63,6 +63,10 @@ class Request : public Message {
   // is made of "contents" and the storage associated with "contents"
   // is not deallocated if the message is later deleted.
 
+#ifdef STATIC_LOG_ALLOCATOR
+  Request(Request_rep *contents, Request_id r, short rr = -1);
+#endif
+
   Request *clone() const;
   // Effects: Clones this.
 

@@ -168,7 +168,7 @@ Node::Node(MEM_STATS_PARAM FILE *config_file,
   }
 
 #define WANMCAST 0
-#ifdef WANMCAST
+#if WANMCAST
   // Set TTL larger than 1 to enable multicast across routers.
   u_char i = 20;
   error = setsockopt(sock, IPPROTO_IP, IP_MULTICAST_TTL, (char *)&i, sizeof(i));

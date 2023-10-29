@@ -22,6 +22,7 @@ Pre_prepare::Pre_prepare(View v, Seqno s, Req_queue &reqs)
 #ifdef STATIC_LOG_ALLOCATOR
 Pre_prepare::Pre_prepare(Pre_prepare_rep *msg, View v, Seqno s, Req_queue &reqs)
     : Message(Pre_prepare_tag, msg) {
+  msg->size = Max_message_size;
   fill(v, s, reqs);
 }
 #endif

@@ -309,8 +309,10 @@ inline View_info::OReq_info::~OReq_info() {
 }
 
 inline void View_info::OReq_info::clear() {
+#ifndef STATIC_LOG_ALLOCATOR
   delete m;
-  m = 0;
+#endif
+  m = nullptr;
   v = -1;
   lv = -1;
   d.zero();

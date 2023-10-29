@@ -23,6 +23,17 @@ Request::Request(Request_id r, short rr)
   set_size(sizeof(Request_rep));
 }
 
+#ifdef STATIC_LOG_ALLOCATOR
+Request::Request(Request_rep *cont, Request_id r, short rr)
+    : Message(Request_tag, cont) {
+  cont->size = max_request_size;
+  rep().cid = node->id();
+  rep().rid = r;
+  rep().replier = rr;
+  rep().command_size = 0;
+}
+#endif
+
 Request *Request::clone() const {
   Request *ret = (Request *)new Message(max_size);
   memcpy(ret->msg, msg, msg->size);

@@ -2,6 +2,7 @@
 
 #include "Certificate.h"
 #include "Node.h"
+#include "scratch_allocator.h"
 
 // TODO: Certificates already only use f+1 distinct messages to be considered
 // correct. Therefore, we can simply use cur_size as the slot and reduce number
@@ -118,7 +119,13 @@ bool Certificate<T>::add(T *m) {
       if (m->verify()) bmap.set(id);
     }
   }
+#ifdef STATIC_LOG_ALLOCATOR
+  if (scratch_allocator::is_in_scratch(m->contents())) {
+    delete m;
+  }
+#else
   delete m;
+#endif
   return false;
 }
 
