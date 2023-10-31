@@ -38,7 +38,7 @@ Node *node = 0;
 // Enable statistics
 #include "Statistics.h"
 
-#define NO_IP_MULTICAST
+// #define NO_IP_MULTICAST
 
 namespace libbyzea {
 
