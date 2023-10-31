@@ -38,8 +38,8 @@ void Pre_prepare::fill(View v, Seqno s, Req_queue &reqs) {
   // and compute digest.
   char *next_req = requests();
 #ifndef USE_PKEY
-  char *max_req =
-      next_req + msize() - replica->max_nd_bytes() - node->auth_size();
+  char *max_req = next_req + msize() - sizeof(Pre_prepare_rep) -
+                  replica->max_nd_bytes() - node->auth_size();
 #else
   char *max_req =
       next_req + msize() - replica->max_nd_bytes() - node->sig_size();
