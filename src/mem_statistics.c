@@ -16,7 +16,7 @@ static long runtime_allocations[NUM_MEM_TYPES];
 static long call_stack_size = 0;
 static long long total = 0;
 static long long max_total = 0;
-static enum mem_type current_mem_type = MEM_TYPE_NONE;
+static enum mem_type current_mem_type = MEM_TYPE_OTHER;
 static int runtime_logging = 0;
 
 #define BUF_LEN 256

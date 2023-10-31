@@ -1,3 +1,4 @@
+#include "Node.h"
 #ifndef _Request_h
 #define _Request_h 1
 
@@ -108,6 +109,11 @@ class Request : public Message {
   // Effects: Returns true iff the authentication token in the message
   // is a signature.
 
+  /**
+   * Return, whether request is a recovery request.
+   */
+  bool is_recovery() const;
+
   bool verify();
   // Effects: Verifies if the message is authenticated by the client
   // "client_id()" using a signature.
@@ -158,12 +164,13 @@ inline bool Request::is_read_only() const { return rep().extra & 1; }
 
 inline bool Request::is_signed() const { return true; }
 
+inline bool Request::is_recovery() const { return (rep().extra >> 2) & 0x1; }
+
 inline Digest &Request::digest() const { return rep().od; }
 
 #ifdef STATIC_LOG_ALLOCATOR
 inline Request *Request::persist() {
-  th_assert(in_scratch_, "Request is already persisted");
-
+  th_assert(in_scratch_, "message is already persisted");
   special_region::store_request(this);
   return special_region::load_request(client_id());
 }

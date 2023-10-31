@@ -9,12 +9,14 @@
 #include <cstring>
 
 #include "Client.h"
+#include "Node.h"
 #include "Replica.h"
 #include "Reply.h"
 #include "Request.h"
 #include "State_defs.h"
 #include "Statistics.h"
 #include "mem_statistics_guard.h"
+#include "special_region.h"
 
 void Byz_print_memory_consumption(const size_t mem_size) {
   libbyzea::Replica::print_memory_consumption(mem_size);
@@ -53,7 +55,17 @@ int Byz_init_client(const char *conf, const char *conf_priv, short port) {
 void Byz_reset_client() { ((libbyzea::Client *)libbyzea::node)->reset(); }
 
 int Byz_alloc_request(Byz_req *req, [[maybe_unused]] int size) {
-  libbyzea::Request *request = new libbyzea::Request((Request_id)0);
+  libbyzea::Request *request;
+#ifdef STATIC_LOG_ALLOCATOR
+  if (libbyzea::node->is_replica(libbyzea::node->id())) {
+    request =
+        libbyzea::special_region::new_request(libbyzea::replica->new_rid());
+  } else {
+    request = new libbyzea::Request((Request_id)0);
+  }
+#else
+  request = new libbyzea::Request((Request_id)0);
+#endif
   if (request == 0) return -1;
 
   int len;
@@ -65,10 +77,20 @@ int Byz_alloc_request(Byz_req *req, [[maybe_unused]] int size) {
 
 int Byz_send_request(Byz_req *req, [[maybe_unused]] bool ro) {
   libbyzea::Request *request = (libbyzea::Request *)req->opaque;
-  request->request_id() = ((libbyzea::Client *)libbyzea::node)->get_rid();
+  // Replicas already add rid in Byz_alloc_request
+  if (!libbyzea::node->is_replica(libbyzea::node->id())) {
+    request->request_id() = ((libbyzea::Client *)libbyzea::node)->get_rid();
+  } else {
+    request->request_id() = libbyzea::replica->new_rid();
+  }
   request->sign(req->size);
 
-  bool retval = ((libbyzea::Client *)libbyzea::node)->send_request(request);
+  bool retval;
+  if (!libbyzea::node->is_replica(libbyzea::node->id())) {
+    retval = ((libbyzea::Client *)libbyzea::node)->send_request(request);
+  } else {
+    retval = ((libbyzea::Replica *)libbyzea::node)->send_request(request);
+  }
   return (retval) ? 0 : -1;
 }
 
@@ -87,7 +109,13 @@ int Byz_invoke(Byz_req *req, Byz_rep *rep, bool ro) {
 
 void Byz_free_request(Byz_req *req) {
   libbyzea::Request *request = (libbyzea::Request *)req->opaque;
+#ifdef STATIC_LOG_ALLOCATOR
+  if (!libbyzea::node->is_replica(libbyzea::node->id())) {
+    delete request;
+  }
+#else
   delete request;
+#endif
 }
 
 void Byz_free_reply(Byz_rep *rep) {
@@ -145,7 +173,7 @@ int Byz_init_replica(const char *conf, const char *conf_priv, char *mem,
                      unsigned int size,
                      int (*exec)(Byz_req *, Byz_rep *, Byz_buffer *, int, bool),
                      void (*comp_ndet)(Seqno, Byz_buffer *), int ndet_max_len,
-                     short port) {
+                     int (*recv_reply)(Byz_rep *), short port) {
 #ifdef PRINT_MEM_STATISTICS
   libbyzea::MemoryStatisticsGuard mem_guard("Byz_init_replica", true);
 #endif
@@ -185,6 +213,7 @@ int Byz_init_replica(const char *conf, const char *conf_priv, char *mem,
   // Register service-specific functions.
   libbyzea::replica->register_exec(exec);
   libbyzea::replica->register_nondet_choices(comp_ndet, ndet_max_len);
+  libbyzea::replica->register_recv_callback(recv_reply);
 
   return libbyzea::replica->used_state_bytes();
 }

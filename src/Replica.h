@@ -99,6 +99,8 @@ class Replica : public Node {
   // Effects: Registers "n" as the non_det_choices function.
 #endif
 
+  void register_recv_callback(int (*r)(Byz_rep *));
+
   void compute_non_det(Seqno n, char *b, int *b_len);
   // Requires: "b" points to "*b_len" bytes.
   // Effects: Computes non-deterministic choices for sequence number
@@ -159,6 +161,8 @@ class Replica : public Node {
   bool delay_vc();
   // Effects: Returns true iff view change should be delayed.
 
+  bool send_request(Request *request);
+
 #ifndef NO_STATE_TRANSLATION
   char *get_cached_obj(int i);
 #endif
@@ -183,6 +187,7 @@ class Replica : public Node {
   void handle(Data *m);
   void handle(Meta_data *m);
   void handle(Meta_data_d *m);
+  friend Rep_info;
   void handle(Reply *m, bool mine = false);
   void handle(Query_stable *m);
   void handle(Reply_stable *m);
@@ -200,7 +205,7 @@ class Replica : public Node {
   // group:
   //
   void send_pre_prepare();
-  // Effects: Sends a Pre_prepare message
+  // Effects: Sends a Pre_prepare message,
 
   void send_prepare(Prepared_cert &pc);
   // Effects: Sends a prepare message if appropriate.
@@ -397,7 +402,7 @@ class Replica : public Node {
   // Pointers to various functions.
   //
   int (*exec_command)(Byz_req *, Byz_rep *, Byz_buffer *, int, bool);
-
+  int (*reply_callback)(Byz_rep *);
   void (*non_det_choices)(Seqno, Byz_buffer *);
   int max_nondet_choice_len;
 

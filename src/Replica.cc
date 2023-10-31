@@ -12,6 +12,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <cstddef>
+
 #include "Checkpoint.h"
 #include "Commit.h"
 #include "Data.h"
@@ -281,6 +283,10 @@ void Replica::register_nondet_choices(void (*n)(Seqno, Byz_buffer *),
   max_nondet_choice_len = max_len;
 }
 
+void Replica::register_recv_callback(int (*r)(Byz_rep *)) {
+  reply_callback = r;
+}
+
 void Replica::compute_non_det(Seqno s, char *b, int *b_len) {
   if (non_det_choices == 0) {
     *b_len = 0;
@@ -312,6 +318,9 @@ void Replica::recv() {
 
   // Allow recoveries
   rec_ready = true;
+  if (rr != nullptr) {
+    send(rr, primary());
+  }
 
   fprintf(stderr, "Replica ready\n");
 
@@ -1301,7 +1310,7 @@ void Replica::execute_prepared(bool committed) {
         outb.contents = replies.new_reply(cid, outb.size);
         non_det.contents = pp->choices(non_det.size);
 
-        if (is_replica(cid)) {
+        if (is_replica(cid) && req.is_recovery()) {
           // Handle recovery requests, i.e., requests from replicas,
           // differently.  TODO: make more general to allow other types
           // of requests from replicas.
@@ -1401,8 +1410,13 @@ void Replica::execute_committed() {
             // Send committed reply to recovery request.
             if (cid != node_id)
               replies.send_reply(cid, view(), id(), false);
-            else
-              handle(replies.reply(cid)->copy(cid), true);
+            else {
+              if (req.is_recovery()) {
+                handle(replies.reply(cid)->copy(cid), true);
+              } else {
+                handle(replies.reply(cid), true);
+              }
+            }
           }
 
           // Remove the request from rqueue if present.
@@ -1730,7 +1744,7 @@ void Replica::send_status() {
     }
 
     if (rr) {
-      // Retransmit recovery request if I am waiting for one.
+      // Retransmit (recovery) request if I am waiting for one.
       send(rr, All_replicas);
     }
 
@@ -2058,8 +2072,58 @@ void Replica::handle(Reply *m, bool mine) {
   int mid = m->id();
   int mv = m->view();
 
-  if (rr && rr->request_id() == m->request_id() &&
-      (mine || !m->is_tentative())) {
+  if (rr == nullptr || rr->request_id() != m->request_id()) {
+#ifdef STATIC_LOG_ALLOCATOR
+    if (!mine) {
+      delete m;
+    }
+#else
+    delete m;
+#endif
+    return;
+  }
+
+  if (!rr->is_recovery()) {
+    auto added = false;
+    if (mine && rr_reps.mine(nullptr) == nullptr) {
+      added = rr_reps.add_mine(m);
+    } else if (!mine) {
+      added = rr_reps.add(m);
+#ifdef STATIC_LOG_ALLOCATOR
+      if (added) {
+        delete m;
+      }
+#endif
+    }
+
+    if (added && rr_reps.is_complete()) {
+      th_assert(rr_reps.cvalue()->full(), "Invalid State");
+
+      auto rep = rr_reps.cvalue_clear();
+      Byz_rep outb;
+      outb.contents = rep->reply(outb.size);
+      outb.opaque = rep;
+#ifndef STATIC_LOG_ALLOCATOR
+      delete rr;
+#endif
+      rr = nullptr;
+      if (reply_callback != nullptr) {
+        reply_callback(&outb);
+      }
+#ifndef STATIC_LOG_ALLOCATOR
+      delete rep;
+#endif
+    }
+
+#ifndef STATIC_LOG_ALLOCATOR
+    if (!added && !mine) {
+      delete m;
+    }
+#endif
+    return;
+  }
+
+  if (rr->is_recovery() && (mine || m->is_tentative())) {
     // Only accept recovery request replies that are not tentative.
     bool added = (mine) ? rr_reps.add_mine(m) : rr_reps.add(m);
     if (added) {
@@ -2128,6 +2192,17 @@ void Replica::send_null() {
   // requests to allow recoveries to complete.
 }
 
+bool Replica::send_request(Request *request) {
+  if (rr != nullptr) {
+    return false;
+  }
+  if (rec_ready) {
+    send(request, cur_primary);
+  }
+  rr = request;
+
+  return true;
+}
 //
 // Timeout handlers:
 //

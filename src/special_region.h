@@ -15,6 +15,7 @@ class New_key;
 class Meta_data_d;
 class New_view;
 class Request;
+class Reply;
 
 namespace special_region {
 
@@ -51,8 +52,13 @@ void store_metadata_d(Meta_data_d *meta_data_d);
 
 New_key *load_new_key();
 
+Request *new_request(Request_id rid, int rr = -1);
+
 Request *load_request(int client_id);
 void store_request(Request *req);
+
+Reply *load_reply(size_t slot);
+void store_reply(Reply *reply, size_t slot);
 
 }  // namespace special_region
 }  // namespace libbyzea

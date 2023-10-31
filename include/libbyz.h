@@ -224,7 +224,7 @@ int Byz_init_replica(const char *conf, const char *conf_priv, char *mem,
                      unsigned int size,
                      int (*exec)(Byz_req *, Byz_rep *, Byz_buffer *, int, bool),
                      void (*comp_ndet)(Seqno, Byz_buffer *), int ndet_max_len,
-                     short port);
+                     int (*recv_reply)(Byz_rep *), short port);
 /* Requires: "mem" is vm page aligned and "size" is a multiple of the vm page
    size.
 

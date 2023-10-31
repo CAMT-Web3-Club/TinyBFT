@@ -20,7 +20,7 @@ bool Req_queue::append(Request *r) {
   int cid = r->client_id();
   Request_id rid = r->request_id();
   PNode &cn = reqs[cid];
-  if (cn.r != 0) {
+  if (cn.r != nullptr) {
     // There is a request from client cid in reqs.
     if (rid > cn.r->request_id()) {
       remove(cid, rid);

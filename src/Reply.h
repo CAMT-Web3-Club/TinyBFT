@@ -1,3 +1,5 @@
+#include "Node.h"
+#include "special_region.h"
 #ifndef _Reply_h
 #define _Reply_h 1
 
@@ -106,8 +108,8 @@ class Reply : public Message {
   static bool convert(Message *m1, Reply *&m2);
   // Effects: If "m1" has the right size and tag of a "Reply", casts
   // "m1" to a "Reply" pointer, returns the pointer in "m2" and
-  // returns true. Otherwise, it returns false. Convert also trims any
-  // surplus storage from "m1" when the conversion is successfull.
+  // returns true. Otherwise, it returns false. Convert Reply *replyalso trims
+  // any surplus storage from "m1" when the conversion is successfull.
 
  private:
   Reply_rep &rep() const;
@@ -144,7 +146,14 @@ inline bool Reply::match(Reply *r) {
 }
 
 #ifdef STATIC_LOG_ALLOCATOR
-inline Reply *Reply::persist([[maybe_unused]] size_t slot) { return nullptr; }
+inline Reply *Reply::persist(size_t slot) {
+  if (id() == node->id()) {
+    th_assert(!in_scratch_, "Invalid state");
+    return this;
+  }
+  special_region::store_reply(this, slot);
+  return special_region::load_reply(slot);
+}
 #endif
 
 }  // namespace libbyzea

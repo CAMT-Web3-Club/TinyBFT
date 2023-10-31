@@ -8,6 +8,8 @@
 #include "Meta_data_d.h"
 #include "New_key.h"
 #include "New_view.h"
+#include "Rep_info.h"
+#include "Reply.h"
 #include "Request.h"
 #include "View_change.h"
 #include "View_change_ack.h"
@@ -71,12 +73,21 @@ struct RequestBlock {
   ~RequestBlock() {}
 };
 
+struct ReplyBlock {
+  Reply reply_;
+  char msg_[Rep_info::Max_rep_size];
+
+  ReplyBlock() : reply_(reinterpret_cast<Reply_rep *>(msg_)) {}
+  ~ReplyBlock() {}
+};
+
 static NewViewBlock new_views[MAX_NUM_REPLICAS];
 static ViewChangeBlock view_changes[MAX_NUM_REPLICAS];
 static ViewChangeAckBlock view_change_acks[MAX_NUM_REPLICAS][MAX_NUM_REPLICAS];
 static MetaDataDBlock metadata_ds[MAX_NUM_REPLICAS];
 static NewKeyBlock new_key;
-static RequestBlock requests[max_num_clients];
+static RequestBlock requests[max_num_clients + Max_num_replicas];
+static ReplyBlock replies[F + 1];
 
 size_t memory_demand_checkpoints() { return sizeof(metadata_ds); }
 
@@ -169,15 +180,24 @@ void store_metadata_d(Meta_data_d *meta_data_d) {
 
 New_key *load_new_key() { return &new_key.new_key_; }
 
-Request *load_request(int client_id) {
-  return &requests[client_id - 4].request_;
+Request *new_request(Request_id rid, int rr) {
+  auto &b = requests[node->id()];
+  return new (&b.request_)
+      Request(reinterpret_cast<Request_rep *>(b.msg_), rid, rr);
 }
+Request *load_request(int client_id) { return &requests[client_id].request_; }
 
 void store_request(Request *req) {
-  int i = req->client_id() - 4;
+  int i = req->client_id();
   th_assert((size_t)req->size() <= sizeof(requests[i].msg_),
             "Request too large");
   std::memcpy(&requests[i].msg_, req->contents(), req->size());
+}
+
+Reply *load_reply(size_t slot) { return &replies[slot].reply_; }
+
+void store_reply(Reply *reply, size_t slot) {
+  std::memcpy(&replies[slot].msg_, reply->contents(), reply->size());
 }
 
 }  // namespace special_region

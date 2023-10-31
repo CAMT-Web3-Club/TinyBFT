@@ -129,12 +129,16 @@ void Rep_info::send_reply(int pid, View v, int id, bool tentative) {
   rr.replica = id;
   Principal* p = node->i_to_p(pid);
 
-  INCR_OP(reply_auth);
-  START_CC(reply_auth_cycles);
-  p->gen_mac_out(r->contents(), sizeof(Reply_rep), r->contents() + old_size);
-  STOP_CC(reply_auth_cycles);
+  if (pid != node->id()) {
+    INCR_OP(reply_auth);
+    START_CC(reply_auth_cycles);
+    p->gen_mac_out(r->contents(), sizeof(Reply_rep), r->contents() + old_size);
+    STOP_CC(reply_auth_cycles);
 
-  node->send(r, pid);
+    node->send(r, pid);
+  } else {
+    replica->handle(r, true);
+  }
 
   // Undo changes. To ensure state matches across all replicas.
   rr.extra = 0;
