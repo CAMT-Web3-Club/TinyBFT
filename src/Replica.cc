@@ -133,6 +133,8 @@ void Replica::print_memory_consumption([[maybe_unused]] const size_t mem_size) {
           special_region::memory_demand_view());
   fprintf(stderr, "sizeof(special_region_checkpoints) = %zu\n",
           special_region::memory_demand_checkpoints());
+  fprintf(stderr, "sizeof(special_region_requests) = %zu\n",
+          special_region::memory_demand_requests());
   fprintf(stderr, "sizeof(scratch_region) = %zu\n",
           scratch_allocator::memory_demand());
 #endif
