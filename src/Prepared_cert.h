@@ -126,7 +126,7 @@ inline bool Prepared_cert::add_mine(Pre_prepare *m) {
   th_assert(node->id() == node->primary(m->view()), "Invalid Argument");
   th_assert(pp == nullptr, "Invalid state");
 #ifdef STATIC_LOG_ALLOCATOR
-  th_assert(!scratch_allocator::in_scratch(),
+  th_assert(!scratch_allocator::is_in_scratch(m),
             "Own messages should never be in scratch region");
 #endif
 

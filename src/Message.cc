@@ -58,7 +58,7 @@ Message::Message(Message_rep *cont) {
 
 #ifdef STATIC_LOG_ALLOCATOR
 Message::Message(int t, Message_rep *contents) {
-  th_assert(ALIGNED(cont), "Improperly aligned pointer");
+  th_assert(ALIGNED(contents), "Improperly aligned pointer");
   msg = contents;
   max_size = -1;  // To prevent contents from being deallocated or trimmed
 
