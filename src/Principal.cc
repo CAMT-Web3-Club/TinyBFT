@@ -87,7 +87,6 @@ bool Principal::verify_signature(const char *src, unsigned src_len,
   memcpy(&signature_len, sig, sizeof(signature_len));
   sig += sizeof(signature_len);
   if (signature_len + sizeof(signature_len) > sig_size()) {
-    printf("%zx > %zx?\n", (signature_len + sizeof(signature_len)), sig_size());
     STOP_CC(sig_ver_cycles);
     return false;
   }
