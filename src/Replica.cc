@@ -41,6 +41,7 @@
 #include "View_change_ack.h"
 #include "checkpoint_record.h"
 #include "checkpoint_record_log.h"
+#include "mem_statistics.h"
 #include "special_region.h"
 #include "th_assert.h"
 
@@ -1560,6 +1561,12 @@ void Replica::new_state(Seqno c) {
 }
 
 void Replica::mark_stable(Seqno n, bool have_state) {
+#ifdef PRINT_MEM_STATISTICS
+  // Prevent the system from making progress and output memory stats once the
+  // window is completely filled.
+  MEMSTATS_PRINT();
+  return;
+#endif
   MEMSTATS_MEM_TYPE_VAR
   // XXXXXcheck if this should be < or <=
 
