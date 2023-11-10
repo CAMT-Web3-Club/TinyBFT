@@ -46,7 +46,7 @@ T *Set<T>::remove(int id) {
 template <class T>
 void Set<T>::clear() {
   for (int i = 0; i < max_size; i++) {
-#ifdef STATIC_LOG_ALLOCATOR
+#ifndef STATIC_LOG_ALLOCATOR
     delete elems[i];
 #endif
     elems[i] = nullptr;

@@ -756,11 +756,13 @@ void Replica::handle(Checkpoint *m) {
       // Stable checkpoint message above my last_executed.
       Checkpoint *c = sset.fetch(m->id());
       if (c == nullptr || c->seqno() < ms) {
-        delete sset.remove(m->id());
 #ifdef STATIC_LOG_ALLOCATOR
+        sset.remove(m->id());
         auto tmp = m->persist(m->id());
         delete m;
         m = tmp;
+#else
+        delete sset.remove(m->id());
 #endif
         sset.store(m);
         if (sset.size() > f()) {
