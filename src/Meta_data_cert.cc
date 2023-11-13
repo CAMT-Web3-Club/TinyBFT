@@ -123,7 +123,9 @@ bool Meta_data_cert::add(Meta_data_d* m, bool mine) {
         d = val.d;
       }
     }
+#ifndef STATIC_LOG_ALLOCATOR
     delete om;
+#endif
 
     for (Seqno n = m->last_stable(); n <= m->last_checkpoint();
          n += checkpoint_interval) {
