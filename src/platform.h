@@ -9,7 +9,7 @@
 #endif
 
 #if !defined(__i386__) && !defined(__x86_64__) && \
-    (!defined(ESP_PLATFORM) || !defined(__riscv))
+    (!defined(ESP_PLATFORM) || (!defined(__riscv) && !defined(__xtensa__)))
 #error "Unsupported Hardware Platform"
 #endif
 
@@ -59,9 +59,13 @@ inline uint64_t cycle_count() {
 #if defined(__i386__) || defined(__x86_64__)
   unsigned int aux;
   count.value = __builtin_ia32_rdtscp(&aux);
-#elif defined(ESP_PLATFORM) && defined(__riscv)
+#elif defined(ESP_PLATFORM)
   count.words.high = 0;
+#if defined(__riscv)
   __asm__("csrr %0, %1" : "=r"(count.words.low) : "i"(csr::MPCCR));
+#elif defined(__xtensa__)
+  __asm__("rsr.ccount %0" : "=r"(count.words.low));
+#endif
 #endif
 
   return count.value;
