@@ -1,19 +1,17 @@
-# Libbyzea - An energy-aware BFT library
+# TinyBFT - A BFT Library for Tiny Embedded Devices
 
-Libbyzea is a library for implementing byzantine fault-tolerant (BFT) services.
+TinyBFT is a library for implementing byzantine fault-tolerant (BFT) services.
 It is based on MIT's [Practical Byzantine Fault Tolerance
 (PBFT)](https://pmg.csail.mit.edu/bft/) library (`libbyz`) and adds
-optimizations that reduce the implemented protocol's energy footprint.  It is
-mainly intended to be used on systems with energy-constraints, like embedded
-systems with batteries as their main power source, for example.
+optimizations that reduce the implemented protocol's memory footprint.  It is
+mainly intended to be used on systems with heavily resource-constrained devices.
 
 In order to be compatible with modern compilers, a few technical changes were
-made to the original code. While `libbyz` uses the no longer maintained library
-`sfslite` for cryptographic operations, `libbyzea` uses
+made to the original PBFT code. While `libbyz` uses the no longer maintained
+library `sfslite` for cryptographic operations, `libbyzea` uses
 [MbedTLS](https://github.com/Mbed-TLS/mbedtls).  This also made it necessary to
 replace the Rabin public key cryptosystem with RSA, since the former is not
-supported by MbedTLS. It is planned to replace RSA with elliptic-curve
-algorithms in the future to reduce keysizes and to improve performance.
+supported by MbedTLS.
 
 ## Dependencies
 
@@ -55,6 +53,15 @@ If your installation of MbedTLS is not located in the default location of your
 system, you can manually supply the location of its header files to CMake. If
 you want to supply a relative path instead, make sure the path is relative to
 this repository's root directory, not the build directory.
+
+#### Enable TinyBFT
+
+```sh
+cmake -DTINY_BFT=1 ..
+```
+
+The default configuration builds the regular PBFT prototype without TinyBFT's
+optimizations. This switch allows you to enable TinyBFT for the build.
 
 #### Change Maximum Message Size (MAX_MESSAGE_SIZE)
 
@@ -127,15 +134,6 @@ the sequence number of the last request executed modulo 32 is 0.
 Note that a larger amount of checkpoints means that potentially more memory has
 to be allocated to safe checkpoint state if there exist many checkpoints that
 are not stable, yet.
-
-#### Enable Recovery Suppport (ENABLE_RECOVERY)
-
-```sh
-cmake -DENABLE_RECOVERY
-```
-
-Enables PBFT's recovery support, allowing a replica to persist its current
-state to disk and load it on rebooting.
 
 #### Enable Memory Demand Statistics (PRINT_MEM_STATISTICS)
 
