@@ -38,8 +38,6 @@ Node *node = 0;
 // Enable statistics
 #include "Statistics.h"
 
-// #define NO_IP_MULTICAST
-
 namespace libbyzea {
 
 static const char *DRBG_PERSONALIZATION_STRING =

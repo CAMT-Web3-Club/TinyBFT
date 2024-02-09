@@ -135,6 +135,16 @@ Note that a larger amount of checkpoints means that potentially more memory has
 to be allocated to safe checkpoint state if there exist many checkpoints that
 are not stable, yet.
 
+#### Disable Multicast
+
+```sh
+cmake -DDISABLE_MULTICAST=1
+```
+
+Normally, replicas use UDP multicast messages to communicate with each other. In
+certain network setups (e.g. across local network boundaries), this can lead to
+problems. Disabling multicasts uses point-to-point UDP packets instead.
+
 #### Enable Memory Demand Statistics (PRINT_MEM_STATISTICS)
 
 ```sh

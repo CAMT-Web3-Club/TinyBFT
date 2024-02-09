@@ -50,10 +50,6 @@ if (DEFINED CHECKPOINT_INTERVAL)
     target_compile_definitions(byzea PUBLIC CHECKPOINT_INTERVAL=${CHECKPOINT_INTERVAL})
 endif()
 
-if (DEFINED ENABLE_RECOVERY)
-    target_compile_definitions(byzea PUBLIC RECOVERY=1)
-endif()
-
 if (DEFINED PRINT_MEM_STATISTICS)
     target_compile_definitions(byzea PUBLIC PRINT_MEM_STATISTICS=${PRINT_MEM_STATISTICS})
     target_sources(byzea PRIVATE
@@ -69,6 +65,10 @@ endif()
 
 if(DEFINED MAX_REQUEST_SIZE)
 	target_compile_definitions(byzea PUBLIC MAX_REQUEST_SIZE=${MAX_REQUEST_SIZE})
+endif()
+
+if(DEFINED DISABLE_MULTICAST)
+	target_compile_definitions(byzea PUBLIC NO_IP_MULTICAST=${DISABLE_MULTICAST})
 endif()
 
 if(DEFINED TINY_BFT)
