@@ -118,7 +118,7 @@ void store_new_view(New_view *new_view) {
   th_assert(size_t(new_view->size()) <= max_new_view_size,
             "invalid New_view size");
 
-  fprintf(stderr, "%d %d\n", new_view->size(), max_new_view_size);
+  fprintf(stderr, "%d %zu\n", new_view->size(), max_new_view_size);
   std::memcpy(&new_views[node->primary(new_view->view())].msg_,
               new_view->contents(), new_view->size());
 }
@@ -145,7 +145,8 @@ void store_view_change(View_change *view_change) {
 
 View_change_ack *new_view_change_ack(View v, int vc_replica_id,
                                      Digest const &digest) {
-  th_assert(replica_id == node->id(), "invalid state");
+  th_assert(vc_replica_id >= 0 && vc_replica_id < MAX_NUM_REPLICAS,
+            "invalid state");
   auto &b = view_change_acks[node->id()][vc_replica_id];
   auto vcar = reinterpret_cast<View_change_ack_rep *>(b.msg_);
 
