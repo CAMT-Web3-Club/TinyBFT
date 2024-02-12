@@ -4,7 +4,8 @@ TinyBFT is a library for implementing byzantine fault-tolerant (BFT) services.
 It is based on MIT's [Practical Byzantine Fault Tolerance
 (PBFT)](https://pmg.csail.mit.edu/bft/) library (`libbyz`) and adds
 optimizations that reduce the implemented protocol's memory footprint.  It is
-mainly intended to be used on systems with heavily resource-constrained devices.
+mainly intended to be used on systems with heavily resource-constrained
+devices.
 
 In order to be compatible with modern compilers, a few technical changes were
 made to the original PBFT code. While `libbyz` uses the no longer maintained
@@ -69,9 +70,10 @@ optimizations. This switch allows you to enable TinyBFT for the build.
 cmake -DMAX_MESSAGE_SIZE=2048 ..
 ```
 
-The library defines a maximum message size that is used to allocate certain data
-structures, like incoming new messages for example. If your system has only a
-small amount of RAM, it can be useful to reduce this size when building the library.
+The library defines a maximum message size that is used to allocate certain
+data structures, like incoming new messages for example. If your system has
+only a small amount of RAM, it can be useful to reduce this size when building
+the library.
 
 #### Change Maximum Reply Size (MAX_REPLY_SIZE)
 
@@ -89,10 +91,11 @@ cmake -DBLOCK_SIZE=4096 ..
 ```
 
 The `State` and `TrivialState` classes manage the system state in data
-structures that are block-based, meaning the system state is chunked into blocks
-of `BLOCK_SIZE`. This number must be a multiple of two and should be smaller or
-equal to your architecture's page size. Since blocks may be sent between
-replicas during state transfer, `BLOCK_SIZE` must be smaller than `MAX_MESSAGE_SIZE`
+structures that are block-based, meaning the system state is chunked into
+blocks of `BLOCK_SIZE`. This number must be a multiple of two and should be
+smaller or equal to your architecture's page size. Since blocks may be sent
+between replicas during state transfer, `BLOCK_SIZE` must be smaller than
+`MAX_MESSAGE_SIZE`
 
 
 #### Change the Maximum Number of Replicas (MAX_NUM_REPLICAS)
@@ -110,14 +113,13 @@ the cost of less redundancy.
 #### Change the Window Size (WINDOW_SIZE)
 
 ```sh
-cmake -DWINDOW_SIZE=64 ..
+cmake -DWINDOW_SIZE=256 ..
 ```
 
 The window describes the number of sequence numbers that are accepted by a
 replica during a certain point in time. This means that many of the library's
-data structures have to allocate memory for each slot in a window. Reducing this
-size can drastically reduce the library's memory consumption. Its **minimum value**
-64.
+data structures have to allocate memory for each slot in a window. Reducing
+this size can drastically reduce the library's memory consumption.
 
 #### Change Checkpoint Interval (CHECKPOINT_INTERVAL)
 
@@ -125,11 +127,12 @@ size can drastically reduce the library's memory consumption. Its **minimum valu
 cmake -DCHECKPOINT_INTERVAL=128 ..
 ```
 
-The checkpoint interval defines at which sequence numbers checkpoints are created.
-A checkpoint is created after a executing requests with a sequence number divisible by
-the checkpoint interval, that is `<sequence_number> % CHECKPOINT_INTERVAL == 0`.
-If the checkpoint interval is set to 32 for example, then a checkpoint is created every time
-the sequence number of the last request executed modulo 32 is 0.
+The checkpoint interval defines at which sequence numbers checkpoints are
+created.  A checkpoint is created after a executing requests with a sequence
+number divisible by the checkpoint interval, that is `<sequence_number> %
+CHECKPOINT_INTERVAL == 0`.  If the checkpoint interval is set to 128 for
+example, then a checkpoint is created every time the sequence number of the
+last request executed modulo 128 is 0.
 
 Note that a larger amount of checkpoints means that potentially more memory has
 to be allocated to safe checkpoint state if there exist many checkpoints that
@@ -141,9 +144,9 @@ are not stable, yet.
 cmake -DDISABLE_MULTICAST=1
 ```
 
-Normally, replicas use UDP multicast messages to communicate with each other. In
-certain network setups (e.g. across local network boundaries), this can lead to
-problems. Disabling multicasts uses point-to-point UDP packets instead.
+Normally, replicas use UDP multicast messages to communicate with each other.
+In certain network setups (e.g. across local network boundaries), this can lead
+to problems. Disabling multicasts uses point-to-point UDP packets instead.
 
 #### Enable Memory Demand Statistics (PRINT_MEM_STATISTICS)
 
@@ -152,9 +155,9 @@ camke -DPRINT_MEM_STATISTICS=1 ..
 ```
 
 Enables the (dynamic) memory demand benchmark. This compiles a custom
-`malloc(3)` implementation into the library which tracks all memory allocations.
-The memory demand during initialization is then printed per component. The
-output printed is of the form:
+`malloc(3)` implementation into the library which tracks all memory
+allocations.  The memory demand during initialization is then printed per
+component. The output printed is of the form:
 
 ```
 sizeof(Replica) = 2704
