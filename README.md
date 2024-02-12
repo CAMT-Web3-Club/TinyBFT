@@ -184,3 +184,47 @@ The memory consumed by a component always also includes the memory allocated by
 the components it calls. If `Replica` calls the `State` constructor during
 initialization for example, the memory allocated by `State`'s constructor is also
 added to `Replica`'s memory demand.
+
+## Runtime Configuration
+
+The library reads cluster information from a configuration file during
+initialization. Since the configuration has no support for comments, this
+section explains its file format. Below is an example configuration file:
+
+```
+generic
+1
+1800000
+4
+234.5.6.8 3669
+esp0 192.168.178.47 3669 pub/esp0.pub
+esp1 192.168.178.48 3669 pub/esp1.pub
+esp2 192.168.178.49 3669 pub/esp2.pub
+esp3 192.168.178.50 3669 pub/esp3.pub
+181000
+150
+9999250000
+```
+
+The configuration file is line-based. The first line holds an arbitrary service
+name (`generic` in the example). The next three lines define the tolerated
+number of faulty replicas `f`, the authentication timeout in milliseconds when
+using authenticators instead of signatures, and the total number of nodes, i.e.
+replicas and clients. In the example above this would mean `f = 1`, a
+authentication timeout of 30 minutes, and 4 nodes in total.
+
+The next lines define the nodes in the system. Here, the first line `234.5.6.8`
+always holds the multicast address used when enabling multicast. This is
+followed by the actual nodes in the system. Here, each line holds information
+for one specific node using the following format:
+
+```
+<hostname> <ip-address> <port> <path-to-rsa-public-key>
+```
+
+Finally, the last three lines define three different timeouts in milliseconds
+relevant to replicas only:
+
+- View-Change Timeout (`181000`)
+- Status Message Timeout (`150`)
+- Recovery Timeout (`9999250000`)
