@@ -6,11 +6,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS True)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED True)
-set(CMAKE_C_FLAGS "-m32 -march=haswell -msse2 -mpclmul -Wno-unused-variable -Wno-unused-but-set-variable")
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
-set(CMAKE_CXX_FLAGS "-m32 -march=haswell -msse2 -mpclmul -Wno-unused-variable -Wno-unused-but-set-variable")
 
 add_library(byzea STATIC)
 
@@ -94,7 +92,7 @@ else()
     )
 endif()
 
-target_compile_options(byzea PRIVATE "-Wall" "-Werror=all" "-Wextra" "-Wno-unused-function")
+target_compile_options(byzea PRIVATE "-Wall" "-Werror=all" "-Wextra" "-Wno-unused-function" "-Wno-unused-variable" "-Wno-unused-but-set-variable")
 
 target_sources(byzea PRIVATE
     src/Client.cc
