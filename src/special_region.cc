@@ -75,7 +75,7 @@ struct RequestBlock {
 
 struct ReplyBlock {
   Reply reply_;
-  char msg_[Rep_info::Max_rep_size];
+  char msg_[Rep_info::Max_rep_size] __attribute__((aligned(ALIGNMENT)));
 
   ReplyBlock() : reply_(reinterpret_cast<Reply_rep *>(msg_)) {}
   ~ReplyBlock() {}
