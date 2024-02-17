@@ -12,7 +12,7 @@
 #ifndef MAX_REQUEST_SIZE
 #define MAX_REQUEST_SIZE                                             \
   (MAX_MESSAGE_SIZE - sizeof(Pre_prepare_rep) - AUTHENTICATOR_SIZE - \
-   sizeof(Request_rep) - 256)
+   sizeof(Request_rep) - 256 - 4)
 #endif
 
 namespace libbyzea {
@@ -35,8 +35,10 @@ struct Request_rep : public Message_rep {
 };
 
 constexpr int max_request_size =
-    MAX_REQUEST_SIZE + sizeof(Request_rep) +
-    256;  // For now, we assume an RSA keysize of 2048 bit
+    ALIGNED_SIZE(MAX_REQUEST_SIZE + sizeof(Request_rep) +
+    + sizeof(uint32_t) + 256); // Sigantures are encoded as signature_size + Signature
+static_assert(max_request_size <= MAX_MESSAGE_SIZE,
+	"invalid maximum request size");
 
 class Request : public Message {
   //
