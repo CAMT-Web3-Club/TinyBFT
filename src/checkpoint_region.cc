@@ -4,16 +4,18 @@
 #include <new>
 
 #include "Checkpoint.h"
+#include "Message.h"
 #include "Replica.h"
 #include "th_assert.h"
 
 namespace libbyzea {
 namespace checkpoint_region {
 
+constexpr auto CHECKPOINT_SIZE = sizeof(Checkpoint_rep) + AUTHENTICATOR_SIZE;
+
 struct Block {
   Checkpoint checkpoint_;
-  char msg_[sizeof(Checkpoint_rep) + AUTHENTICATOR_SIZE]
-      __attribute__((aligned(ALIGNMENT)));
+  char msg_[CHECKPOINT_SIZE] __attribute__((aligned(ALIGNMENT)));
 
   Block() : checkpoint_(reinterpret_cast<Checkpoint_rep *>(msg_)) {}
 
@@ -64,10 +66,8 @@ Checkpoint *load_checkpoint(Seqno seqno, size_t i) {
 }
 
 void store_checkpoint(Checkpoint *checkpoint, size_t i) {
-  th_assert(
-      within_range(checkpoint->seqno()) || checkpoint->seqno() > max_seqno(),
-      "Sequence number not in range");
-  th_assert((size_t)checkpoint->size() <= sizeof(Block),
+  th_assert(checkpoint->seqno() >= head, "Sequence number not in range");
+  th_assert((size_t)checkpoint->size() <= checkpoint_size,
             "Checkpoint message is too large");
 
   char *store;
