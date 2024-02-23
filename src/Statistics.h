@@ -165,10 +165,9 @@ struct Statistics {
   void end_rec_stats();
 };
 
+#ifdef PRINT_STATS
 extern Statistics stats;
 
-// #define PRINT_STATS
-#ifdef PRINT_STATS
 #define START_CC(x) stats.x.start()
 #define STOP_CC(x) stats.x.stop()
 #define INCR_OP(x) stats.x++

@@ -69,6 +69,11 @@ if(DEFINED DISABLE_MULTICAST)
 	target_compile_definitions(byzea PUBLIC NO_IP_MULTICAST=${DISABLE_MULTICAST})
 endif()
 
+if(DEFINED PRINT_PERF_STATISTICS)
+    target_compile_definitions(byzea PUBLIC PRINT_STATS=${PRINT_PERF_STATISTICS})
+    target_sources(byzea PRIVATE src/Statistics.cc)
+endif()
+
 if(DEFINED TINY_BFT)
     target_compile_definitions(byzea PUBLIC
         DYNAMIC_PARTITION_TREE=${TINY_BFT}
@@ -130,7 +135,6 @@ target_sources(byzea PRIVATE
     src/Query_stable.cc
     src/Reply_stable.cc
     src/Stable_estimator.cc
-    src/Statistics.cc
     src/Time.cc
     src/Pre_prepare_info.cc
     src/rsa_private_key.cc

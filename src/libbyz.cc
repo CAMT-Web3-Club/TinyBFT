@@ -227,7 +227,9 @@ void Byz_replica_run() {
   libbyzea::MemoryStatisticsGuard mem_guard("Byz_replica_run", true);
   MEMSTATS_RUNTIME_LOGGING(1);
 #endif
+#ifdef PRINT_STATS
   libbyzea::stats.zero_stats();
+#endif
   libbyzea::replica->recv();
 }
 
@@ -235,9 +237,25 @@ void Byz_replica_run() {
 void _Byz_modify_index(int bindex) { libbyzea::replica->modify_index(bindex); }
 #endif
 
-void Byz_reset_stats() { libbyzea::stats.zero_stats(); }
+void Byz_reset_stats() {
+#ifdef PRINT_STATS
+  libbyzea::stats.zero_stats();
+#else
+  fprintf(stderr,
+          "WARNING: libbyzea was not compiled with statistics support. Please "
+          "recompile with -DPRINT_STATS=1\n");
+#endif
+}
 
-void Byz_print_stats() { libbyzea::stats.print_stats(); }
+void Byz_print_stats() {
+#ifdef PRINT_STATS
+  libbyzea::stats.print_stats();
+#else
+  fprintf(stderr,
+          "WARNING: libbyzea was not compiled with statistics support. Please "
+          "recompile with -DPRINT_STATS=1\n");
+#endif
+}
 
 #ifndef NO_STATE_TRANSLATION
 char *Byz_get_cached_object(int i) { return replica->get_cached_obj(i); }

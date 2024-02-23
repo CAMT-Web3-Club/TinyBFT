@@ -11,9 +11,8 @@ Note that unsigned arithmetic can lead to unexpected results.
 #ifndef _BITS_H
 #define _BITS_H
 
+#include <assert.h>
 #include <stdint.h>
-
-#include "assert.h"
 
 #define byte_bits 8
 typedef unsigned int Uint;
