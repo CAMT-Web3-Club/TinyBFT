@@ -139,7 +139,9 @@ bool Certificate<T>::add_mine(T *m) {
         stderr,
         "Node is faulty, more than f faulty replicas or faulty primary %s\n",
         m->stag());
+#ifndef STATIC_LOG_ALLOCATOR
     delete m;
+#endif
     return false;
   }
 
