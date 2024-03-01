@@ -63,6 +63,10 @@ class Checkpoint : public Message {
 #ifdef STATIC_LOG_ALLOCATOR
   Checkpoint *persist(size_t slot);
   // Effects: persists this message in an underlying storage.
+
+  Checkpoint *persist_above_window();
+  // Effects: persists this message in an underlying storage for above window
+  // checkpoints.
 #endif
 
   static bool convert(Message *m1, Checkpoint *&m2);
@@ -100,6 +104,12 @@ inline Checkpoint *Checkpoint::persist(size_t slot) {
   Seqno sn = seqno();
   checkpoint_region::store_checkpoint(this, slot);
   return checkpoint_region::load_checkpoint(sn, slot);
+}
+
+inline Checkpoint *Checkpoint::persist_above_window() {
+  auto replica_id = this->id();
+  checkpoint_region::store_above_window(this);
+  return checkpoint_region::load_above_window(replica_id);
 }
 #endif
 

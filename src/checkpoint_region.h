@@ -19,6 +19,9 @@ bool within_range(Seqno seqno);
 Checkpoint *load_checkpoint(Seqno seqno, size_t i);
 void store_checkpoint(Checkpoint *checkpoint, size_t i);
 
+Checkpoint *load_above_window(size_t replica_id);
+void store_above_window(Checkpoint *checkpoint);
+
 void truncate(Seqno seqno);
 
 int certificate_index(Seqno seqno);

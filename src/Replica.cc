@@ -759,7 +759,7 @@ void Replica::handle(Checkpoint *m) {
       if (c == nullptr || c->seqno() < ms) {
 #ifdef STATIC_LOG_ALLOCATOR
         sset.remove(m->id());
-        auto tmp = m->persist(m->id());
+        auto tmp = m->persist_above_window();
         delete m;
         m = tmp;
 #else

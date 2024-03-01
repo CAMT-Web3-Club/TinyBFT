@@ -53,33 +53,37 @@ static inline int replica_index(int replica_id) {
 }
 
 Checkpoint *load_checkpoint(Seqno seqno, size_t i) {
-  th_assert(within_range(seqno) || seqno > max_seqno(),
-            "Sequence number not in range");
-  if (!within_range(seqno)) {
-    auto &msg = above_window_checkpoints[replica_index(i)].checkpoint_;
-    th_assert(seqno == msg.seqno(), "Invalid state");
-    return &msg;
-  }
-
+  th_assert(within_range(seqno), "Sequence number not in range");
   size_t cert = certificate_index(seqno);
   return &checkpoint_certs[cert].checkpoints_[i].checkpoint_;
 }
 
 void store_checkpoint(Checkpoint *checkpoint, size_t i) {
-  th_assert(checkpoint->seqno() >= head, "Sequence number not in range");
+  th_assert(within_range(seqno), "Sequence number not in range");
   th_assert((size_t)checkpoint->size() <= checkpoint_size,
             "Checkpoint message is too large");
 
   char *store;
-  if (within_range(checkpoint->seqno())) {
-    size_t cert_index = certificate_index(checkpoint->seqno());
-    store = checkpoint_certs[cert_index].checkpoints_[i].msg_;
-  } else {
-    auto &cur = above_window_checkpoints[replica_index(i)].checkpoint_;
-    th_assert(checkpoint->seqno() > cur.seqno(), "Invalid state");
-    store = above_window_checkpoints[replica_index(i)].msg_;
-  }
+  size_t cert_index = certificate_index(checkpoint->seqno());
+  store = checkpoint_certs[cert_index].checkpoints_[i].msg_;
   std::memcpy(store, checkpoint->contents(), checkpoint->size());
+}
+
+Checkpoint *load_above_window(size_t replica_id) {
+  th_assert(replica_id != replica->id() && replica_id < MAX_NUM_REPLICAS,
+            "Invalid replica id");
+  auto i = replica_index(replica_id);
+  return &above_window_checkpoints[i].checkpoint_;
+}
+
+void store_above_window(Checkpoint *checkpoint) {
+  th_assert(checkpoint->id() >= MAX_NUM_REPLICAS, "Invalid state");
+  th_assert(checkpoint->seqno() > max_seqno() || checkpoint->stable(),
+            "Invalid state");
+
+  auto i = replica_index(checkpoint->id());
+  auto &cur = above_window_checkpoints[i].checkpoint_;
+  std::memcpy(cur.contents(), checkpoint->contents(), checkpoint->size());
 }
 
 void truncate(Seqno new_head) {
