@@ -59,8 +59,8 @@ Checkpoint *load_checkpoint(Seqno seqno, size_t i) {
 }
 
 void store_checkpoint(Checkpoint *checkpoint, size_t i) {
-  th_assert(within_range(seqno), "Sequence number not in range");
-  th_assert((size_t)checkpoint->size() <= checkpoint_size,
+  th_assert(within_range(checkpoint->seqno()), "Sequence number not in range");
+  th_assert((size_t)checkpoint->size() <= CHECKPOINT_SIZE,
             "Checkpoint message is too large");
 
   char *store;
@@ -70,7 +70,7 @@ void store_checkpoint(Checkpoint *checkpoint, size_t i) {
 }
 
 Checkpoint *load_above_window(size_t replica_id) {
-  th_assert(replica_id != replica->id() && replica_id < MAX_NUM_REPLICAS,
+  th_assert((int)replica_id != replica->id() && replica_id < MAX_NUM_REPLICAS,
             "Invalid replica id");
   auto i = replica_index(replica_id);
   return &above_window_checkpoints[i].checkpoint_;
