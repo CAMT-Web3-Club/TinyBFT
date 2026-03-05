@@ -4,7 +4,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>
+#ifndef ESP_PLATFORM
 #include <sys/mman.h>
+#endif
 #include <unistd.h>
 
 #include "Data.h"
@@ -1808,7 +1810,9 @@ bool State::shutdown(FILE* o, Seqno ls) {
   wb += fwrite(&end, sizeof(Seqno), 1, o);
   ab++;
 
+#ifndef ESP_PLATFORM
   msync(mem, nb * Block_size, MS_SYNC);
+#endif
 #endif
 
   return ret & (ab == wb);
@@ -1976,7 +1980,9 @@ void State::simulate_reboot() {
   // Invalidate state pages to force reading from disk after reboot
   inv_time.start();
 #ifdef NO_STATE_TRANSLATION
+#ifndef ESP_PLATFORM
   msync(mem, nb * Block_size, MS_INVALIDATE);
+#endif
 #endif
   inv_time.stop();
 

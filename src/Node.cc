@@ -2,15 +2,23 @@
 
 #include <arpa/inet.h>
 #include <fcntl.h>
+#ifndef ESP_PLATFORM
 #include <netdb.h>
+#endif
 #include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef ESP_PLATFORM
 #include <sys/param.h>
+#endif
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+
+#ifdef ESP_PLATFORM
+#include "esp_netif.h"
+#endif
 
 #include <cstring>
 
@@ -31,7 +39,7 @@
 
 namespace libbyzea {
 // Pointer to global node instance.
-Node *node = 0;
+Node* node = 0;
 }  // namespace libbyzea
 
 // TODO: Check if this needsto be here or can be moved above node's declaration.
@@ -40,11 +48,11 @@ Node *node = 0;
 
 namespace libbyzea {
 
-static const char *DRBG_PERSONALIZATION_STRING =
-    static_cast<const char *>("libbyz");
+static const char* DRBG_PERSONALIZATION_STRING =
+    static_cast<const char*>("libbyz");
 
-Node::Node(MEM_STATS_PARAM FILE *config_file,
-           const std::string &private_key_file, short req_port) {
+Node::Node(MEM_STATS_PARAM FILE* config_file,
+           const std::string& private_key_file, short req_port) {
   node = this;
 
 #ifdef NO_IP_MULTICAST
@@ -57,7 +65,7 @@ Node::Node(MEM_STATS_PARAM FILE *config_file,
   mbedtls_ctr_drbg_init(&ctr_drbg_ctx);
   int err = mbedtls_ctr_drbg_seed(
       &ctr_drbg_ctx, mbedtls_entropy_func, &entropy,
-      reinterpret_cast<const unsigned char *>(DRBG_PERSONALIZATION_STRING),
+      reinterpret_cast<const unsigned char*>(DRBG_PERSONALIZATION_STRING),
       std::strlen(DRBG_PERSONALIZATION_STRING));
   MEM_STATS_GUARD_POP();
   if (err) {
@@ -101,7 +109,7 @@ Node::Node(MEM_STATS_PARAM FILE *config_file,
   // read in group principal's address
   fscanf(config_file, "%256s %hd\n", addr_buff, &port);
   Addr a;
-  bzero((char *)&a, sizeof(a));
+  bzero((char*)&a, sizeof(a));
   a.sin_family = AF_INET;
   a.sin_addr.s_addr = inet_addr(addr_buff);
   a.sin_port = htons(port);
@@ -109,6 +117,19 @@ Node::Node(MEM_STATS_PARAM FILE *config_file,
                         &ctr_drbg_ctx);
 
   // read in remaining principals' addresses and figure out my principal
+#ifdef ESP_PLATFORM
+  // On ESP32, get our own IP from the default network interface
+  struct in_addr my_address;
+  {
+    esp_netif_ip_info_t ip_info;
+    esp_netif_t* netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+    if (netif && esp_netif_get_ip_info(netif, &ip_info) == ESP_OK) {
+      my_address.s_addr = ip_info.ip.addr;
+    } else {
+      th_fail("Could not get ESP32 IP address");
+    }
+  }
+#else
   char host_name[MAXHOSTNAMELEN + 1];
   if (gethostname(host_name, MAXHOSTNAMELEN)) {
     perror("Unable to get hostname");
@@ -116,13 +137,15 @@ Node::Node(MEM_STATS_PARAM FILE *config_file,
   }
 
   MEM_STATS_GUARD_PUSH(gehostbyname);
-  struct hostent *hent = gethostbyname(host_name);
+  struct hostent* hent = gethostbyname(host_name);
   MEM_STATS_GUARD_POP();
   if (hent == 0) th_fail("Could not get hostent");
-  struct in_addr my_address = *((in_addr *)hent->h_addr_list[0]);
+  struct in_addr my_address = *((in_addr*)hent->h_addr_list[0]);
+#endif
   node_id = -1;
 
-  principals = (Principal **)malloc(num_principals * sizeof(Principal *));
+  char host_name[65];
+  principals = (Principal**)malloc(num_principals * sizeof(Principal*));
   for (int i = 0; i < num_principals; i++) {
     fscanf(config_file, "%64s %32s %hd %1023s \n", host_name, addr_buff, &port,
            public_keyfile);
@@ -159,7 +182,7 @@ Node::Node(MEM_STATS_PARAM FILE *config_file,
   tmp.sin_family = AF_INET;
   tmp.sin_addr.s_addr = htonl(INADDR_ANY);
   tmp.sin_port = principals[node_id]->address()->sin_port;
-  error = bind(sock, (struct sockaddr *)&tmp, sizeof(Addr));
+  error = bind(sock, (struct sockaddr*)&tmp, sizeof(Addr));
   if (error < 0) {
     perror("Unable to name socket");
     exit(1);
@@ -169,7 +192,7 @@ Node::Node(MEM_STATS_PARAM FILE *config_file,
 #if WANMCAST
   // Set TTL larger than 1 to enable multicast across routers.
   u_char i = 20;
-  error = setsockopt(sock, IPPROTO_IP, IP_MULTICAST_TTL, (char *)&i, sizeof(i));
+  error = setsockopt(sock, IPPROTO_IP, IP_MULTICAST_TTL, (char*)&i, sizeof(i));
   if (error < 0) {
     perror("unable to change TTL value");
     exit(1);
@@ -179,7 +202,7 @@ Node::Node(MEM_STATS_PARAM FILE *config_file,
   // #define NO_UDP_CHECKSUM
 #ifdef NO_UDP_CHECKSUM
   int no_check = 1;
-  error = setsockopt(sock, SOL_SOCKET, SO_NO_CHECK, (char *)&no_check,
+  error = setsockopt(sock, SOL_SOCKET, SO_NO_CHECK, (char*)&no_check,
                      sizeof(no_check));
   if (error < 0) {
     perror("unable to turn of UDP checksumming");
@@ -221,7 +244,7 @@ Node::~Node() {
   delete priv_key;
 }
 
-void Node::send(Message *m, int i) {
+void Node::send(Message* m, int i) {
   th_assert(i == All_replicas || (i >= 0 && i < num_principals),
             "Invalid argument");
 
@@ -232,7 +255,7 @@ void Node::send(Message *m, int i) {
   }
 #endif
 
-  const Addr *to =
+  const Addr* to =
       (i == All_replicas) ? group->address() : principals[i]->address();
 
   int error = 0;
@@ -242,7 +265,7 @@ void Node::send(Message *m, int i) {
     INCR_CNT(bytes_out, size);
     START_CC(sendto_cycles);
 
-    error = sendto(sock, m->contents(), size, 0, (struct sockaddr *)to,
+    error = sendto(sock, m->contents(), size, 0, (struct sockaddr*)to,
                    sizeof(Addr));
 
     STOP_CC(sendto_cycles);
@@ -277,12 +300,11 @@ bool Node::has_messages(long to) {
   return false;
 }
 
-Message *Node::recv() {
-  Message *m = new Message(Max_message_size);
+Message* Node::recv() {
+  Message* m = new Message(Max_message_size);
   while (1) {
 #ifndef ASYNC_SOCK
-    while (!has_messages(20000))
-      ;
+    while (!has_messages(20000));
 #endif
 
     INCR_OP(num_recvfrom);
@@ -310,13 +332,12 @@ Message *Node::recv() {
       return m;
     }
 #ifdef ASYNC_SOCK
-    while (!has_messages(20000))
-      ;
+    while (!has_messages(20000));
 #endif
   }
 }
 
-void Node::gen_auth(char *s, unsigned l, bool in, char *dest) const {
+void Node::gen_auth(char* s, unsigned l, bool in, char* dest) const {
   INCR_OP(num_gen_auth);
   START_CC(gen_auth_cycles);
 
@@ -340,13 +361,13 @@ void Node::gen_auth(char *s, unsigned l, bool in, char *dest) const {
   STOP_CC(gen_auth_cycles);
 }
 
-bool Node::verify_auth(int i, char *s, unsigned l, bool in, char *dest) const {
+bool Node::verify_auth(int i, char* s, unsigned l, bool in, char* dest) const {
   th_assert(node_id < num_replicas, "Called by non-replica");
 
   INCR_OP(num_ver_auth);
   START_CC(ver_auth_cycles);
 
-  Principal *p = i_to_p(i);
+  Principal* p = i_to_p(i);
 
   // Principal never verifies its own authenticator.
   if (p != 0 && i != node_id) {
@@ -368,7 +389,7 @@ bool Node::verify_auth(int i, char *s, unsigned l, bool in, char *dest) const {
   return false;
 }
 
-void Node::gen_signature(const char *src, unsigned src_len, char *sig) {
+void Node::gen_signature(const char* src, unsigned src_len, char* sig) {
   INCR_OP(num_sig_gen);
   START_CC(sig_gen_cycles);
 
@@ -376,30 +397,30 @@ void Node::gen_signature(const char *src, unsigned src_len, char *sig) {
   uint32_t key_size = priv_key->size();
   memcpy(sig, &key_size, sizeof(key_size));
   sig += sizeof(key_size);
-  int err = priv_key->sign(reinterpret_cast<const uint8_t *>(src), src_len,
-                           reinterpret_cast<uint8_t *>(sig), key_size);
+  int err = priv_key->sign(reinterpret_cast<const uint8_t*>(src), src_len,
+                           reinterpret_cast<uint8_t*>(sig), key_size);
   th_assert(err == 0, "Faild to sign message");
 
   STOP_CC(sig_gen_cycles);
 }
 
-unsigned Node::decrypt(char *src, unsigned src_len, char *dst,
+unsigned Node::decrypt(char* src, unsigned src_len, char* dst,
                        unsigned dst_len) {
   if (src_len < 2 * sizeof(unsigned)) return 0;
 
   uint32_t plaintext_len;
-  memcpy((char *)&plaintext_len, src, sizeof(unsigned));
+  memcpy((char*)&plaintext_len, src, sizeof(unsigned));
   src += sizeof(plaintext_len);
 
   uint32_t ciphertext_len;
-  memcpy((char *)&ciphertext_len, src, sizeof(unsigned));
+  memcpy((char*)&ciphertext_len, src, sizeof(unsigned));
   src += sizeof(ciphertext_len);
   src_len -= (sizeof(plaintext_len) + sizeof(ciphertext_len));
 
   if (dst_len < plaintext_len || src_len < ciphertext_len) return 0;
 
   size_t dec_plaintext_len;
-  int err = priv_key->decrypt(reinterpret_cast<uint8_t *>(src), ciphertext_len,
+  int err = priv_key->decrypt(reinterpret_cast<uint8_t*>(src), ciphertext_len,
                               dst, dst_len, &dec_plaintext_len);
   th_assert(err == 0, "failed to decrypt message");
   th_assert(plaintext_len == dec_plaintext_len, "unexpected plaintext length");
@@ -427,7 +448,7 @@ void Node::new_tstamp() {
   cur_rid = tstamp << int_bits;
 }
 
-mbedtls_ctr_drbg_context *Node::drbg_context() { return &this->ctr_drbg_ctx; }
+mbedtls_ctr_drbg_context* Node::drbg_context() { return &this->ctr_drbg_ctx; }
 
 void atimer_handler() {
   th_assert(node, "replica is not initialized\n");

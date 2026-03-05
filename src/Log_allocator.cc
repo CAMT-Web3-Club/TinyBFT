@@ -1,6 +1,10 @@
 #include "Log_allocator.h"
 
+#ifndef ESP_PLATFORM
 #include <sys/mman.h>
+#else
+#include <stdlib.h>
+#endif
 
 #include "mem_statistics.h"
 
@@ -20,24 +24,33 @@ Log_allocator::Log_allocator(int csz, int nc) {
   cur = alloc_chunk();
 }
 
-Log_allocator::Chunk *Log_allocator::alloc_chunk() {
-  Chunk *ret;
+Log_allocator::Chunk* Log_allocator::alloc_chunk() {
+  Chunk* ret;
   if (free_chunks != 0) {
     // First try to allocate from free list
     ret = free_chunks;
-    free_chunks = (Chunk *)(free_chunks->next);
+    free_chunks = (Chunk*)(free_chunks->next);
   } else if (num_chunks < max_num_chunks) {
     // Try to allocate from the current chunks array.
-    ret = (Chunk *)(chunks + chunk_size * num_chunks);
+    ret = (Chunk*)(chunks + chunk_size * num_chunks);
     num_chunks++;
   } else {
     MEMSTATS_CALL_STACK_PUSH(Log_allocator::alloc_chunk);
     MEMSTATS_MEM_TYPE_VAR
     MEMSTATS_SET_MEM_TYPE(MEM_TYPE_LOG_ALLOCATOR);
     // Allocate a new chunks array. The array must be chunk_size-aligned.
-    void *addr = (void *)-1;
+#ifdef ESP_PLATFORM
+    // On ESP32, use malloc instead of mmap
+    void* addr = malloc(chunk_size * max_num_chunks);
+    if (addr == NULL) {
+      th_fail("Unable to allocate memory");
+    }
+    MEMSTATS_TRACK_CHANGE((long)chunk_size * max_num_chunks);
+    MEMSTATS_CALL_STACK_POP();
+#else
+    void* addr = (void*)-1;
     for (int i = 1; i <= 1000; i++) {
-      addr = (void *)(chunks + (chunk_size * max_num_chunks) * i);
+      addr = (void*)(chunks + (chunk_size * max_num_chunks) * i);
       MEMSTATS_CALL_STACK_PUSH(mmap);
       addr = mmap(addr, chunk_size * max_num_chunks,
                   PROT_READ | PROT_WRITE,  // R&W access
@@ -50,19 +63,20 @@ Log_allocator::Chunk *Log_allocator::alloc_chunk() {
       }
       MEMSTATS_RESTORE_MEM_TYPE();
       MEMSTATS_CALL_STACK_POP();
-      if (addr != (void *)-1 && ((long)addr) % chunk_size == 0) {
+      if (addr != (void*)-1 && ((long)addr) % chunk_size == 0) {
         break;
       } else {
-        addr = (void *)-1;
+        addr = (void*)-1;
       }
     }
 
-    if (addr == (void *)-1) {
+    if (addr == (void*)-1) {
       th_fail("Unable to allocate memory");
     }
     MEMSTATS_CALL_STACK_POP();
-    chunks = (char *)addr;
-    ret = (Chunk *)chunks;
+#endif
+    chunks = (char*)addr;
+    ret = (Chunk*)chunks;
     num_chunks = 1;
   }
 
@@ -82,13 +96,13 @@ void Log_allocator::debug_print() {
   }
 
   printf("Free chunks:\n");
-  for (Chunk *p = free_chunks; p != 0; p = (Chunk *)(p->next)) {
+  for (Chunk* p = free_chunks; p != 0; p = (Chunk*)(p->next)) {
     p->debug_print();
   }
 
   printf("All chunks:");
   for (int i = 0; i < max_num_chunks; i++) {
-    Chunk *p = (Chunk *)(chunks + chunk_size * i);
+    Chunk* p = (Chunk*)(chunks + chunk_size * i);
     p->debug_print();
   }
 }
