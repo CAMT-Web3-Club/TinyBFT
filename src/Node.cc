@@ -144,10 +144,10 @@ Node::Node(MEM_STATS_PARAM FILE* config_file,
 #endif
   node_id = -1;
 
-  char host_name[65];
+  char node_hostname[65];
   principals = (Principal**)malloc(num_principals * sizeof(Principal*));
   for (int i = 0; i < num_principals; i++) {
-    fscanf(config_file, "%64s %32s %hd %1023s \n", host_name, addr_buff, &port,
+    fscanf(config_file, "%64s %32s %hd %1023s \n", node_hostname, addr_buff, &port,
            public_keyfile);
     a.sin_addr.s_addr = inet_addr(addr_buff);
     a.sin_port = htons(port);
