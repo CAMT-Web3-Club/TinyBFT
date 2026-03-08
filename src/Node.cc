@@ -264,6 +264,14 @@ void Node::send(Message* m, int i) {
   }
 #endif
 
+  if (i == node_id) {
+    printf("libbyz: loopback push type %s, size %d\n", m->stag(), m->size());
+    Message* clone = new Message(m->size());
+    memcpy(clone->contents(), m->contents(), m->size());
+    loopback_queue.push_back(clone);
+    return;
+  }
+
   const Addr* to =
       (i == All_replicas) ? group->address() : principals[i]->address();
 
@@ -285,6 +293,8 @@ void Node::send(Message* m, int i) {
 }
 
 bool Node::has_messages(long to) {
+  if (!loopback_queue.empty()) return true;
+
   START_CC(handle_timeouts_cycles);
   ITimer::handle_timeouts();
   STOP_CC(handle_timeouts_cycles);
@@ -310,11 +320,38 @@ bool Node::has_messages(long to) {
 }
 
 Message* Node::recv() {
+  if (!loopback_queue.empty()) {
+    Message* m = loopback_queue.front();
+    loopback_queue.pop_front();
+    printf("libbyz: loopback pop type %s, size %d\n", m->stag(), m->size());
+    return m;
+  }
+
   Message* m = new Message(Max_message_size);
   while (1) {
+    if (!loopback_queue.empty()) {
+      delete m;
+      m = loopback_queue.front();
+      loopback_queue.pop_front();
+      printf("libbyz: loopback pop (inner) type %s, size %d\n", m->stag(),
+             m->size());
+      return m;
+    }
+
 #ifndef ASYNC_SOCK
-    while (!has_messages(20000));
+    while (!has_messages(20000)) {
+      if (!loopback_queue.empty()) break;
+    }
 #endif
+
+    if (!loopback_queue.empty()) {
+      delete m;
+      m = loopback_queue.front();
+      loopback_queue.pop_front();
+      printf("libbyz: loopback pop (retry) type %s, size %d\n", m->stag(),
+             m->size());
+      return m;
+    }
 
     INCR_OP(num_recvfrom);
     START_CC(recvfrom_cycles);

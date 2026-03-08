@@ -17,8 +17,8 @@
 
 namespace libbyzea {
 
-Client::Client(MEM_STATS_PARAM FILE *config_file,
-               const std::string &private_key_file, short port)
+Client::Client(MEM_STATS_PARAM FILE* config_file,
+               const std::string& private_key_file, short port)
     : Node(MEM_STATS_ARG_PUSH(Node) config_file, private_key_file, port),
       t_reps(MEM_STATS_ARG_PUSH(Certificate<Reply>) 2 * f() + 1),
       c_reps(MEM_STATS_ARG_PUSH(Certificate<Reply>) f() + 1) {
@@ -41,9 +41,10 @@ Client::~Client() { delete rtimer; }
 
 void Client::reset() { rtimeout = 150; }
 
-bool Client::send_request(Request *req) {
+bool Client::send_request(Request* req) {
   if (out_req == 0) {
     // Send request to service
+    printf("[Client] Sending request to primary %d\n", primary());
     send(req, primary());
     out_req = req;
     n_retrans = 0;
@@ -65,7 +66,7 @@ bool Client::send_request(Request *req) {
   }
 }
 
-Reply *Client::recv_reply() {
+Reply* Client::recv_reply() {
   if (out_req == 0)
     // Nothing to wait for.
     return 0;
@@ -74,15 +75,15 @@ Reply *Client::recv_reply() {
   // Wait for reply
   //
   while (1) {
-    Message *m = recv();
+    Message* m = recv();
 
-    Reply *rep;
+    Reply* rep;
     if (!Reply::convert(m, rep) || rep->request_id() != out_rid) {
       delete m;
       continue;
     }
 
-    Certificate<Reply> &reps = (rep->is_tentative()) ? t_reps : c_reps;
+    Certificate<Reply>& reps = (rep->is_tentative()) ? t_reps : c_reps;
     if (reps.is_complete()) {
       // We have a complete certificate without a full reply.
       if (!rep->full() || !rep->verify() || !rep->match(reps.cvalue())) {
@@ -125,7 +126,7 @@ Reply *Client::recv_reply() {
 
 void rtimer_handler() {
   th_assert(node, "Client is not initialized");
-  ((Client *)node)->retransmit();
+  ((Client*)node)->retransmit();
 }
 
 void Client::retransmit() {

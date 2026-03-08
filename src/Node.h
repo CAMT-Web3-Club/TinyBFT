@@ -5,6 +5,8 @@
 #include <mbedtls/entropy.h>
 #include <stdio.h>
 
+#include <deque>
+
 #include "ITimer.h"
 #include "Principal.h"
 #include "Statistics.h"
@@ -22,8 +24,11 @@ class ITimer;
 extern void atimer_handler();
 
 class Node {
+ private:
+  std::deque<Message*> loopback_queue;
+
  public:
-  Node(MEM_STATS_PARAM FILE *config_file, const std::string &private_key_file,
+  Node(MEM_STATS_PARAM FILE* config_file, const std::string& private_key_file,
        short port = 0);
   // Effects: Create a new Node object using the information in
   // "config_file" and "config_priv".  If port is 0, use the first
@@ -45,11 +50,11 @@ class Node {
   int id() const;
   // Effects: Returns the principal identifier of the current node.
 
-  Principal *i_to_p(int id) const;
+  Principal* i_to_p(int id) const;
   // Effects: Returns the principal that corresponds to
   // identifier "id" or 0 if "id" is not valid.
 
-  Principal *principal() const;
+  Principal* principal() const;
   // Effects: Returns a pointer to the principal identifier associated
   // with the current node.
 
@@ -62,20 +67,20 @@ class Node {
   inline int primary() const;
   // Effects: Returns  the identifier of the primary for current view.
 
-  mbedtls_ctr_drbg_context *drbg_context();
+  mbedtls_ctr_drbg_context* drbg_context();
   // Effects: Returns the node's random number generator context.
 
   //
   // Communication methods:
   //
   static const int All_replicas = -1;
-  void send(Message *m, int i);
+  void send(Message* m, int i);
   // Requires: "i" is either All_replicas or a valid principal
   // identifier.
   // Effects: Sends an unreliable message "m" to all replicas or to
   // principal "i".
 
-  Message *recv();
+  Message* recv();
   // Effects: Blocks waiting to receive a message (while calling
   // handlers on expired timers) then returns message.  The caller is
   // responsible for deallocating the message.
@@ -95,7 +100,7 @@ class Node {
   // Effects: Returns the size in bytes of an authenticator for principal
   // "id" (or current principal if "id" is negative.)
 
-  void gen_auth_out(char *src, unsigned src_len, char *dest = 0) const;
+  void gen_auth_out(char* src, unsigned src_len, char* dest = 0) const;
   // Requires: "src" points to a string of length at least "src_len"
   // bytes. If "dest" == 0, "src+src_len" must have size >= "sig_size()";
   // otherwise, "dest" points to a string of length at least "sig_size()".
@@ -103,12 +108,12 @@ class Node {
   // starting at "src" (using out-keys for principals) and places the result in
   // "src"+"src_len" (if "dest" == 0) or "dest" (otherwise).
 
-  void gen_auth_in(char *src, unsigned src_len, char *dest = 0) const;
+  void gen_auth_in(char* src, unsigned src_len, char* dest = 0) const;
   // Requires: same as gen_auth
   // Effects: Same as gen_auth but authenticator is computed using
   // in-keys for principals
 
-  bool verify_auth_in(int i, char *src, unsigned src_len, char *dest = 0) const;
+  bool verify_auth_in(int i, char* src, unsigned src_len, char* dest = 0) const;
   // Requires: "i" is not the calling principal and same as gen_auth
   // Effects: If "i" is an invalid principal identifier or is the
   // identifier of the calling principal, returns false and does
@@ -117,8 +122,8 @@ class Node {
   // valid for the calling principal (i.e. computed with calling
   // principal's in-key.)
 
-  bool verify_auth_out(int i, char *src, unsigned src_len,
-                       char *dest = 0) const;
+  bool verify_auth_out(int i, char* src, unsigned src_len,
+                       char* dest = 0) const;
   // Requires: same as verify_auth
   // Effects: same as verify_auth except that checks an authenticator
   // computed with calling principal's out-key.)
@@ -131,12 +136,12 @@ class Node {
   // Effects: Returns the size in bytes of a signature for principal
   // "id" (or current principal if "id" is negative.)
 
-  void gen_signature(const char *src, unsigned src_len, char *sig);
+  void gen_signature(const char* src, unsigned src_len, char* sig);
   // Requires: "sig" is at least sig_size() bytes long.
   // Effects: Generates a signature "sig" (from this principal) for
   // "src_len" bytes starting at "src" and puts the result in "sig".
 
-  unsigned decrypt(char *src, unsigned src_len, char *dst, unsigned dst_len);
+  unsigned decrypt(char* src, unsigned src_len, char* dst, unsigned dst_len);
   // Effects: decrypts the cyphertext in "src" using this
   // principal's private key and places up to "dst_len" bytes of the
   // result in "dst". Returns the number of bytes placed in "dst".
@@ -159,7 +164,7 @@ class Node {
   int threshold;     // Number of correct replicas. It must be
                      // threshold == 2*max_faulty+1.
 
-  PrivateKey *priv_key;  // Node's private key.
+  PrivateKey* priv_key;  // Node's private key.
 
   // Random number generator data
   mbedtls_ctr_drbg_context ctr_drbg_ctx;
@@ -167,11 +172,11 @@ class Node {
 
   // Map from principal identifiers to Principal*. The first "num_replicas"
   // principals correspond to the replicas.
-  Principal **principals;
+  Principal** principals;
   int num_principals;
 
   // Special principal associated with the group of replicas.
-  Principal *group;
+  Principal* group;
 
   View v;           //  Last view known to this node.
   int cur_primary;  // id of primary for the current view.
@@ -179,13 +184,13 @@ class Node {
   //
   // Handling authentication freshness
   //
-  ITimer *atimer;
+  ITimer* atimer;
   friend void atimer_handler();
 
   virtual void send_new_key();
   // Effects: Sends a new-key message and updates last_new_key.
 
-  New_key *last_new_key;  // Last new-key message we sent.
+  New_key* last_new_key;  // Last new-key message we sent.
 
   // Communication variables.
   int sock;
@@ -194,7 +199,7 @@ class Node {
   void new_tstamp();
   // Effects: Computes a new timestamp for rid.
 
-  void gen_auth(char *src, unsigned src_len, bool in, char *dest) const;
+  void gen_auth(char* src, unsigned src_len, bool in, char* dest) const;
   // Requires: "src" points to a string of length at least "src_len"
   // bytes. "dest" points to a string of length at least "sig_size()".
   // Effects: Computes an authenticator of "src_len" bytes starting at
@@ -202,8 +207,8 @@ class Node {
   // otherwise) and places the result in "src"+"src_len" (if "dest" ==
   // 0) or "dest" (otherwise).
 
-  bool verify_auth(int i, char *src, unsigned src_len, bool in,
-                   char *dest) const;
+  bool verify_auth(int i, char* src, unsigned src_len, bool in,
+                   char* dest) const;
   // Requires: "i" is not the calling principal and same as gen_auth
   // Effects: If "i" is an invalid principal identifier, returns false
   // and does nothing. Otherwise, returns true iff "dest" contains an
@@ -224,12 +229,12 @@ inline int Node::np() const { return num_principals; }
 
 inline int Node::id() const { return node_id; }
 
-inline Principal *Node::i_to_p(int id) const {
+inline Principal* Node::i_to_p(int id) const {
   if (id < 0 || id >= num_principals) return 0;
   return principals[id];
 }
 
-inline Principal *Node::principal() const { return i_to_p(id()); }
+inline Principal* Node::principal() const { return i_to_p(id()); }
 
 inline bool Node::is_replica(int id) const {
   return id >= 0 && id < num_replicas;
@@ -246,24 +251,24 @@ inline int Node::auth_size(int id) const {
   return ((id < num_replicas) ? num_replicas - 1 : num_replicas) * HMAC_size;
 }
 
-inline void Node::gen_auth_out(char *src, unsigned src_len, char *dest) const {
+inline void Node::gen_auth_out(char* src, unsigned src_len, char* dest) const {
   if (dest == 0) dest = src + src_len;
   gen_auth(src, src_len, false, dest);
 }
 
-inline void Node::gen_auth_in(char *src, unsigned src_len, char *dest) const {
+inline void Node::gen_auth_in(char* src, unsigned src_len, char* dest) const {
   if (dest == 0) dest = src + src_len;
   gen_auth(src, src_len, true, dest);
 }
 
-inline bool Node::verify_auth_in(int i, char *src, unsigned src_len,
-                                 char *dest) const {
+inline bool Node::verify_auth_in(int i, char* src, unsigned src_len,
+                                 char* dest) const {
   if (dest == 0) dest = src + src_len;
   return verify_auth(i, src, src_len, true, dest);
 }
 
-inline bool Node::verify_auth_out(int i, char *src, unsigned src_len,
-                                  char *dest) const {
+inline bool Node::verify_auth_out(int i, char* src, unsigned src_len,
+                                  char* dest) const {
   if (dest == 0) dest = src + src_len;
   return verify_auth(i, src, src_len, false, dest);
 }
@@ -274,14 +279,14 @@ inline unsigned Node::sig_size(int id) const {
   return principals[id]->sig_size();
 }
 
-inline int cipher_size(char *dst, unsigned dst_len) {
+inline int cipher_size(char* dst, unsigned dst_len) {
   // Effects: Returns the size of the cypher in dst or 0 if dst
   // does not contain a valid cypher.
   if (dst_len < 2 * sizeof(unsigned)) return 0;
 
   unsigned csize;
   dst += sizeof(unsigned);
-  memcpy((char *)&csize, dst, sizeof(unsigned));
+  memcpy((char*)&csize, dst, sizeof(unsigned));
 
   if (csize <= dst_len)
     return csize + 2 * sizeof(unsigned);
@@ -290,7 +295,7 @@ inline int cipher_size(char *dst, unsigned dst_len) {
 }
 
 // Pointer to global node object.
-extern Node *node;
+extern Node* node;
 
 }  // namespace libbyzea
 

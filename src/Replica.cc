@@ -50,7 +50,7 @@
 
 namespace libbyzea {
 // Global replica object.
-Replica *replica;
+Replica* replica;
 }  // namespace libbyzea
 
 // Force template instantiation
@@ -81,7 +81,7 @@ template class Set<Checkpoint>;
 namespace libbyzea {
 
 template <class T>
-void Replica::retransmit(T *m, Time &cur, Time *tsent, Principal *p) {
+void Replica::retransmit(T* m, Time& cur, Time* tsent, Principal* p) {
   // XXXXXXXXXXXthere most be a bug in the way tsent is managed. Figure out
   //  where and reinsert this protection against denial of service attacks.
   // if (diffTime(cur, *tsent) > 1000) {
@@ -145,10 +145,10 @@ void Replica::print_memory_consumption([[maybe_unused]] const size_t mem_size) {
 
 #ifndef NO_STATE_TRANSLATION
 
-Replica::Replica(FILE *config_file, const std::string &private_key_file,
-                 int num_objs, int (*get)(int, char **),
-                 void (*put)(int, int *, int *, char **),
-                 void (*shutdown_proc)(FILE *o), void (*restart_proc)(FILE *i),
+Replica::Replica(FILE* config_file, const std::string& private_key_file,
+                 int num_objs, int (*get)(int, char**),
+                 void (*put)(int, int*, int*, char**),
+                 void (*shutdown_proc)(FILE* o), void (*restart_proc)(FILE* i),
                  short port)
     : Node(config_file, config_priv, port),
       rqueue(),
@@ -163,8 +163,8 @@ Replica::Replica(FILE *config_file, const std::string &private_key_file,
       n_mem_blocks(num_objs) {
 #else
 
-Replica::Replica(MEM_STATS_PARAM FILE *config_file,
-                 const std::string &private_key_file, char *mem, int nbytes,
+Replica::Replica(MEM_STATS_PARAM FILE* config_file,
+                 const std::string& private_key_file, char* mem, int nbytes,
                  short port)
     : Node(MEM_STATS_ARG_PUSH(Node) config_file, private_key_file, port),
       rqueue(MEM_STATS_GUARD_PUSH(Req_queue)),
@@ -246,7 +246,7 @@ Replica::Replica(MEM_STATS_PARAM FILE *config_file,
 
 #ifdef LARGE_SND_BUFF
   int snd_buf_size = 262144;
-  error = setsockopt(sock, SOL_SOCKET, SO_SNDBUF, (char *)&snd_buf_size,
+  error = setsockopt(sock, SOL_SOCKET, SO_SNDBUF, (char*)&snd_buf_size,
                      sizeof(snd_buf_size));
   if (error < 0) {
     perror("unable to increase send buffer size");
@@ -256,7 +256,7 @@ Replica::Replica(MEM_STATS_PARAM FILE *config_file,
 
 #ifdef LARGE_RCV_BUFF
   int rcv_buf_size = 131072;
-  error = setsockopt(sock, SOL_SOCKET, SO_RCVBUF, (char *)&rcv_buf_size,
+  error = setsockopt(sock, SOL_SOCKET, SO_RCVBUF, (char*)&rcv_buf_size,
                      sizeof(rcv_buf_size));
   if (error < 0) {
     perror("unable to increase recv buffer size");
@@ -266,29 +266,26 @@ Replica::Replica(MEM_STATS_PARAM FILE *config_file,
   MEM_STATS_GUARD_POP();
 }
 
-void Replica::register_exec(int (*e)(Byz_req *, Byz_rep *, Byz_buffer *, int,
+void Replica::register_exec(int (*e)(Byz_req*, Byz_rep*, Byz_buffer*, int,
                                      bool)) {
   exec_command = e;
 }
 
 #ifndef NO_STATE_TRANSLATION
-void Replica::register_nondet_choices(void (*n)(Seqno, Byz_buffer *),
-                                      int max_len,
-                                      bool (*check)(Byz_buffer *)) {
+void Replica::register_nondet_choices(void (*n)(Seqno, Byz_buffer*),
+                                      int max_len, bool (*check)(Byz_buffer*)) {
   check_non_det = check;
 #else
-void Replica::register_nondet_choices(void (*n)(Seqno, Byz_buffer *),
+void Replica::register_nondet_choices(void (*n)(Seqno, Byz_buffer*),
                                       int max_len) {
 #endif
   non_det_choices = n;
   max_nondet_choice_len = max_len;
 }
 
-void Replica::register_recv_callback(int (*r)(Byz_rep *)) {
-  reply_callback = r;
-}
+void Replica::register_recv_callback(int (*r)(Byz_rep*)) { reply_callback = r; }
 
-void Replica::compute_non_det(Seqno s, char *b, int *b_len) {
+void Replica::compute_non_det(Seqno s, char* b, int* b_len) {
   if (non_det_choices == 0) {
     *b_len = 0;
     return;
@@ -332,7 +329,8 @@ void Replica::recv() {
       MEMSTATS_RESTORE_MEM_TYPE();
     }
 
-    Message *m = Node::recv();
+    Message* m = Node::recv();
+    printf("libbyz: replica received message type %d\n", m->tag());
     if (qs) {
       if (m->tag() != New_key_tag && m->tag() != Query_stable_tag &&
           m->tag() != Reply_stable_tag && m->tag() != Status_tag) {
@@ -430,12 +428,18 @@ void Replica::recv() {
   }
 }
 
-void Replica::handle(Request *m) {
+void Replica::handle(Request* m) {
+  bool vrfy = m->verify();
+  bool hnv = has_new_view();
+  printf(
+      "libbyz: handling request from %d, rid %llu, verify=%d, "
+      "has_new_view=%d\n",
+      m->client_id(), m->request_id(), vrfy, hnv);
   int cid = m->client_id();
   bool ro = m->is_read_only();
   Request_id rid = m->request_id();
 
-  if (has_new_view() && m->verify()) {
+  if (hnv && vrfy) {
     // Replica's requests must be signed and cannot be read-only.
     if (!is_replica(cid) || !ro) {
       if (ro) {
@@ -488,6 +492,14 @@ void Replica::handle(Request *m) {
 }
 
 void Replica::send_pre_prepare() {
+  bool cond =
+      (rqueue.size() > 0 && seqno + 1 <= last_executed + congestion_window &&
+       seqno + 1 <= max_out + last_stable && has_new_view());
+  printf(
+      "libbyz: send_pre_prepare seqno %lld, rq_size %d, le %lld, cw %d, mo %d, "
+      "ls %lld, hnv %d, cond %d\n",
+      seqno + 1, rqueue.size(), last_executed, congestion_window, max_out,
+      last_stable, has_new_view(), cond);
   MEMSTATS_MEM_TYPE_VAR
   th_assert(primary() == node_id, "Non-primary called send_pre_prepare");
 
@@ -516,9 +528,9 @@ void Replica::send_pre_prepare() {
     seqno++;
     //    fprintf(stderr, "Sending PP seqno %qd\n", seqno);
 #ifndef STATIC_LOG_ALLOCATOR
-    Pre_prepare *pp = new Pre_prepare(view(), seqno, rqueue);
+    Pre_prepare* pp = new Pre_prepare(view(), seqno, rqueue);
 #else
-    Pre_prepare *pp = agreement_region::new_pre_prepare(view(), seqno, rqueue);
+    Pre_prepare* pp = agreement_region::new_pre_prepare(view(), seqno, rqueue);
 #endif
 
     // TODO: should make code match my proof with request removed
@@ -526,6 +538,7 @@ void Replica::send_pre_prepare() {
     // pre-prepare is constructed.
 
     send(pp, All_replicas);
+    printf("libbyz: sent pre_prepare to All_replicas\n");
     MEMSTATS_SET_MEM_TYPE(MEM_TYPE_CERTIFICATE_LOGS);
     plog.fetch(seqno).add_mine(pp);
     MEMSTATS_RESTORE_MEM_TYPE();
@@ -533,7 +546,7 @@ void Replica::send_pre_prepare() {
 }
 
 template <class T>
-bool Replica::in_w(T *m) {
+bool Replica::in_w(T* m) {
   const Seqno offset = m->seqno() - last_stable;
 
   if (offset > 0 && offset <= max_out) return true;
@@ -548,7 +561,7 @@ bool Replica::in_w(T *m) {
 }
 
 template <class T>
-bool Replica::in_wv(T *m) {
+bool Replica::in_wv(T* m) {
   const Seqno offset = m->seqno() - last_stable;
 
   if (offset > 0 && offset <= max_out && m->view() == view()) return true;
@@ -562,7 +575,9 @@ bool Replica::in_wv(T *m) {
   return false;
 }
 
-void Replica::handle(Pre_prepare *m) {
+void Replica::handle(Pre_prepare* m) {
+  printf("libbyz: handling pre_prepare seqno %lld from %d\n", m->seqno(),
+         m->id());
   MEMSTATS_MEM_TYPE_VAR
   const Seqno ms = m->seqno();
 
@@ -576,7 +591,7 @@ void Replica::handle(Pre_prepare *m) {
   if (in_wv(m) && ms > low_bound && has_new_view()) {
 #endif
     MEMSTATS_SET_MEM_TYPE(MEM_TYPE_CERTIFICATE_LOGS);
-    Prepared_cert &pc = plog.fetch(ms);
+    Prepared_cert& pc = plog.fetch(ms);
     MEMSTATS_RESTORE_MEM_TYPE();
 
     // Only accept message if we never accepted another pre-prepare
@@ -603,11 +618,11 @@ void Replica::handle(Pre_prepare *m) {
   delete m;
 }
 
-void Replica::send_prepare(Prepared_cert &pc) {
+void Replica::send_prepare(Prepared_cert& pc) {
   if (pc.my_prepare() == 0 && pc.is_pp_complete()) {
     // Send prepare to all replicas and log it.
-    Pre_prepare *pp = pc.pre_prepare();
-    Prepare *p = new Prepare(v, pp->seqno(), pp->digest());
+    Pre_prepare* pp = pc.pre_prepare();
+    Prepare* p = new Prepare(v, pp->seqno(), pp->digest());
     send(p, All_replicas);
     if (pc.add_mine(p)) {
 #ifdef STATIC_LOG_ALLOCATOR
@@ -623,13 +638,13 @@ void Replica::send_commit(Seqno s) {
   // for null requests. May not be true in general.
   if (s == last_executed + 1) execute_prepared();
 
-  Commit *c = new Commit(view(), s);
+  Commit* c = new Commit(view(), s);
   send(c, All_replicas);
 
   if (s > last_prepared) last_prepared = s;
 
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_CERTIFICATE_LOGS);
-  Certificate<Commit> &cs = clog.fetch(s);
+  Certificate<Commit>& cs = clog.fetch(s);
   auto added = cs.add_mine(c);
 #ifdef STATIC_LOG_ALLOCATOR
   if (added) {
@@ -643,7 +658,7 @@ void Replica::send_commit(Seqno s) {
   MEMSTATS_RESTORE_MEM_TYPE();
 }
 
-void Replica::handle(Prepare *m) {
+void Replica::handle(Prepare* m) {
   MEMSTATS_MEM_TYPE_VAR
   const Seqno ms = m->seqno();
 
@@ -651,7 +666,7 @@ void Replica::handle(Prepare *m) {
   // current view.
   if (in_wv(m) && ms > low_bound && primary() != m->id() && has_new_view()) {
     MEMSTATS_SET_MEM_TYPE(MEM_TYPE_CERTIFICATE_LOGS);
-    Prepared_cert &ps = plog.fetch(ms);
+    Prepared_cert& ps = plog.fetch(ms);
     if (ps.add(m)) {
       if (ps.is_complete()) {
         send_commit(ms);
@@ -677,7 +692,7 @@ void Replica::handle(Prepare *m) {
   return;
 }
 
-void Replica::handle(Commit *m) {
+void Replica::handle(Commit* m) {
   MEMSTATS_MEM_TYPE_VAR
   const Seqno ms = m->seqno();
 
@@ -685,7 +700,7 @@ void Replica::handle(Commit *m) {
   // accept commits from older views as in proof.
   if (in_wv(m) && ms > low_bound) {
     MEMSTATS_SET_MEM_TYPE(MEM_TYPE_CERTIFICATE_LOGS);
-    Certificate<Commit> &cs = clog.fetch(m->seqno());
+    Certificate<Commit>& cs = clog.fetch(m->seqno());
     auto added = cs.add(m);
 #if STATIC_LOG_ALLOCATOR
     if (added) {
@@ -703,7 +718,7 @@ void Replica::handle(Commit *m) {
   return;
 }
 
-void Replica::handle(Checkpoint *m) {
+void Replica::handle(Checkpoint* m) {
   MEMSTATS_MEM_TYPE_VAR
   const Seqno ms = m->seqno();
   if (ms > last_stable) {
@@ -715,7 +730,7 @@ void Replica::handle(Checkpoint *m) {
       bool late = m->stable() && last_executed < ms;
       MEMSTATS_SET_MEM_TYPE(MEM_TYPE_CERTIFICATE_LOGS);
       if (clog.within_range(last_executed)) {
-        Time *t = nullptr;
+        Time* t = nullptr;
         clog.fetch(last_executed).mine(&t);
         MEMSTATS_RESTORE_MEM_TYPE();
         if (t != nullptr) {
@@ -725,7 +740,7 @@ void Replica::handle(Checkpoint *m) {
       MEMSTATS_RESTORE_MEM_TYPE();
 
       if (!late) {
-        Certificate<Checkpoint> &cs = elog.fetch(ms);
+        Certificate<Checkpoint>& cs = elog.fetch(ms);
         auto added = cs.add(m);
         if (added) {
 #ifdef STATIC_LOG_ALLOCATOR
@@ -755,7 +770,7 @@ void Replica::handle(Checkpoint *m) {
       }
 
       // Stable checkpoint message above my last_executed.
-      Checkpoint *c = sset.fetch(m->id());
+      Checkpoint* c = sset.fetch(m->id());
       if (c == nullptr || c->seqno() < ms) {
 #ifdef STATIC_LOG_ALLOCATOR
         sset.remove(m->id());
@@ -793,14 +808,16 @@ void Replica::handle(Checkpoint *m) {
   return;
 }
 
-void Replica::handle(New_key *m) {
-  if (m->id() != node_id && !m->verify()) {
+void Replica::handle(New_key* m) {
+  bool vrfy = m->verify();
+  printf("libbyz: handling new_key from %d, verify=%d\n", m->id(), vrfy);
+  if (m->id() != node_id && !vrfy) {
     fprintf(stderr, "BAD NKEY from %d\n", m->id());
   }
   delete m;
 }
 
-void Replica::handle(Status *m) {
+void Replica::handle(Status* m) {
   MEMSTATS_MEM_TYPE_VAR
   static const int max_ret_bytes = 65536;
 
@@ -813,16 +830,16 @@ void Replica::handle(Status *m) {
 
   if (m->verify() && qs == 0) {
     Time current;
-    Time *t;
+    Time* t;
     current = currentTime();
-    Principal *p = node->i_to_p(m->id());
+    Principal* p = node->i_to_p(m->id());
 
     // Retransmit messages that the sender is missing.
     if (last_stable > m->last_stable() + max_out) {
       // Node is so out-of-date that it will not accept any
       // pre-prepare/prepare/commmit messages in my log.
       // Send a stable checkpoint message for my stable checkpoint.
-      Checkpoint *c = elog.fetch(last_stable).mine(&t);
+      Checkpoint* c = elog.fetch(last_stable).mine(&t);
       th_assert(c != 0 && c->stable(), "Invalid state");
       retransmit(c, current, t, p);
       delete m;
@@ -834,7 +851,7 @@ void Replica::handle(Status *m) {
     int min = MAX(last_stable, m->last_stable() + 1);
     for (Seqno n = min; n <= max; n++) {
       if (n % checkpoint_interval == 0) {
-        Checkpoint *c = elog.fetch(n).mine(&t);
+        Checkpoint* c = elog.fetch(n).mine(&t);
         if (c != 0) {
           retransmit(c, current, t, p);
           th_assert(n == last_stable || !c->stable(), "Invalid state");
@@ -845,7 +862,7 @@ void Replica::handle(Status *m) {
     if (m->view() < v) {
       // Retransmit my latest view-change message
       MEMSTATS_SET_MEM_TYPE(MEM_TYPE_VIEW_INFO);
-      View_change *vc = vi.my_view_change(&t);
+      View_change* vc = vi.my_view_change(&t);
       MEMSTATS_RESTORE_MEM_TYPE();
       if (vc != 0) retransmit(vc, current, t, p);
       delete m;
@@ -863,7 +880,7 @@ void Replica::handle(Status *m) {
           }
 
           MEMSTATS_SET_MEM_TYPE(MEM_TYPE_CERTIFICATE_LOGS);
-          Commit *c = clog.fetch(n).mine(&t);
+          Commit* c = clog.fetch(n).mine(&t);
           MEMSTATS_RESTORE_MEM_TYPE();
           if (c != 0) {
             retransmit(c, current, t, p);
@@ -878,14 +895,14 @@ void Replica::handle(Status *m) {
           // a pre-prepare/prepare for view v.
           if (primary() == node_id) {
             MEMSTATS_SET_MEM_TYPE(MEM_TYPE_CERTIFICATE_LOGS);
-            Pre_prepare *pp = plog.fetch(n).my_pre_prepare(&t);
+            Pre_prepare* pp = plog.fetch(n).my_pre_prepare(&t);
             MEMSTATS_RESTORE_MEM_TYPE();
             if (pp != 0) {
               retransmit(pp, current, t, p);
             }
           } else {
             MEMSTATS_SET_MEM_TYPE(MEM_TYPE_CERTIFICATE_LOGS);
-            Prepare *pr = plog.fetch(n).my_prepare(&t);
+            Prepare* pr = plog.fetch(n).my_prepare(&t);
             MEMSTATS_RESTORE_MEM_TYPE();
             if (pr != 0) {
               retransmit(pr, current, t, p);
@@ -897,7 +914,7 @@ void Replica::handle(Status *m) {
         if (!m->has_vc(node_id)) {
           // p does not have my view-change: send it.
           MEMSTATS_SET_MEM_TYPE(MEM_TYPE_VIEW_INFO);
-          View_change *vc = vi.my_view_change(&t);
+          View_change* vc = vi.my_view_change(&t);
           MEMSTATS_RESTORE_MEM_TYPE();
           th_assert(vc != 0, "Invalid state");
           retransmit(vc, current, t, p);
@@ -907,7 +924,7 @@ void Replica::handle(Status *m) {
           if (primary(v) == node_id && vi.has_new_view(v)) {
             // p does not have new-view message and I am primary: send it
             MEMSTATS_SET_MEM_TYPE(MEM_TYPE_VIEW_INFO);
-            New_view *nv = vi.my_new_view(&t);
+            New_view* nv = vi.my_new_view(&t);
             MEMSTATS_RESTORE_MEM_TYPE();
             if (nv != 0) retransmit(nv, current, t, p);
           }
@@ -924,7 +941,7 @@ void Replica::handle(Status *m) {
             for (int i = 0; i < num_replicas; i++) {
               if (m->id() == i) continue;
               MEMSTATS_SET_MEM_TYPE(MEM_TYPE_VIEW_INFO);
-              View_change_ack *vca = vi.my_vc_ack(i);
+              View_change_ack* vca = vi.my_vc_ack(i);
               MEMSTATS_RESTORE_MEM_TYPE();
               if (vca && !m->has_vc(i))
                 // View-change acks are not being authenticated
@@ -942,7 +959,7 @@ void Replica::handle(Status *m) {
           bool ppp;
           BR_map mrmap;
           while (gen.get(ppv, ppn, mrmap, ppp)) {
-            Pre_prepare *pp = 0;
+            Pre_prepare* pp = 0;
             if (m->id() == primary(v)) {
               MEMSTATS_SET_MEM_TYPE(MEM_TYPE_VIEW_INFO);
               pp = vi.pre_prepare(ppn, ppv);
@@ -988,7 +1005,7 @@ void Replica::handle(Status *m) {
   delete m;
 }
 
-void Replica::handle(View_change *m) {
+void Replica::handle(View_change* m) {
   MEMSTATS_MEM_TYPE_VAR
   printf("RECV: view change v=%qd from %d\n", m->view(), m->id());
   if (m->id() == primary() && m->view() > v) {
@@ -1044,7 +1061,7 @@ void Replica::handle(View_change *m) {
   }
 }
 
-void Replica::handle(New_view *m) {
+void Replica::handle(New_view* m) {
   //  printf("RECV: new view v=%qd from %d\n", m->view(), m->id());
 
   MEMSTATS_MEM_TYPE_VAR
@@ -1053,7 +1070,7 @@ void Replica::handle(New_view *m) {
   MEMSTATS_RESTORE_MEM_TYPE();
 }
 
-void Replica::handle(View_change_ack *m) {
+void Replica::handle(View_change_ack* m) {
   //  printf("RECV: view-change ack v=%qd from %d for %d\n", m->view(), m->id(),
   //  m->vc_id());
 
@@ -1088,8 +1105,8 @@ void Replica::send_view_change() {
 
   for (Seqno i = last_stable + 1; i <= last_stable + max_out; i++) {
     MEMSTATS_SET_MEM_TYPE(MEM_TYPE_CERTIFICATE_LOGS);
-    Prepared_cert &pc = plog.fetch(i);
-    Certificate<Commit> &cc = clog.fetch(i);
+    Prepared_cert& pc = plog.fetch(i);
+    Certificate<Commit>& cc = clog.fetch(i);
     MEMSTATS_RESTORE_MEM_TYPE();
 
     if (pc.is_complete()) {
@@ -1097,13 +1114,13 @@ void Replica::send_view_change() {
       vi.add_complete(pc.rem_pre_prepare());
       MEMSTATS_RESTORE_MEM_TYPE();
     } else {
-      Prepare *p = pc.my_prepare();
+      Prepare* p = pc.my_prepare();
       if (p != 0) {
         MEMSTATS_SET_MEM_TYPE(MEM_TYPE_VIEW_INFO);
         vi.add_incomplete(i, p->digest());
         MEMSTATS_RESTORE_MEM_TYPE();
       } else {
-        Pre_prepare *pp = pc.my_pre_prepare();
+        Pre_prepare* pp = pc.my_pre_prepare();
         if (pp != 0) {
           MEMSTATS_SET_MEM_TYPE(MEM_TYPE_VIEW_INFO);
           vi.add_incomplete(i, pp->digest());
@@ -1135,7 +1152,7 @@ void Replica::process_new_view(Seqno min, Digest d, Seqno max, Seqno ms) {
 
   if (primary(v) == id()) {
     MEMSTATS_SET_MEM_TYPE(MEM_TYPE_VIEW_INFO);
-    New_view *nv = vi.my_new_view();
+    New_view* nv = vi.my_new_view();
     MEMSTATS_RESTORE_MEM_TYPE();
     send(nv, All_replicas);
   }
@@ -1157,15 +1174,15 @@ void Replica::process_new_view(Seqno min, Digest d, Seqno max, Seqno ms) {
   for (Seqno i = min + 1; i < max; i++) {
     Digest d;
     MEMSTATS_SET_MEM_TYPE(MEM_TYPE_VIEW_INFO);
-    Pre_prepare *pp = vi.fetch_request(i, d);
+    Pre_prepare* pp = vi.fetch_request(i, d);
     MEMSTATS_RESTORE_MEM_TYPE();
     MEMSTATS_SET_MEM_TYPE(MEM_TYPE_CERTIFICATE_LOGS);
-    Prepared_cert &pc = plog.fetch(i);
+    Prepared_cert& pc = plog.fetch(i);
 
     if (primary() == id()) {
       pc.add_mine(pp);
     } else {
-      Prepare *p = new Prepare(v, i, d);
+      Prepare* p = new Prepare(v, i, d);
       pc.add_mine(p);
       send(p, All_replicas);
 
@@ -1192,7 +1209,7 @@ void Replica::process_new_view(Seqno min, Digest d, Seqno max, Seqno ms) {
     has_nv_state = true;
 
     // Execute any buffered read-only requests
-    for (Request *m = ro_rqueue.remove(); m != 0; m = ro_rqueue.remove()) {
+    for (Request* m = ro_rqueue.remove(); m != 0; m = ro_rqueue.remove()) {
       execute_read_only(m);
       delete m;
     }
@@ -1203,12 +1220,12 @@ void Replica::process_new_view(Seqno min, Digest d, Seqno max, Seqno ms) {
   //  printf("XXX DONE:process new view: %qd\n", v);
 }
 
-Pre_prepare *Replica::prepared(Seqno n) {
+Pre_prepare* Replica::prepared(Seqno n) {
   MEMSTATS_MEM_TYPE_VAR
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_CERTIFICATE_LOGS);
-  Prepared_cert &pc = plog.fetch(n);
+  Prepared_cert& pc = plog.fetch(n);
   if (pc.is_complete()) {
-    auto *pp = pc.pre_prepare();
+    auto* pp = pc.pre_prepare();
     MEMSTATS_RESTORE_MEM_TYPE();
     return pp;
   }
@@ -1216,13 +1233,13 @@ Pre_prepare *Replica::prepared(Seqno n) {
   return 0;
 }
 
-Pre_prepare *Replica::committed(Seqno s) {
+Pre_prepare* Replica::committed(Seqno s) {
   MEMSTATS_MEM_TYPE_VAR
   // TODO: This is correct but too conservative: fix to handle case
   // where commit and prepare are not in same view; and to allow
   // commits without prepared requests, i.e., only with the
   // pre-prepare.
-  Pre_prepare *pp = prepared(s);
+  Pre_prepare* pp = prepared(s);
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_CERTIFICATE_LOGS);
   if (clog.fetch(s).is_complete()) {
     MEMSTATS_RESTORE_MEM_TYPE();
@@ -1232,13 +1249,13 @@ Pre_prepare *Replica::committed(Seqno s) {
   return 0;
 }
 
-bool Replica::execute_read_only(Request *req) {
+bool Replica::execute_read_only(Request* req) {
   // JC: won't execute read-only if there's a current tentative execution
   // this probably isn't necessary if clients wait for 2f+1 RO responses
   if (last_tentative_execute == last_executed && !state.in_fetch_state() &&
       !state.in_check_state()) {
     // Create a new Reply message.
-    Reply *rep = new Reply(view(), req->request_id(), node_id);
+    Reply* rep = new Reply(view(), req->request_id(), node_id);
 
     // Obtain "in" and "out" buffers to call exec_command
     Byz_req inb;
@@ -1249,7 +1266,7 @@ bool Replica::execute_read_only(Request *req) {
 
     // Execute command.
     int cid = req->client_id();
-    Principal *cp = i_to_p(cid);
+    Principal* cp = i_to_p(cid);
     int error = exec_command(&inb, &outb, 0, cid, true);
 
     if (outb.size % ALIGNMENT_BYTES)
@@ -1282,7 +1299,7 @@ void Replica::execute_prepared(bool committed) {
   if (last_tentative_execute < last_executed + 1 &&
       last_executed < last_stable + max_out && !state.in_fetch_state() &&
       !state.in_check_state() && has_new_view()) {
-    Pre_prepare *pp = prepared(last_executed + 1);
+    Pre_prepare* pp = prepared(last_executed + 1);
 
     if (pp && pp->view() == view()) {
       // Can execute the requests in the message with sequence number
@@ -1382,7 +1399,7 @@ void Replica::execute_committed() {
       if (last_executed >= last_stable + max_out || last_executed < last_stable)
         return;
 
-      Pre_prepare *pp = committed(last_executed + 1);
+      Pre_prepare* pp = committed(last_executed + 1);
 
       if (pp && pp->view() == view()) {
         // Tentatively execute last_executed + 1 if needed.
@@ -1396,7 +1413,7 @@ void Replica::execute_committed() {
         th_assert(pp->seqno() == last_executed, "Invalid execution");
 
         // Execute any buffered read-only requests
-        for (Request *m = ro_rqueue.remove(); m != 0; m = ro_rqueue.remove()) {
+        for (Request* m = ro_rqueue.remove(); m != 0; m = ro_rqueue.remove()) {
           execute_read_only(m);
           delete m;
         }
@@ -1432,8 +1449,8 @@ void Replica::execute_committed() {
           MEMSTATS_SET_MEM_TYPE(MEM_TYPE_STATE_MANAGEMENT);
           state.digest(last_executed, d_state);
           MEMSTATS_RESTORE_MEM_TYPE();
-          Checkpoint *e = new Checkpoint(last_executed, d_state);
-          Certificate<Checkpoint> &cc = elog.fetch(last_executed);
+          Checkpoint* e = new Checkpoint(last_executed, d_state);
+          Certificate<Checkpoint>& cc = elog.fetch(last_executed);
           cc.add_mine(e);
           if (cc.is_complete()) {
             mark_stable(last_executed, true);
@@ -1474,7 +1491,7 @@ void Replica::update_max_rec() {
   for (int i = 0; i < num_replicas; i++) {
     if (replies.reply(i)) {
       int len;
-      char *buf = replies.reply(i)->reply(len);
+      char* buf = replies.reply(i)->reply(len);
       if (len == sizeof(Seqno)) {
         Seqno nr;
         memcpy(&nr, buf, sizeof(Seqno));
@@ -1519,7 +1536,7 @@ void Replica::new_state(Seqno c) {
     MEMSTATS_SET_MEM_TYPE(MEM_TYPE_STATE_MANAGEMENT);
     state.digest(c, d);
     MEMSTATS_RESTORE_MEM_TYPE();
-    Checkpoint *ck = new Checkpoint(c, d);
+    Checkpoint* ck = new Checkpoint(c, d);
     elog.fetch(c).add_mine(ck);
     send(ck, All_replicas);
 #ifdef STATIC_LOG_ALLOCATOR
@@ -1530,7 +1547,7 @@ void Replica::new_state(Seqno c) {
   // Check if c is known to be stable.
   int scount = 0;
   for (int i = 0; i < num_replicas; i++) {
-    Checkpoint *ck = sset.fetch(i);
+    Checkpoint* ck = sset.fetch(i);
     if (ck != 0 && ck->seqno() >= c) {
       th_assert(ck->stable(), "Invalid state");
       scount++;
@@ -1546,7 +1563,7 @@ void Replica::new_state(Seqno c) {
   execute_committed();
 
   // Execute any buffered read-only requests
-  for (Request *m = ro_rqueue.remove(); m != 0; m = ro_rqueue.remove()) {
+  for (Request* m = ro_rqueue.remove(); m != 0; m = ro_rqueue.remove()) {
     execute_read_only(m);
     delete m;
   }
@@ -1619,7 +1636,7 @@ void Replica::mark_stable(Seqno n, bool have_state) {
     // Re-authenticate my checkpoint message to mark it as stable or
     // if I do not have one put one in and make the corresponding
     // certificate complete.
-    Checkpoint *c = elog.fetch(last_stable).mine();
+    Checkpoint* c = elog.fetch(last_stable).mine();
     if (c == nullptr) {
       Digest d_state;
       MEMSTATS_SET_MEM_TYPE(MEM_TYPE_STATE_MANAGEMENT);
@@ -1642,7 +1659,7 @@ void Replica::mark_stable(Seqno n, bool have_state) {
   // my window to elog.
   Seqno new_ls = last_stable;
   for (int i = 0; i < num_replicas; i++) {
-    Checkpoint *c = sset.fetch(i);
+    Checkpoint* c = sset.fetch(i);
     if (c != 0) {
       Seqno cn = c->seqno();
       if (cn < last_stable) {
@@ -1654,7 +1671,7 @@ void Replica::mark_stable(Seqno n, bool have_state) {
       }
 
       if (cn <= last_stable + max_out) {
-        Certificate<Checkpoint> &cs = elog.fetch(cn);
+        Certificate<Checkpoint>& cs = elog.fetch(cn);
         cs.add(sset.remove(i));
         if (cs.is_complete() && cn > new_ls) new_ls = cn;
       }
@@ -1672,28 +1689,28 @@ void Replica::mark_stable(Seqno n, bool have_state) {
   if (primary() == id()) send_pre_prepare();
 }
 
-void Replica::handle(Data *m) {
+void Replica::handle(Data* m) {
   MEMSTATS_MEM_TYPE_VAR
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_STATE_MANAGEMENT);
   state.handle(m);
   MEMSTATS_RESTORE_MEM_TYPE();
 }
 
-void Replica::handle(Meta_data *m) {
+void Replica::handle(Meta_data* m) {
   MEMSTATS_MEM_TYPE_VAR
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_STATE_MANAGEMENT);
   state.handle(m);
   MEMSTATS_RESTORE_MEM_TYPE();
 }
 
-void Replica::handle(Meta_data_d *m) {
+void Replica::handle(Meta_data_d* m) {
   MEMSTATS_MEM_TYPE_VAR
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_STATE_MANAGEMENT);
   state.handle(m);
   MEMSTATS_RESTORE_MEM_TYPE();
 }
 
-void Replica::handle(Fetch *m) {
+void Replica::handle(Fetch* m) {
   MEMSTATS_MEM_TYPE_VAR
   int mid = m->id();
   MEMSTATS_SET_MEM_TYPE(MEM_TYPE_STATE_MANAGEMENT);
@@ -1773,7 +1790,7 @@ void Replica::send_status() {
       // Set prepared and committed bitmaps correctly
       int max = last_stable + max_out;
       for (Seqno n = last_executed + 1; n <= max; n++) {
-        Prepared_cert &pc = plog.fetch(n);
+        Prepared_cert& pc = plog.fetch(n);
         if (pc.is_complete() ||
             state.in_check_state()) {  // XXXXXXadded state.in_check_state()
           s.mark_prepared(n);
@@ -1820,7 +1837,7 @@ bool Replica::shutdown() {
 
   char ckpt_name[1024];
   sprintf(ckpt_name, "/tmp/%s_%d", service_name, id());
-  FILE *o = fopen(ckpt_name, "w");
+  FILE* o = fopen(ckpt_name, "w");
 
   size_t sz = fwrite(&v, sizeof(View), 1, o);
   sz += fwrite(&limbo, sizeof(bool), 1, o);
@@ -1852,7 +1869,7 @@ bool Replica::shutdown() {
   return ret & (sz == 9);
 }
 
-bool Replica::restart(FILE *in) {
+bool Replica::restart(FILE* in) {
   START_CC(restart_time);
 
   bool ret = true;
@@ -1911,7 +1928,7 @@ void Replica::recover() {
 
   char ckpt_name[1024];
   sprintf(ckpt_name, "/tmp/%s_%d", service_name, id());
-  FILE *i = fopen(ckpt_name, "r");
+  FILE* i = fopen(ckpt_name, "r");
 
   if (i == NULL || !restart(i)) {
     // Replica is faulty; start from initial state.
@@ -1938,7 +1955,7 @@ void Replica::recover() {
   unsigned zk[Key_size_u];
   bzero(zk, Key_size);
   for (int i = num_replicas; i < num_principals; i++) {
-    Principal *p = i_to_p(i);
+    Principal* p = i_to_p(i);
     p->set_out_key(zk, p->last_tstamp() + 1);
   }
   STOP_CC(nk_time);
@@ -1951,12 +1968,12 @@ void Replica::recover() {
 
   // Add my own reply-stable message to the estimator.
   Seqno lc = last_executed / checkpoint_interval * checkpoint_interval;
-  Reply_stable *rs =
+  Reply_stable* rs =
       new Reply_stable(lc, last_prepared, qs->nonce(), i_to_p(id()));
   se.add(rs, true);
 }
 
-void Replica::handle(Query_stable *m) {
+void Replica::handle(Query_stable* m) {
   if (m->verify()) {
     Seqno lc = last_executed / checkpoint_interval * checkpoint_interval;
     Reply_stable rs(lc, last_prepared, m->nonce(), i_to_p(m->id()));
@@ -2016,7 +2033,7 @@ void Replica::enforce_bound(Seqno b) {
   corrupt = !correct;
 }
 
-void Replica::handle(Reply_stable *m) {
+void Replica::handle(Reply_stable* m) {
   MEMSTATS_MEM_TYPE_VAR
   if (qs && qs->nonce() == m->nonce()) {
     if (se.add(m)) {
@@ -2034,7 +2051,7 @@ void Replica::handle(Reply_stable *m) {
       rr = new Request(new_rid());
 
       int len;
-      char *buf = rr->store_command(len);
+      char* buf = rr->store_command(len);
       th_assert(len >= (int)sizeof(recovery_point), "Request is too small");
       memcpy(buf, &recovery_point, sizeof(recovery_point));
 
@@ -2077,7 +2094,7 @@ void Replica::enforce_view(View rec_view) {
   send_view_change();
 }
 
-void Replica::handle(Reply *m, bool mine) {
+void Replica::handle(Reply* m, bool mine) {
   int mid = m->id();
   int mv = m->view();
 
@@ -2145,7 +2162,7 @@ void Replica::handle(Reply *m, bool mine) {
         // I have a valid reply to my outstanding recovery request.
         // Update recovery point
         int len;
-        const char *rep = rr_reps.cvalue()->reply(len);
+        const char* rep = rr_reps.cvalue()->reply(len);
         th_assert(len == sizeof(Seqno), "Invalid message");
 
         Seqno rec_seqno;
@@ -2190,7 +2207,7 @@ void Replica::send_null() {
 #else
       Req_queue empty;
 #endif
-      Pre_prepare *pp = new Pre_prepare(view(), seqno, empty);
+      Pre_prepare* pp = new Pre_prepare(view(), seqno, empty);
       send(pp, All_replicas);
       plog.fetch(seqno).add_mine(pp);
     }
@@ -2201,7 +2218,7 @@ void Replica::send_null() {
   // requests to allow recoveries to complete.
 }
 
-bool Replica::send_request(Request *request) {
+bool Replica::send_request(Request* request) {
   if (rr != nullptr) {
     return false;
   }
@@ -2272,8 +2289,8 @@ void ntimer_handler() {
   replica->send_null();
 }
 
-bool Replica::has_req(int cid, const Digest &d) {
-  Request *req = rqueue.first_client(cid);
+bool Replica::has_req(int cid, const Digest& d) {
+  Request* req = rqueue.first_client(cid);
 
   if (req && req->digest() == d) return true;
 
@@ -2284,8 +2301,8 @@ void Replica::join_mcast_group() {
   struct ip_mreq req;
   req.imr_multiaddr.s_addr = group->address()->sin_addr.s_addr;
   req.imr_interface.s_addr = INADDR_ANY;
-  int error = setsockopt(sock, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char *)&req,
-                         sizeof(req));
+  int error =
+      setsockopt(sock, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&req, sizeof(req));
   if (error < 0) {
     perror("Unable to join group");
     exit(1);
@@ -2296,7 +2313,7 @@ void Replica::leave_mcast_group() {
   struct ip_mreq req;
   req.imr_multiaddr.s_addr = group->address()->sin_addr.s_addr;
   req.imr_interface.s_addr = INADDR_ANY;
-  int error = setsockopt(sock, IPPROTO_IP, IP_DROP_MEMBERSHIP, (char *)&req,
+  int error = setsockopt(sock, IPPROTO_IP, IP_DROP_MEMBERSHIP, (char*)&req,
                          sizeof(req));
   if (error < 0) {
     perror("Unable to join group");
@@ -2317,7 +2334,7 @@ void Replica::try_end_recovery() {
     recovering = false;
 
     // Execute any buffered read-only requests
-    for (Request *m = ro_rqueue.remove(); m != 0; m = ro_rqueue.remove()) {
+    for (Request* m = ro_rqueue.remove(); m != 0; m = ro_rqueue.remove()) {
       execute_read_only(m);
       delete m;
     }
@@ -2325,7 +2342,7 @@ void Replica::try_end_recovery() {
 }
 
 #ifndef NO_STATE_TRANSLATION
-char *Replica::get_cached_obj(int i) { return state.get_cached_obj(i); }
+char* Replica::get_cached_obj(int i) { return state.get_cached_obj(i); }
 #endif
 
 }  // namespace libbyzea
