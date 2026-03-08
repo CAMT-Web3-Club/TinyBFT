@@ -104,7 +104,7 @@ between replicas during state transfer, `BLOCK_SIZE` must be smaller than
 cmake -DMAX_NUM_REPLICAS=4 ..
 ```
 
-Libbyzea by default supports up to 32 replicas (i.e. `f = 10`). Changing the
+Libbyzea by default supports up to 4 replicas (i.e. `f = 1`). Changing the
 maximum number of replicas affects the size of certain data structures and
 message types, since they have to store information for each possible replica.
 Reducing this size can positively influence the library's memory footprint, at
