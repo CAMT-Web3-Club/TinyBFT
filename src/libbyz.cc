@@ -22,11 +22,11 @@ void Byz_print_memory_consumption(const size_t mem_size) {
   libbyzea::Replica::print_memory_consumption(mem_size);
 }
 
-int Byz_init_client(const char *conf, const char *conf_priv, short port) {
+int Byz_init_client(const char* conf, const char* conf_priv, short port) {
 #ifdef PRINT_MEM_STATISTICS
   libbyzea::MemoryStatisticsGuard mem_guard("Byz_init_client", true);
 #endif
-  FILE *config_file = fopen(conf, "r");
+  FILE* config_file = fopen(conf, "r");
   if (config_file == 0) {
     fprintf(stderr, "libbyz: Invalid configuration file %s \n", conf);
     return -1;
@@ -34,7 +34,7 @@ int Byz_init_client(const char *conf, const char *conf_priv, short port) {
 
   // FIXME: we should make sure that client initialization was successful in the
   // constructor, by adding a is_valid method or something similar.
-  FILE *config_priv_file = fopen(conf_priv, "r");
+  FILE* config_priv_file = fopen(conf_priv, "r");
   if (config_priv_file == 0) {
     fprintf(stderr, "libbyz: Invalid private configuration file %s \n",
             conf_priv);
@@ -46,16 +46,16 @@ int Byz_init_client(const char *conf, const char *conf_priv, short port) {
   srand48(getpid());
 
   const std::string private_key_file(conf_priv, std::strlen(conf_priv));
-  libbyzea::Client *client = new libbyzea::Client(
+  libbyzea::Client* client = new libbyzea::Client(
       MEM_STATS_ARG_PUSH(Client) config_file, private_key_file, port);
   libbyzea::node = client;
   return 0;
 }
 
-void Byz_reset_client() { ((libbyzea::Client *)libbyzea::node)->reset(); }
+void Byz_reset_client() { ((libbyzea::Client*)libbyzea::node)->reset(); }
 
-int Byz_alloc_request(Byz_req *req, [[maybe_unused]] int size) {
-  libbyzea::Request *request;
+int Byz_alloc_request(Byz_req* req, [[maybe_unused]] int size) {
+  libbyzea::Request* request;
 #ifdef STATIC_LOG_ALLOCATOR
   if (libbyzea::node->is_replica(libbyzea::node->id())) {
     request =
@@ -71,15 +71,15 @@ int Byz_alloc_request(Byz_req *req, [[maybe_unused]] int size) {
   int len;
   req->contents = request->store_command(len);
   req->size = len;
-  req->opaque = (void *)request;
+  req->opaque = (void*)request;
   return 0;
 }
 
-int Byz_send_request(Byz_req *req, [[maybe_unused]] bool ro) {
-  libbyzea::Request *request = (libbyzea::Request *)req->opaque;
+int Byz_send_request(Byz_req* req, [[maybe_unused]] bool ro) {
+  libbyzea::Request* request = (libbyzea::Request*)req->opaque;
   // Replicas already add rid in Byz_alloc_request
   if (!libbyzea::node->is_replica(libbyzea::node->id())) {
-    request->request_id() = ((libbyzea::Client *)libbyzea::node)->get_rid();
+    request->request_id() = ((libbyzea::Client*)libbyzea::node)->get_rid();
   } else {
     request->request_id() = libbyzea::replica->new_rid();
   }
@@ -87,28 +87,28 @@ int Byz_send_request(Byz_req *req, [[maybe_unused]] bool ro) {
 
   bool retval;
   if (!libbyzea::node->is_replica(libbyzea::node->id())) {
-    retval = ((libbyzea::Client *)libbyzea::node)->send_request(request);
+    retval = ((libbyzea::Client*)libbyzea::node)->send_request(request);
   } else {
-    retval = ((libbyzea::Replica *)libbyzea::node)->send_request(request);
+    retval = ((libbyzea::Replica*)libbyzea::node)->send_request(request);
   }
   return (retval) ? 0 : -1;
 }
 
-int Byz_recv_reply(Byz_rep *rep) {
-  libbyzea::Reply *reply = ((libbyzea::Client *)libbyzea::node)->recv_reply();
+int Byz_recv_reply(Byz_rep* rep) {
+  libbyzea::Reply* reply = ((libbyzea::Client*)libbyzea::node)->recv_reply();
   if (reply == NULL) return -1;
   rep->contents = reply->reply(rep->size);
   rep->opaque = reply;
   return 0;
 }
 
-int Byz_invoke(Byz_req *req, Byz_rep *rep, bool ro) {
+int Byz_invoke(Byz_req* req, Byz_rep* rep, bool ro) {
   if (Byz_send_request(req, ro) == -1) return -1;
   return Byz_recv_reply(rep);
 }
 
-void Byz_free_request(Byz_req *req) {
-  libbyzea::Request *request = (libbyzea::Request *)req->opaque;
+void Byz_free_request(Byz_req* req) {
+  libbyzea::Request* request = (libbyzea::Request*)req->opaque;
 #ifdef STATIC_LOG_ALLOCATOR
   if (!libbyzea::node->is_replica(libbyzea::node->id())) {
     delete request;
@@ -118,22 +118,22 @@ void Byz_free_request(Byz_req *req) {
 #endif
 }
 
-void Byz_free_reply(Byz_rep *rep) {
-  libbyzea::Reply *reply = (libbyzea::Reply *)rep->opaque;
+void Byz_free_reply(Byz_rep* rep) {
+  libbyzea::Reply* reply = (libbyzea::Reply*)rep->opaque;
   delete reply;
 }
 
 #ifndef NO_STATE_TRANSLATION
 
-int Byz_init_replica(const char *conf, const char *conf_priv,
+int Byz_init_replica(const char* conf, const char* conf_priv,
                      unsigned int num_objs,
-                     int (*exec)(Byz_req *, Byz_rep *, Byz_buffer *, int, bool),
-                     void (*comp_ndet)(Seqno, Byz_buffer *), int ndet_max_len,
-                     bool (*check_ndet)(Byz_buffer *), int (*get)(int, char **),
-                     void (*put)(int, int *, int *, char **),
-                     void (*shutdown_proc)(FILE *o),
-                     void (*restart_proc)(FILE *i), short port) {
-  FILE *config_file = fopen(conf, "r");
+                     int (*exec)(Byz_req*, Byz_rep*, Byz_buffer*, int, bool),
+                     void (*comp_ndet)(Seqno, Byz_buffer*), int ndet_max_len,
+                     bool (*check_ndet)(Byz_buffer*), int (*get)(int, char**),
+                     void (*put)(int, int*, int*, char**),
+                     void (*shutdown_proc)(FILE* o),
+                     void (*restart_proc)(FILE* i), short port) {
+  FILE* config_file = fopen(conf, "r");
   if (config_file == 0) {
     fprintf(stderr, "libbyz: Invalid configuration file %s \n", conf);
     return -1;
@@ -141,7 +141,7 @@ int Byz_init_replica(const char *conf, const char *conf_priv,
 
   // FIXME: we should make sure that replica initialization was successful in
   // the constructor, by adding a is_valid method or something similar.
-  FILE *config_priv_file = fopen(conf_priv, "r");
+  FILE* config_priv_file = fopen(conf_priv, "r");
   if (config_priv_file == 0) {
     fprintf(stderr, "libbyz: Invalid private configuration file %s \n",
             conf_priv);
@@ -163,22 +163,22 @@ int Byz_init_replica(const char *conf, const char *conf_priv,
   return replica->used_state_pages();
 }
 
-void Byz_modify(int npages, int *pages) {
+void Byz_modify(int npages, int* pages) {
   for (int i = 0; i < npages; i++) replica->modify_index(pages[i]);
 }
 
 #else
 
-int Byz_init_replica(const char *conf, const char *conf_priv, char *mem,
+int Byz_init_replica(const char* conf, const char* conf_priv, char* mem,
                      unsigned int size,
-                     int (*exec)(Byz_req *, Byz_rep *, Byz_buffer *, int, bool),
-                     void (*comp_ndet)(Seqno, Byz_buffer *), int ndet_max_len,
-                     int (*recv_reply)(Byz_rep *), short port) {
+                     int (*exec)(Byz_req*, Byz_rep*, Byz_buffer*, int, bool),
+                     void (*comp_ndet)(Seqno, Byz_buffer*), int ndet_max_len,
+                     int (*recv_reply)(Byz_rep*), short port) {
 #ifdef PRINT_MEM_STATISTICS
   libbyzea::MemoryStatisticsGuard mem_guard("Byz_init_replica", true);
 #endif
   MEM_STATS_GUARD_PUSH(fopen);
-  FILE *config_file = fopen(conf, "r");
+  FILE* config_file = fopen(conf, "r");
   if (config_file == 0) {
     fprintf(stderr, "libbyz: Invalid configuration file %s \n", conf);
     return -1;
@@ -188,7 +188,7 @@ int Byz_init_replica(const char *conf, const char *conf_priv, char *mem,
   // FIXME: we should make sure that replica initialization was successful in
   // the constructor, by adding a is_valid method or something similar.
   MEM_STATS_GUARD_PUSH(fopen);
-  FILE *config_priv_file = fopen(conf_priv, "r");
+  FILE* config_priv_file = fopen(conf_priv, "r");
   if (config_priv_file == 0) {
     fprintf(stderr, "libbyz: Invalid private configuration file %s \n",
             conf_priv);
@@ -201,9 +201,11 @@ int Byz_init_replica(const char *conf, const char *conf_priv, char *mem,
   srand48(getpid());
 
 #ifdef DYNAMIC_PARTITION_TREE
+  fprintf(stderr, "libbyz: Initializing partition tree with size %d\n", size);
   libbyzea::partition::init(size);
 #endif
 
+  fprintf(stderr, "libbyz: Creating Replica object...\n");
   const std::string private_key_file(conf_priv, std::strlen(conf_priv));
   libbyzea::replica =
       new libbyzea::Replica(MEM_STATS_ARG_PUSH(Replica) config_file,
@@ -218,7 +220,7 @@ int Byz_init_replica(const char *conf, const char *conf_priv, char *mem,
   return libbyzea::replica->used_state_bytes();
 }
 
-void Byz_modify(char *mem, int size) { libbyzea::replica->modify(mem, size); }
+void Byz_modify(char* mem, int size) { libbyzea::replica->modify(mem, size); }
 
 #endif
 
@@ -258,5 +260,5 @@ void Byz_print_stats() {
 }
 
 #ifndef NO_STATE_TRANSLATION
-char *Byz_get_cached_object(int i) { return replica->get_cached_obj(i); }
+char* Byz_get_cached_object(int i) { return replica->get_cached_obj(i); }
 #endif
