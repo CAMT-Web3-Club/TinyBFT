@@ -81,11 +81,15 @@ Node::Node(MEM_STATS_PARAM FILE* config_file,
   // Read private key file:
   // TODO: this file should be encrypted under some passphrase and user
   // should be prompted for that passphrase.
+  fprintf(stderr, "libbyz: Loading private key from %s...\n",
+          private_key_file.c_str());
   priv_key = new RsaPrivateKey(private_key_file, &ctr_drbg_ctx);
+  fprintf(stderr, "libbyz: Private key loaded.\n");
 
   // Read public configuration file:
   // TODO: this should be more robust
   fscanf(config_file, "%256s\n", service_name);
+  fprintf(stderr, "libbyz: Service name: %s\n", service_name);
 
   // read max_faulty and compute derived variables
   fscanf(config_file, "%d\n", &max_faulty);
@@ -103,11 +107,11 @@ Node::Node(MEM_STATS_PARAM FILE* config_file,
   short port;
 
   fscanf(config_file, "%d\n", &num_principals);
-  //  if (num_replicas > num_principals)
-  //  th_fail("Invalid argument");
+  fprintf(stderr, "libbyz: Num principals: %d\n", num_principals);
 
   // read in group principal's address
   fscanf(config_file, "%256s %hd\n", addr_buff, &port);
+  fprintf(stderr, "libbyz: Group addr: %s:%d\n", addr_buff, port);
   Addr a;
   bzero((char*)&a, sizeof(a));
   a.sin_family = AF_INET;
@@ -147,8 +151,10 @@ Node::Node(MEM_STATS_PARAM FILE* config_file,
   char node_hostname[65];
   principals = (Principal**)malloc(num_principals * sizeof(Principal*));
   for (int i = 0; i < num_principals; i++) {
-    fscanf(config_file, "%64s %32s %hd %1023s \n", node_hostname, addr_buff, &port,
-           public_keyfile);
+    fscanf(config_file, "%64s %32s %hd %1023s \n", node_hostname, addr_buff,
+           &port, public_keyfile);
+    fprintf(stderr, "libbyz: Principal %d: %s %s:%d (key: %s)\n", i,
+            node_hostname, addr_buff, port, public_keyfile);
     a.sin_addr.s_addr = inet_addr(addr_buff);
     a.sin_port = htons(port);
     principals[i] = new Principal(MEM_STATS_ARG_PUSH(Principal) i, a,
@@ -182,11 +188,14 @@ Node::Node(MEM_STATS_PARAM FILE* config_file,
   tmp.sin_family = AF_INET;
   tmp.sin_addr.s_addr = htonl(INADDR_ANY);
   tmp.sin_port = principals[node_id]->address()->sin_port;
+  fprintf(stderr, "libbyz: Binding socket to port %d...\n",
+          ntohs(tmp.sin_port));
   error = bind(sock, (struct sockaddr*)&tmp, sizeof(Addr));
   if (error < 0) {
     perror("Unable to name socket");
     exit(1);
   }
+  fprintf(stderr, "libbyz: Socket bound successfully.\n");
 
 #define WANMCAST 0
 #if WANMCAST

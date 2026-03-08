@@ -21,7 +21,11 @@ void init_clock_mhz() {
 
   clock_mhz =
       (c1 - c0) / ((t1.tv_sec - t0.tv_sec) * 1000000 + t1.tv_usec - t0.tv_usec);
+#ifndef USE_GETTIMEOFDAY
   th_assert(clock_mhz != 0, "clock_mhz is 0");
+#else
+  if (clock_mhz == 0) clock_mhz = 160;
+#endif
 }
 
 }  // namespace libbyzea
