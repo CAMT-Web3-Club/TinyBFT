@@ -468,6 +468,12 @@ unsigned Node::decrypt(char* src, unsigned src_len, char* dst,
   size_t dec_plaintext_len;
   int err = priv_key->decrypt(reinterpret_cast<uint8_t*>(src), ciphertext_len,
                               dst, dst_len, &dec_plaintext_len);
+  if (err != 0) {
+    fprintf(stderr,
+            "libbyz: decrypt failed with err=%d, ciphertext_len=%lu, "
+            "plaintext_len=%lu\n",
+            err, (unsigned long)ciphertext_len, (unsigned long)plaintext_len);
+  }
   th_assert(err == 0, "failed to decrypt message");
   th_assert(plaintext_len == dec_plaintext_len, "unexpected plaintext length");
 

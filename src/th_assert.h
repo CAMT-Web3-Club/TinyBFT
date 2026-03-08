@@ -64,14 +64,14 @@ extern "C" {
 #if defined(__linux__)
 
 #if 1
-// #define __assert(str, file, line) fail("%s %s %d", str, file, line)
+#define __assert(str, file, line) fail("%s %s %d", str, file, line)
 #else
 #define __assert(str, file, line) \
   __assert_fail(str, file, line, __ASSERT_FUNCTION)
 #endif
 
 #else
-extern void __assert(char *, char *, int);
+extern void __assert(char*, char*, int);
 #endif
 #endif
 
@@ -98,7 +98,7 @@ extern void __assert(char *, char *, int);
 
 /* In some configurations __assert may be a macro so be careful here */
 #ifndef __assert
-extern void __assert(char *, char *, int);
+extern void __assert(char*, char*, int);
 #endif
 
 #define th_fail(msg) __assert(msg, __FILE__, __LINE__)

@@ -11,7 +11,7 @@ New_key::New_key() : Message(New_key_tag, Max_message_size) { refresh_keys(); }
 
 bool New_key::verify() {
   // If bad principal or old message discard.
-  Principal *p = node->i_to_p(id());
+  Principal* p = node->i_to_p(id());
   if (p == 0 || p->last_tstamp() >= rep().rid) {
     return false;
   }
@@ -21,12 +21,12 @@ bool New_key::verify() {
     return false;
   }
   size_t msg_len = size() - p->sig_size();
-  char *signature = contents() + msg_len;
+  char* signature = contents() + msg_len;
   if (!p->verify_signature(contents(), msg_len, signature)) {
     return false;
   }
 
-  char *dst = contents() + sizeof(New_key_rep);
+  char* dst = contents() + sizeof(New_key_rep);
   size_t dst_len = size() - sizeof(New_key_rep);
   unsigned k[Key_size_u];
 
@@ -39,8 +39,16 @@ bool New_key::verify() {
 
     if (i == node->id()) {
       // found my key
-      int ksize = node->decrypt(dst, dst_len, (char *)k, Key_size);
-      if (ksize != Key_size) return false;
+      fprintf(stderr,
+              "libbyz: New_key::verify: found my key at index %d from sender "
+              "%d, csize=%d\n",
+              i, id(), csize);
+      int ksize = node->decrypt(dst, dst_len, (char*)k, Key_size);
+      if (ksize != Key_size) {
+        fprintf(stderr, "libbyz: New_key::verify: decrypt failed, ksize=%d\n",
+                ksize);
+        return false;
+      }
     }
 
     dst += csize;
@@ -52,11 +60,11 @@ bool New_key::verify() {
   return true;
 }
 
-bool New_key::convert(Message *m1, New_key *&m2) {
+bool New_key::convert(Message* m1, New_key*& m2) {
   if (!m1->has_tag(New_key_tag, sizeof(New_key_rep))) return false;
 
   m1->trim();
-  m2 = (New_key *)m1;
+  m2 = (New_key*)m1;
   return true;
 }
 
@@ -74,9 +82,12 @@ void New_key::refresh_keys() {
   node->principal()->set_out_key(key, rep().rid);
 
   // Get new keys and encrypt them
-  Principal *p;
-  char *dst = contents() + sizeof(New_key_rep);
+  Principal* p;
+  char* dst = contents() + sizeof(New_key_rep);
   size_t dst_len = Max_message_size - sizeof(New_key_rep);
+  fprintf(stderr,
+          "libbyz: refresh_keys: Max_message_size=%zu, dst_len=%zu, n=%d\n",
+          Max_message_size, dst_len, node->n());
   for (int i = 0; i < node->n(); i++) {
     // Skip myself.
     if (i == node->id()) continue;
@@ -84,7 +95,11 @@ void New_key::refresh_keys() {
     random_key(key);
     p = node->i_to_p(i);
     p->set_in_key(key);
-    unsigned ssize = p->encrypt((char *)key, Key_size, dst, dst_len);
+    unsigned ssize = p->encrypt((char*)key, Key_size, dst, dst_len);
+    fprintf(stderr,
+            "libbyz: refresh_keys: encrypted for %d, ssize=%u, remaining "
+            "dst_len=%zu\n",
+            i, ssize, dst_len - ssize);
     th_assert(ssize != 0U, "Message is too small");
     dst += ssize;
     dst_len -= ssize;
