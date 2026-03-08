@@ -180,18 +180,14 @@ int Byz_init_replica(const char* conf, const char* conf_priv, char* mem,
   MEM_STATS_GUARD_PUSH(fopen);
   FILE* config_file = fopen(conf, "r");
   if (config_file == 0) {
-    fprintf(stderr, "libbyz: Invalid configuration file %s \n", conf);
     return -1;
   }
   MEM_STATS_GUARD_POP();
 
   // FIXME: we should make sure that replica initialization was successful in
   // the constructor, by adding a is_valid method or something similar.
-  MEM_STATS_GUARD_PUSH(fopen);
   FILE* config_priv_file = fopen(conf_priv, "r");
   if (config_priv_file == 0) {
-    fprintf(stderr, "libbyz: Invalid private configuration file %s \n",
-            conf_priv);
     return -1;
   }
   fclose(config_priv_file);
@@ -201,11 +197,9 @@ int Byz_init_replica(const char* conf, const char* conf_priv, char* mem,
   srand48(getpid());
 
 #ifdef DYNAMIC_PARTITION_TREE
-  fprintf(stderr, "libbyz: Initializing partition tree with size %d\n", size);
   libbyzea::partition::init(size);
 #endif
 
-  fprintf(stderr, "libbyz: Creating Replica object...\n");
   const std::string private_key_file(conf_priv, std::strlen(conf_priv));
   libbyzea::replica =
       new libbyzea::Replica(MEM_STATS_ARG_PUSH(Replica) config_file,
