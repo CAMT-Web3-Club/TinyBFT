@@ -19,7 +19,7 @@ supported by MbedTLS.
 The following dependencies need to be installed in order to build the library:
 
 * CMake >= v3.18.4
-* MbedTLS == v3.5.2
+* MbedTLS >= 3.2.1 <= 3.6.5
 
 ## Building
 
