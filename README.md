@@ -244,17 +244,69 @@ relevant to replicas only:
 
 The `examples/` directory contains simple client and replica implementations to help you get started.
 
+### Building
+
+The examples can be built using CMake:
+
+```sh
+# Build the library first
+cd build
+cmake .. && make
+
+# Build examples
+cd ../examples
+mkdir -p build && cd build
+cmake ../.. && make
+```
+
+This produces:
+- `examples/build/simple_client` - Client example
+- `examples/build/simple_replica` - Replica example
+
+### Generating Keys
+
+TinyBFT requires RSA key pairs for each node. Generate keys using OpenSSL:
+
+```bash
+# Create keys directory
+mkdir -p priv pub
+
+# Generate private key
+openssl genrsa -out priv/r0_priv.pem 2048
+
+# Extract public key (optional, for completeness)
+openssl rsa -in priv/r0_priv.pem -pubout -out pub/r0.pub
+```
+
+Repeat for each node (r0, r1, r2 for replicas, client0 for clients).
+
+### Configuration File
+
+Create a configuration file (see `test_runtime/test.conf` for reference):
+
+```
+test_bft
+1              # f (max faulty replicas)
+1800000        # authentication timeout
+5              # number of principals
+239.255.0.1 5678    # multicast group address and port
+localhost 127.0.0.1 5679 priv/r0.pem    # replica 0
+localhost 127.0.0.1 5680 priv/r1.pem    # replica 1
+localhost 127.0.0.1 5681 priv/r2.pem    # replica 2
+localhost 127.0.0.1 5682 priv/r3.pem    # replica 3
+localhost 127.0.0.1 5683 priv/client0.pem  # client 0
+10000         # status timeout
+1000          # reply timeout
+60000         # recovery timeout
+```
+
 ### Simple Client
 
 A minimal client that sends requests to the BFT cluster:
 
 ```sh
-# Build
-g++ -o simple_client examples/simple_client.cc -I./include -L./build -lbyzea \
-    -lmbedtls -lmbedcrypto -lmbedx509 -lpthread
-
-# Run
-./simple_client config.txt priv_keys.txt
+# Run (from project root)
+./examples/build/simple_client config.txt priv/client0_priv.pem
 ```
 
 ### Simple Replica
@@ -262,12 +314,11 @@ g++ -o simple_client examples/simple_client.cc -I./include -L./build -lbyzea \
 A minimal replica implementing a key-value store:
 
 ```sh
-# Build
-g++ -o simple_replica examples/simple_replica.cc -I./include -L./build -lbyzea \
-    -lmbedtls -lmbedcrypto -lmbedx509 -lpthread
+# Run replica 0 (port 5679 from config)
+./examples/build/simple_replica config.txt priv/r0_priv.pem 5679
 
-# Run
-./simple_replica config.txt priv_keys.txt
+# Run replica 1 (port 5680 from config)
+./examples/build/simple_replica config.txt priv/r1_priv.pem 5680
 ```
 
 ### Key API Functions

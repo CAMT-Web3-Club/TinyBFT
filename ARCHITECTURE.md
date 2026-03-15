@@ -670,7 +670,7 @@ The replier is selected randomly and rotated if no response arrives within 100ms
 | CMake Variable | Default | Description |
 |----------------|---------|-------------|
 | `TINY_BFT` | off | Enable TinyBFT static memory optimizations |
-| `MAX_MESSAGE_SIZE` | 9000 | Maximum UDP message size in bytes |
+| `MAX_MESSAGE_SIZE` | 16384 | Maximum UDP message size in bytes (must fit view-change messages) |
 | `MAX_REPLY_SIZE` | 1240 | Maximum reply payload size (< `MAX_MESSAGE_SIZE`) |
 | `BLOCK_SIZE` | 4096 | State page/block size (power of 2, ≤ page size) |
 | `MAX_NUM_REPLICAS` | 32 | Max replicas supported (affects data structure sizing) |
@@ -692,6 +692,8 @@ The build system enforces correct configuration via static assertions:
 | `BLOCK_SIZE` | Must be a power of two (e.g., 4096) |
 | `WINDOW_SIZE > CHECKPOINT_INTERVAL` | Protocol requires window larger than checkpoint interval |
 | `max_view_change_size <= MAX_MESSAGE_SIZE` | View-change messages must fit in UDP packets |
+| `max_new_view_size <= MAX_MESSAGE_SIZE` | New-view messages must fit in UDP packets |
+| `max_request_size <= MAX_MESSAGE_SIZE` | Request messages must fit in UDP packets |
 
 If any assertion fails, compilation will error with a clear message indicating the constraint violation.
 
