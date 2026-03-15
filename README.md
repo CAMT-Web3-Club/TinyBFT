@@ -92,10 +92,10 @@ cmake -DBLOCK_SIZE=4096 ..
 
 The `State` and `TrivialState` classes manage the system state in data
 structures that are block-based, meaning the system state is chunked into
-blocks of `BLOCK_SIZE`. This number must be a multiple of two and should be
+blocks of `BLOCK_SIZE`. This number must be a power of two (e.g., 4096) and should be
 smaller or equal to your architecture's page size. Since blocks may be sent
 between replicas during state transfer, `BLOCK_SIZE` must be smaller than
-`MAX_MESSAGE_SIZE`
+`MAX_MESSAGE_SIZE`. The build will fail at compile time if `BLOCK_SIZE` is not a power of two.
 
 
 #### Change the Maximum Number of Replicas (MAX_NUM_REPLICAS)
@@ -119,7 +119,9 @@ cmake -DWINDOW_SIZE=256 ..
 The window describes the number of sequence numbers that are accepted by a
 replica during a certain point in time. This means that many of the library's
 data structures have to allocate memory for each slot in a window. Reducing
-this size can drastically reduce the library's memory consumption.
+this size can drastically reduce the library's memory consumption. Note that
+`WINDOW_SIZE` must be greater than `CHECKPOINT_INTERVAL`; the build will fail
+at compile time if this constraint is violated.
 
 #### Change Checkpoint Interval (CHECKPOINT_INTERVAL)
 
@@ -237,3 +239,46 @@ relevant to replicas only:
 - View-Change Timeout (`181000`)
 - Status Message Timeout (`150`)
 - Recovery Timeout (`9999250000`)
+
+## Examples
+
+The `examples/` directory contains simple client and replica implementations to help you get started.
+
+### Simple Client
+
+A minimal client that sends requests to the BFT cluster:
+
+```sh
+# Build
+g++ -o simple_client examples/simple_client.cc -I./include -L./build -lbyzea \
+    -lmbedtls -lmbedcrypto -lmbedx509 -lpthread
+
+# Run
+./simple_client config.txt priv_keys.txt
+```
+
+### Simple Replica
+
+A minimal replica implementing a key-value store:
+
+```sh
+# Build
+g++ -o simple_replica examples/simple_replica.cc -I./include -L./build -lbyzea \
+    -lmbedtls -lmbedcrypto -lmbedx509 -lpthread
+
+# Run
+./simple_replica config.txt priv_keys.txt
+```
+
+### Key API Functions
+
+| Function | Description |
+|----------|-------------|
+| `Byz_init_client()` | Initialize client with config file |
+| `Byz_init_replica()` | Initialize replica with config and state memory |
+| `Byz_alloc_request()` | Allocate request buffer |
+| `Byz_send_request()` | Send request to cluster |
+| `Byz_recv_reply()` | Wait for reply from replicas |
+| `Byz_invoke()` | Convenience: send + recv in one call |
+| `Byz_modify()` | Notify library of state modification |
+| `Byz_replica_run()` | Start replica event loop |

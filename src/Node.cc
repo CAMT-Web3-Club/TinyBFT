@@ -136,6 +136,28 @@ Node::Node(MEM_STATS_PARAM FILE *config_file,
     }
   }
 
+  // If no match found, try to find by port (for replica case)
+  if (node_id < 0) {
+    if (req_port > 0) {
+      // For replica: find principal with matching port
+      for (int i = 0; i < num_principals; i++) {
+        if (principals[i] && principals[i]->address()->sin_port == htons(req_port)) {
+          node_id = i;
+          break;
+        }
+      }
+    }
+    if (node_id < 0 && req_port == 0) {
+      // For client: find first non-replica principal
+      for (int i = 0; i < num_principals; i++) {
+        if (!is_replica(i)) {
+          node_id = i;
+          break;
+        }
+      }
+    }
+  }
+
   if (node_id < 0) th_fail("Could not find my principal");
 
   // Initialize current view number and primary.

@@ -2,6 +2,7 @@
 #define LIBBYZ_RSA_PRIVATE_KEY_H_
 
 #include <mbedtls/ctr_drbg.h>
+#include <mbedtls/pk.h>
 #include <mbedtls/rsa.h>
 #include <stdint.h>
 
@@ -57,6 +58,7 @@ class RsaPrivateKey : public PrivateKey {
   size_t size() const override;
 
  private:
+  mbedtls_pk_context pk_ctx_;
   mbedtls_rsa_context *ctx_;
   mbedtls_ctr_drbg_context *rng_ctx_;
 };

@@ -683,6 +683,18 @@ The replier is selected randomly and rotated if no response arrives within 100ms
 | `PRINT_MEM_STATISTICS` | off | Enable custom `malloc` tracking |
 | `MBEDTLS_INCLUDE_PATH` | system | Override MbedTLS include path |
 
+### Compile-Time Validation
+
+The build system enforces correct configuration via static assertions:
+
+| Assertion | Requirement |
+|-----------|-------------|
+| `BLOCK_SIZE` | Must be a power of two (e.g., 4096) |
+| `WINDOW_SIZE > CHECKPOINT_INTERVAL` | Protocol requires window larger than checkpoint interval |
+| `max_view_change_size <= MAX_MESSAGE_SIZE` | View-change messages must fit in UDP packets |
+
+If any assertion fails, compilation will error with a clear message indicating the constraint violation.
+
 ### Memory Impact Summary
 
 ```mermaid
@@ -786,11 +798,15 @@ void comp_ndet(Seqno seqno, Byz_buffer *ndet);
 ### `Byz_buffer` / `Byz_req` / `Byz_rep`
 
 ```c
-struct _Byz_buffer {
+struct Byz_buffer_t {
     int   size;      // number of valid bytes in contents
     char *contents;  // pointer to the data buffer
     void *opaque;    // library-internal use
 };
+
+typedef struct Byz_buffer_t Byz_buffer;
+typedef Byz_buffer Byz_req;
+typedef Byz_buffer Byz_rep;
 ```
 
 ---

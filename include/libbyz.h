@@ -1,9 +1,5 @@
-#ifndef _LIBBYZ_H
-#define _LIBBYZ_H
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#ifndef LIBBYZ_H
+#define LIBBYZ_H
 
 #ifndef __cplusplus
 #include <stdbool.h>
@@ -16,27 +12,35 @@ extern "C" {
 #ifndef BLOCK_SIZE
 #define BLOCK_SIZE 4096
 #endif  // !BLOCK_SIZE
-static const int Block_size = BLOCK_SIZE;
+
 #ifdef __cplusplus
-static_assert(Block_size % 2 == 0, "Block size must be a power of two");
+static_assert((BLOCK_SIZE & (BLOCK_SIZE - 1)) == 0 && BLOCK_SIZE > 0,
+              "BLOCK_SIZE must be a power of two");
 #else
-_Static_assert(BLOCK_SIZE % 2 == 0, "Block size must be a power of two");
+_Static_assert((BLOCK_SIZE & (BLOCK_SIZE - 1)) == 0 && BLOCK_SIZE > 0,
+                "BLOCK_SIZE must be a power of two");
 #endif
 
-#include "Modify.h"
-#include "types.h"
-// #include "Digest.h"
-#include "State_defs.h"
+/* Use enum to avoid multiple definition issue with static const int */
+enum { Block_size = BLOCK_SIZE };
 
-struct _Byz_buffer {
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include "types.h"
+#include "State_defs.h"
+#include "Modify.h"
+
+struct Byz_buffer_t {
   int size;
   char *contents;
   void *opaque;
 };
 
-typedef struct _Byz_buffer Byz_buffer;
-typedef struct _Byz_buffer Byz_req;
-typedef struct _Byz_buffer Byz_rep;
+typedef struct Byz_buffer_t Byz_buffer;
+typedef Byz_buffer Byz_req;
+typedef Byz_buffer Byz_rep;
 
 void Byz_print_memory_consumption(const size_t mem_size);
 

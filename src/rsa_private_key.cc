@@ -15,29 +15,28 @@ RsaPrivateKey::RsaPrivateKey(const std::string &key_filename,
                              mbedtls_ctr_drbg_context *rng_ctx)
     : rng_ctx_(rng_ctx) {
   MEMSTATS_CALL_STACK_PUSH(RsaPrivateKey::RsaPrivateKey);
-  mbedtls_pk_context ctx;
-  mbedtls_pk_init(&ctx);
+  mbedtls_pk_init(&pk_ctx_);
 
   // TODO: we might want to encrypt these.
   MEMSTATS_CALL_STACK_PUSH(mbedtls_pk_parse_keyfile);
-  int err = mbedtls_pk_parse_keyfile(&ctx, key_filename.c_str(), nullptr,
+  int err = mbedtls_pk_parse_keyfile(&pk_ctx_, key_filename.c_str(), nullptr,
                                      mbedtls_ctr_drbg_random, rng_ctx);
   MEMSTATS_CALL_STACK_POP();
   if (err) {
     th_fail("error while reading PEM encoded public key");
   }
-  if (mbedtls_pk_get_type(&ctx) != MBEDTLS_PK_RSA) {
+  if (mbedtls_pk_get_type(&pk_ctx_) != MBEDTLS_PK_RSA) {
     th_fail("public key file is not an RSA public key");
   }
 
   // MbedTLS' public key abstraction layer by default uses PKCSv1.5. We want to
   // use v2.1 instead, so OAEP encryption and PSS signatures are used.
-  ctx_ = mbedtls_pk_rsa(ctx);
+  ctx_ = mbedtls_pk_rsa(pk_ctx_);
   mbedtls_rsa_set_padding(ctx_, MBEDTLS_RSA_PKCS_V21, MBEDTLS_MD_SHA256);
   MEMSTATS_CALL_STACK_POP();
 }
 
-RsaPrivateKey::~RsaPrivateKey() { mbedtls_rsa_free(ctx_); }
+RsaPrivateKey::~RsaPrivateKey() { mbedtls_pk_free(&pk_ctx_); }
 
 int RsaPrivateKey::decrypt(const uint8_t *ciphertext, size_t len, char *dest,
                            size_t dest_len, size_t *plaintext_len) {

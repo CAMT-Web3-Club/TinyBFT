@@ -15,7 +15,7 @@
 #include "types.h"
 
 #ifndef MAX_MESSAGE_SIZE
-#define MAX_MESSAGE_SIZE 9000
+#define MAX_MESSAGE_SIZE 16384
 #endif  // MAX_MESSAGE_SIZE
 
 namespace libbyzea {

@@ -1,5 +1,5 @@
-#ifndef _types_h
-#define _types_h 1
+#ifndef LIBBYZEA_TYPES_H
+#define LIBBYZEA_TYPES_H
 
 /*
  * Definitions of various types.
@@ -41,4 +41,4 @@ static const Seqno Seqno_max = 9223372036854775807LL;
 
 typedef Long BR_map;
 
-#endif  // _types_h
+#endif  // LIBBYZEA_TYPES_H
