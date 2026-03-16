@@ -69,6 +69,7 @@ class Message {
    * Pre_prepare.cc
    */
   char *contents();
+  const char *contents() const;
 
   /** Effects: Fetches the message size. */
   int size() const;
@@ -173,6 +174,11 @@ class Message {
 
   friend class Node;
   friend class Pre_prepare;
+  friend class Transport;
+  friend class UdpTransport;
+  friend class LoopbackTransport;
+  friend class EspNowTransport;
+  friend class Fragmentation;
 
   Message_rep *msg;  // Pointer to the contents of the message.
   int max_size;      // Maximum number of bytes that can be stored in "msg"
@@ -249,6 +255,7 @@ inline int Message::msize() const {
 }
 
 inline char *Message::contents() { return (char *)msg; }
+inline const char *Message::contents() const { return (const char *)msg; }
 
 }  // namespace libbyzea
 

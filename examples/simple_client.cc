@@ -49,13 +49,15 @@ int main(int argc, char** argv) {
     fflush(stderr);
     int ret = Byz_init_client(config_file, private_key_file, 0);
     fprintf(stderr, "DEBUG: Byz_init_client returned %d\n", ret);
-    fflush(stderr);
     if (ret != 0) {
         std::cerr << "Failed to initialize client\n";
         return 1;
     }
 
-    std::cout << "Client initialized successfully\n";
+    std::cout << "Client initialized successfully" << std::endl;
+    std::cerr << "Client initialized successfully (stderr)" << std::endl;
+    fflush(stdout);
+    fflush(stderr);
 
     // Allocate a request buffer
     Byz_req req;

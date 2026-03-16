@@ -167,7 +167,7 @@ Node::Node(MEM_STATS_PARAM FILE *config_file,
   // Initialize memory allocator for messages.
   Message::init();
 
-  // Initialize socket.
+  // Initialize socket first (needed for bind)
   sock = socket(AF_INET, SOCK_DGRAM, 0);
 
   // Allow address rebinding so evaluation iterations do not fail with
@@ -219,6 +219,15 @@ Node::Node(MEM_STATS_PARAM FILE *config_file,
   }
 #endif  // ASYNC_SOCK
 
+  // Initialize transport based on compile-time selection
+  // Note: Currently disabled to keep direct socket compatibility working
+  // Transport infrastructure is in place but not fully wired up
+  transport = nullptr;
+  
+  // TODO: Enable transport when peer address handling is complete
+  // transport = Transport::create(TINYBFT_DEFAULT_TRANSPORT);
+  // if (transport) { transport->init(); ... }
+
   // Sleep for more than a second to ensure strictly increasing
   // timestamps.
   sleep(2);
@@ -253,6 +262,18 @@ void Node::send(Message *m, int i) {
     return;
   }
 #endif
+
+  // Use transport if available, otherwise fall back to direct sendto
+  if (transport) {
+    if (i == All_replicas) {
+      for (int x = 0; x < num_replicas; x++) {
+        transport->send(m, x);
+      }
+    } else {
+      transport->send(m, i);
+    }
+    return;
+  }
 
   const Addr *to =
       (i == All_replicas) ? group->address() : principals[i]->address();
@@ -300,6 +321,21 @@ bool Node::has_messages(long to) {
 }
 
 Message *Node::recv() {
+  // Use transport if available
+  if (transport) {
+    Message* m = transport->recv();
+    if (m) {
+#ifdef ASYNC_SOCK
+      ITimer::handle_timeouts();
+      INCR_OP(num_recv_success);
+      INCR_CNT(bytes_in, m->size());
+#endif
+      return m;
+    }
+    return nullptr;
+  }
+
+  // Fall back to direct recvfrom
   Message *m = new Message(Max_message_size);
   while (1) {
 #ifndef ASYNC_SOCK

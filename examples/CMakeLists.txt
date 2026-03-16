@@ -48,3 +48,9 @@ add_executable(simple_replica simple_replica.cc)
 target_link_libraries(simple_replica byzea)
 target_link_libraries(simple_replica ${MBEDTLS_LIBRARIES})
 target_link_libraries(simple_replica pthread)
+
+# Test client example
+add_executable(test_client test_client.cc)
+target_link_libraries(test_client byzea)
+target_link_libraries(test_client ${MBEDTLS_LIBRARIES})
+target_link_libraries(test_client pthread)

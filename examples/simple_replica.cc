@@ -79,11 +79,21 @@ int exec_command(Byz_req* req, Byz_rep* rep, Byz_buffer* ndet, int client,
             return -1;  // Reject write in read-only mode
         }
         
-        // Parse SET command: "SET <key> <value>"
+        // Parse SET command: "SET key value" or "SET key=value"
         size_t first_space = cmd.find(' ', 4);
-        size_t second_space = cmd.find(' ', first_space + 1);
         
-        if (first_space == std::string::npos || second_space == std::string::npos) {
+        if (first_space == std::string::npos) {
+            // Try "SET key=value" format
+            size_t eq_pos = cmd.find('=', 4);
+            if (eq_pos != std::string::npos) {
+                std::string key = cmd.substr(4, eq_pos - 4);
+                std::string value = cmd.substr(eq_pos + 1);
+                kv_store[key] = value;
+                std::string ok = "OK";
+                memcpy(rep->contents, ok.data(), ok.size());
+                rep->size = ok.size();
+                return 0;
+            }
             std::string error = "INVALID_FORMAT";
             memcpy(rep->contents, error.data(), error.size());
             rep->size = error.size();
@@ -91,7 +101,7 @@ int exec_command(Byz_req* req, Byz_rep* rep, Byz_buffer* ndet, int client,
         }
         
         std::string key = cmd.substr(4, first_space - 4);
-        std::string value = cmd.substr(second_space + 1);
+        std::string value = cmd.substr(first_space + 1);
         
         kv_store[key] = value;
         
@@ -127,9 +137,36 @@ int recv_reply(Byz_rep* rep) {
 
 int main(int argc, char** argv) {
     if (argc < 3) {
-        std::cerr << "Usage: " << argv[0] 
-                  << " <config_file> <private_key_file> [port]\n";
-        return 1;
+        // Use default paths if no arguments provided
+        const char* config_file = "/home/phukrit7171/Development/TinyBFT/test_runtime/test.conf";
+        const char* private_key_file = "/home/phukrit7171/Development/TinyBFT/test_runtime/priv/r0.pem";
+        short port = 5679;
+        
+        // Try to determine replica ID from port
+        // r0=5679, r1=5680, r2=5681, r3=5682
+        
+        // Initialize the replica
+        const size_t state_size = 1024 * 1024;  // 1MB
+        char* state_mem = new char[state_size];
+        
+        int ret = Byz_init_replica(config_file, private_key_file, state_mem,
+                                    state_size, exec_command, comp_ndet, 64,
+                                    recv_reply, port);
+        
+        if (ret < 0) {
+            std::cerr << "Failed to initialize replica (error code: " << ret << ")\n";
+            delete[] state_mem;
+            return 1;
+        }
+        
+        std::cout << "Replica initialized successfully (using " << ret 
+                  << " bytes of state memory)\n";
+
+        std::cout << "Starting replica event loop...\n";
+        Byz_replica_run();
+
+        delete[] state_mem;
+        return 0;
     }
 
     const char* config_file = argv[1];

@@ -333,3 +333,62 @@ A minimal replica implementing a key-value store:
 | `Byz_invoke()` | Convenience: send + recv in one call |
 | `Byz_modify()` | Notify library of state modification |
 | `Byz_replica_run()` | Start replica event loop |
+
+## Testing
+
+### Running Consensus Test
+
+To test full consensus with 4 replicas:
+
+```bash
+# Build with unicast (required for localhost testing)
+cd build
+cmake .. -DDISABLE_MULTICAST=1 && make
+cd ../examples/build && cmake .. && make
+
+# Run the Python test script
+python3 ../test_runtime/run_full_test.py
+```
+
+Or manually:
+
+```bash
+# Start 4 replicas (in separate terminals or background)
+./examples/build/simple_replica test_runtime/test.conf test_runtime/priv/r0.pem 5679 &
+./examples/build/simple_replica test_runtime/test.conf test_runtime/priv/r1.pem 5680 &
+./examples/build/simple_replica test_runtime/test_conf test_runtime/priv/r2.pem 5681 &
+./examples/build/simple_replica test_runtime/test_conf test_runtime/priv/r3.pem 5682 &
+
+# Run client
+./examples/build/test_client test_runtime/test_conf test_runtime/priv/client0.pem
+```
+
+### Test Output
+
+```
+=== Client Output ===
+Client initialized successfully
+
+=== Test 1: SET key1=value1 ===
+Reply (2 bytes, 7ms): OK
+
+=== Test 2: GET key1 ===
+Reply (6 bytes, 2ms): value1
+
+=== Test 3: SET key2=test123 ===
+Reply (2 bytes, 3ms): OK
+
+=== Test 4: GET key2 ===
+Reply (7 bytes, 2ms): test123
+
+=== All tests completed ===
+```
+
+### Build Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `DISABLE_MULTICAST` | Use unicast instead of multicast | OFF |
+| `TINY_BFT` | Enable TinyBFT memory optimizations | OFF |
+| `MAX_MESSAGE_SIZE` | Maximum message size in bytes | 16384 |
+| `WINDOW_SIZE` | Number of outstanding requests | 256 |

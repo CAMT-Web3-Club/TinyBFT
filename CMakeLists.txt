@@ -48,6 +48,26 @@ if (DEFINED CHECKPOINT_INTERVAL)
     target_compile_definitions(byzea PUBLIC CHECKPOINT_INTERVAL=${CHECKPOINT_INTERVAL})
 endif()
 
+# Transport selection: UDP, LOOPBACK, or ESP_NOW
+set(TINYBFT_TRANSPORT "UDP" CACHE STRING "Transport layer: UDP, LOOPBACK, ESP_NOW")
+set_property(CACHE TINYBFT_TRANSPORT PROPERTY STRINGS "UDP" "LOOPBACK" "ESP_NOW")
+
+if(TINYBFT_TRANSPORT STREQUAL "UDP")
+    message(STATUS "Using UDP transport")
+    target_compile_definitions(byzea PUBLIC TINYBFT_TRANSPORT=1)
+    target_compile_definitions(byzea PUBLIC TINYBFT_TRANSPORT_UDP=1)
+elseif(TINYBFT_TRANSPORT STREQUAL "LOOPBACK")
+    message(STATUS "Using LOOPBACK transport")
+    target_compile_definitions(byzea PUBLIC TINYBFT_TRANSPORT=2)
+    target_compile_definitions(byzea PUBLIC TINYBFT_TRANSPORT_LOOPBACK=1)
+elseif(TINYBFT_TRANSPORT STREQUAL "ESP_NOW")
+    message(STATUS "Using ESP_NOW transport")
+    target_compile_definitions(byzea PUBLIC TINYBFT_TRANSPORT=3)
+    target_compile_definitions(byzea PUBLIC TINYBFT_TRANSPORT_ESPNOW=1)
+else()
+    message(FATAL_ERROR "Invalid TINYBFT_TRANSPORT: ${TINYBFT_TRANSPORT}. Use UDP, LOOPBACK, or ESP_NOW")
+endif()
+
 if (DEFINED PRINT_MEM_STATISTICS)
     target_compile_definitions(byzea PUBLIC PRINT_MEM_STATISTICS=${PRINT_MEM_STATISTICS})
     target_sources(byzea PRIVATE
@@ -109,6 +129,9 @@ target_sources(byzea PRIVATE
     src/Digest.cc
     src/dsum.cc
     src/Node.cc
+    src/Transport.cc
+    src/EspNowTransport.cc
+    src/Fragmentation.cc
     src/Request.cc
     src/Checkpoint.cc
     src/Pre_prepare.cc

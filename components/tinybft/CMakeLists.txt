@@ -1,0 +1,67 @@
+idf_component_register(
+    SRCS 
+        "src/Client.cc"
+        "src/Replica.cc"
+        "src/New_key.cc"
+        "src/Commit.cc"
+        "src/Message.cc"
+        "src/Reply.cc"
+        "src/Digest.cc"
+        "src/dsum.cc"
+        "src/Node.cc"
+        "src/Transport.cc"
+        "src/EspNowTransport.cc"
+        "src/Fragmentation.cc"
+        "src/Request.cc"
+        "src/Checkpoint.cc"
+        "src/Pre_prepare.cc"
+        "src/Req_queue.cc"
+        "src/Prepare.cc"
+        "src/Status.cc"
+        "src/Prepared_cert.cc"
+        "src/ITimer.cc"
+        "src/Principal.cc"
+        "src/Log_allocator.cc"
+        "src/Meta_data.cc"
+        "src/Data.cc"
+        "src/Fetch.cc"
+        "src/Meta_data_cert.cc"
+        "src/State.cc"
+        "src/libbyz.cc"
+        "src/View_change.cc"
+        "src/New_view.cc"
+        "src/View_change_ack.cc"
+        "src/View_info.cc"
+        "src/NV_info.cc"
+        "src/Rep_info.cc"
+        "src/Meta_data_d.cc"
+        "src/Query_stable.cc"
+        "src/Reply_stable.cc"
+        "src/Stable_estimator.cc"
+        "src/Time.cc"
+        "src/Pre_prepare_info.cc"
+        "src/rsa_private_key.cc"
+        "src/rsa_public_key.cc"
+        "src/hmac.cc"
+        "src/platform.cc"
+    INCLUDE_DIRS 
+        "include"
+        "src"
+        "${CMAKE_CURRENT_SOURCE_DIR}/include"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src"
+    REQUIRES 
+        esp_wifi
+        esp_now
+        mbedtls
+        nvs_flash
+    PRIV_REQUIRES 
+        esp_timer
+        heap
+)
+
+# Apply TinyBFT-specific compile options
+target_compile_options(${COMPONENT_LIB} PRIVATE
+    -Wall
+    -Wextra
+    -Wno-unused-function
+)

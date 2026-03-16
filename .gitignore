@@ -5,3 +5,10 @@ build/
 .vscode/
 /build-*
 .direnv/
+/examples/build/
+/test_runtime/*.log
+/test_runtime/priv/*.pem
+/test_runtime/pub/*.pub
+/test_runtime/test_unicast.conf
+*.pyc
+__pycache__/

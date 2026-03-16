@@ -12,6 +12,7 @@
 #include "private_key.h"
 #include "th_assert.h"
 #include "types.h"
+#include "Transport.h"
 
 namespace libbyzea {
 
@@ -189,6 +190,7 @@ class Node {
 
   // Communication variables.
   int sock;
+  std::unique_ptr<Transport> transport;
 
   Request_id cur_rid;  // state for unique identifier generator.
   void new_tstamp();
