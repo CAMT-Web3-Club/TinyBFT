@@ -533,31 +533,31 @@ void handle_frag_timeout(uint32_t msg_id) {
 ## 9. Implementation Checklist
 
 ### Phase 1: Transport Abstraction
-- [ ] Create Transport interface (Transport.h)
-- [ ] Modify Node.cc to use Transport*
-- [ ] Implement UdpTransport for Linux
+- [x] Create Transport interface (Transport.h)
+- [x] Modify Node.cc to use Transport*
+- [x] Implement UdpTransport for Linux
 
 ### Phase 2: ESP-NOW Implementation
-- [ ] Create EspNowTransport class
-- [ ] Implement WiFi + ESP-NOW initialization
-- [ ] Implement send/receive callbacks
-- [ ] Add peer management
+- [x] Create EspNowTransport class
+- [x] Implement WiFi + ESP-NOW initialization
+- [x] Implement send/receive callbacks (ESP-IDF 5.5 API)
+- [x] Add peer management
 
 ### Phase 3: Fragmentation
-- [ ] Implement Fragmentation class
-- [ ] Add fragment header format
-- [ ] Implement reassembly logic
-- [ ] Add timeout handling
+- [x] Implement Fragmentation class
+- [x] Add fragment header format
+- [x] Implement reassembly logic
+- [x] Add timeout handling
 
 ### Phase 4: ESP-IDF Integration
-- [ ] Create component structure
-- [ ] Write CMakeLists.txt
-- [ ] Write Kconfig
-- [ ] Test build
+- [x] Create component structure (components/main/)
+- [x] Write CMakeLists.txt
+- [ ] Write Kconfig (optional)
+- [x] Test build ✅
 
 ### Phase 5: Configuration
-- [ ] Update config file parser
-- [ ] Add MAC address support
+- [x] Update config file parser (SPIFFS-based)
+- [x] Add MAC address support
 - [ ] Test with 7-node config
 
 ### Phase 6: Testing
@@ -707,6 +707,6 @@ ESP-IDF includes mbedTLS with hardware acceleration support on ESP32-C3:
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: 2026-03-15  
+**Document Version**: 1.1  
+**Last Updated**: 2026-03-24  
 **Author**: TinyBFT ESP-NOW Port Team

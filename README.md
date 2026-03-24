@@ -278,6 +278,83 @@ openssl genrsa -out priv/r0_priv.pem 2048
 openssl rsa -in priv/r0_priv.pem -pubout -out pub/r0.pub
 ```
 
+## ESP-IDF / ESP32 Build
+
+TinyBFT supports ESP32-C3 and ESP32 targets via ESP-IDF. The ESP-NOW transport provides low-latency communication for embedded deployments.
+
+### Prerequisites
+
+- Docker (for cross-compilation)
+- ESP-IDF 5.5.3 (included in Docker image `espressif/idf:release-v5.5`)
+
+### Building with Docker
+
+```sh
+# Build using ESP-IDF Docker image
+docker run --rm -v $(pwd):/project -w /project espressif/idf:release-v5.5 bash -c "idf.py build"
+
+# Flash to device
+docker run --rm -v $(pwd):/project -w /project --device /dev/ttyUSB0 espressif/idf:release-v5.5 bash -c "idf.py -p /dev/ttyUSB0 flash monitor"
+```
+
+### Building with Local ESP-IDF
+
+```sh
+# Set up ESP-IDF environment
+source /path/to/esp-idf/export.sh
+
+# Configure for ESP32-C3
+idf.py set-target esp32c3
+
+# Optional: Configure options
+idf.py menuconfig
+
+# Build
+idf.py build
+
+# Flash and monitor
+idf.py -p /dev/ttyUSB0 flash monitor
+```
+
+### ESP-IDF Component Structure
+
+```
+components/
+├── tinybft/              # Main library component
+│   ├── CMakeLists.txt    # Library sources and dependencies
+│   ├── idf_component.yml
+│   └── src/              # TinyBFT source files
+└── main/                 # Application entry point
+    ├── main.c            # app_main() + task creation
+    └── tinybft_example.cpp
+```
+
+### ESP-IDF Configuration
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `CONFIG_TINYBFT_ESPNOW` | y | Enable ESP-NOW transport |
+| `CONFIG_TINYBFT_MAX_MESSAGE_SIZE` | 8192 | Max message size |
+| `CONFIG_TINYBFT_NUM_REPLICAS` | 7 | Number of replicas |
+| `CONFIG_TINYBFT_WIFI_CHANNEL` | 6 | WiFi channel for ESP-NOW |
+
+### Peer MAC Configuration
+
+On ESP-IDF, peer MAC addresses are loaded from SPIFFS. Create a config file:
+
+```json
+{
+  "channel": 6,
+  "peers": [
+    {"id": 0, "mac": "AA:BB:CC:DD:EE:F0"},
+    {"id": 1, "mac": "AA:BB:CC:DD:EE:F1"},
+    {"id": 2, "mac": "AA:BB:CC:DD:EE:F2"}
+  ]
+}
+```
+
+Flash this to SPIFFS partition or use the default config from `sdkconfig.defaults`.
+
 Repeat for each node (r0, r1, r2 for replicas, client0 for clients).
 
 ### Configuration File
