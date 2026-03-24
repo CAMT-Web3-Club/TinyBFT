@@ -1,5 +1,9 @@
 #include "Transport.h"
 
+#ifdef ESP_PLATFORM
+#include "Fragmentation.h"
+#endif
+
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>

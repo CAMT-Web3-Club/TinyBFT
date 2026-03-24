@@ -186,6 +186,14 @@ class Node {
   virtual void send_new_key();
   // Effects: Sends a new-key message and updates last_new_key.
 
+  void init_transport();
+  // Effects: Initialize transport layer (ESP-IDF only, no-op on other platforms)
+
+#ifdef ESP_PLATFORM
+  void load_peers_from_spiffs();
+  // Effects: Load peer MAC addresses from SPIFFS config file (ESP-IDF only)
+#endif
+
   New_key *last_new_key;  // Last new-key message we sent.
 
   // Communication variables.

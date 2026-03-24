@@ -1,62 +1,64 @@
+set(TINYBFT_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../src")
+
 idf_component_register(
     SRCS 
-        "src/Client.cc"
-        "src/Replica.cc"
-        "src/New_key.cc"
-        "src/Commit.cc"
-        "src/Message.cc"
-        "src/Reply.cc"
-        "src/Digest.cc"
-        "src/dsum.cc"
-        "src/Node.cc"
-        "src/Transport.cc"
-        "src/EspNowTransport.cc"
-        "src/Fragmentation.cc"
-        "src/Request.cc"
-        "src/Checkpoint.cc"
-        "src/Pre_prepare.cc"
-        "src/Req_queue.cc"
-        "src/Prepare.cc"
-        "src/Status.cc"
-        "src/Prepared_cert.cc"
-        "src/ITimer.cc"
-        "src/Principal.cc"
-        "src/Log_allocator.cc"
-        "src/Meta_data.cc"
-        "src/Data.cc"
-        "src/Fetch.cc"
-        "src/Meta_data_cert.cc"
-        "src/State.cc"
-        "src/libbyz.cc"
-        "src/View_change.cc"
-        "src/New_view.cc"
-        "src/View_change_ack.cc"
-        "src/View_info.cc"
-        "src/NV_info.cc"
-        "src/Rep_info.cc"
-        "src/Meta_data_d.cc"
-        "src/Query_stable.cc"
-        "src/Reply_stable.cc"
-        "src/Stable_estimator.cc"
-        "src/Time.cc"
-        "src/Pre_prepare_info.cc"
-        "src/rsa_private_key.cc"
-        "src/rsa_public_key.cc"
-        "src/hmac.cc"
-        "src/platform.cc"
+        "${TINYBFT_SRC_DIR}/Client.cc"
+        "${TINYBFT_SRC_DIR}/Replica.cc"
+        "${TINYBFT_SRC_DIR}/New_key.cc"
+        "${TINYBFT_SRC_DIR}/Commit.cc"
+        "${TINYBFT_SRC_DIR}/Message.cc"
+        "${TINYBFT_SRC_DIR}/Reply.cc"
+        "${TINYBFT_SRC_DIR}/Digest.cc"
+        "${TINYBFT_SRC_DIR}/dsum.cc"
+        "${TINYBFT_SRC_DIR}/Node.cc"
+        "${TINYBFT_SRC_DIR}/Transport.cc"
+        "${TINYBFT_SRC_DIR}/EspNowTransport.cc"
+        "${TINYBFT_SRC_DIR}/Fragmentation.cc"
+        "${TINYBFT_SRC_DIR}/Request.cc"
+        "${TINYBFT_SRC_DIR}/Checkpoint.cc"
+        "${TINYBFT_SRC_DIR}/Pre_prepare.cc"
+        "${TINYBFT_SRC_DIR}/Req_queue.cc"
+        "${TINYBFT_SRC_DIR}/Prepare.cc"
+        "${TINYBFT_SRC_DIR}/Status.cc"
+        "${TINYBFT_SRC_DIR}/Prepared_cert.cc"
+        "${TINYBFT_SRC_DIR}/ITimer.cc"
+        "${TINYBFT_SRC_DIR}/Principal.cc"
+        "${TINYBFT_SRC_DIR}/Log_allocator.cc"
+        "${TINYBFT_SRC_DIR}/Meta_data.cc"
+        "${TINYBFT_SRC_DIR}/Data.cc"
+        "${TINYBFT_SRC_DIR}/Fetch.cc"
+        "${TINYBFT_SRC_DIR}/Meta_data_cert.cc"
+        "${TINYBFT_SRC_DIR}/State.cc"
+        "${TINYBFT_SRC_DIR}/libbyz.cc"
+        "${TINYBFT_SRC_DIR}/View_change.cc"
+        "${TINYBFT_SRC_DIR}/New_view.cc"
+        "${TINYBFT_SRC_DIR}/View_change_ack.cc"
+        "${TINYBFT_SRC_DIR}/View_info.cc"
+        "${TINYBFT_SRC_DIR}/NV_info.cc"
+        "${TINYBFT_SRC_DIR}/Rep_info.cc"
+        "${TINYBFT_SRC_DIR}/Meta_data_d.cc"
+        "${TINYBFT_SRC_DIR}/Query_stable.cc"
+        "${TINYBFT_SRC_DIR}/Reply_stable.cc"
+        "${TINYBFT_SRC_DIR}/Stable_estimator.cc"
+        "${TINYBFT_SRC_DIR}/Time.cc"
+        "${TINYBFT_SRC_DIR}/Pre_prepare_info.cc"
+        "${TINYBFT_SRC_DIR}/rsa_private_key.cc"
+        "${TINYBFT_SRC_DIR}/rsa_public_key.cc"
+        "${TINYBFT_SRC_DIR}/hmac.cc"
+        "${TINYBFT_SRC_DIR}/platform.cc"
+        "${TINYBFT_SRC_DIR}/Checkpoint_rec.cc"
+        "${TINYBFT_SRC_DIR}/Statistics.cc"
     INCLUDE_DIRS 
         "include"
-        "src"
-        "${CMAKE_CURRENT_SOURCE_DIR}/include"
-        "${CMAKE_CURRENT_SOURCE_DIR}/src"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../../include"
+        "${TINYBFT_SRC_DIR}"
     REQUIRES 
-        esp_wifi
-        esp_now
         mbedtls
-        nvs_flash
-    PRIV_REQUIRES 
         esp_timer
-        heap
+        esp_wifi
+        nvs_flash
+        spiffs
+        json
 )
 
 # Apply TinyBFT-specific compile options
@@ -64,4 +66,5 @@ target_compile_options(${COMPONENT_LIB} PRIVATE
     -Wall
     -Wextra
     -Wno-unused-function
+    -Wno-unused-variable
 )

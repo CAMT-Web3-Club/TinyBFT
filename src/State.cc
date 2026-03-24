@@ -4,8 +4,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>
+#ifdef ESP_PLATFORM
+#include <esp_heap_caps.h>
+#define msync(a, b, c) ((void)0)
+#define MS_SYNC 0
+#define MS_INVALIDATE 0
+#else
 #include <sys/mman.h>
 #include <unistd.h>
+#endif
 
 #include "Data.h"
 #include "Fetch.h"

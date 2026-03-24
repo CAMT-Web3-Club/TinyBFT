@@ -1,14 +1,3 @@
 version: "1.0.0"
 description: TinyBFT - A BFT Library for Tiny Embedded Devices
 url: https://github.com/anomalyco/TinyBFT
-dependencies:
-  esp_wifi:
-    version: "^1.0.0"
-  esp_now:
-    version: "^1.0.0"
-  mbedtls:
-    version: "^2.0.0"
-  nvs_flash:
-    version: "^1.0.0"
-  esp_timer:
-    version: "^1.0.0"

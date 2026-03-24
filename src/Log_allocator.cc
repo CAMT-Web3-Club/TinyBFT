@@ -1,12 +1,15 @@
 #include "Log_allocator.h"
 
+#ifdef ESP_PLATFORM
+#include <esp_heap_caps.h>
+#else
 #include <sys/mman.h>
-
-#include "mem_statistics.h"
-
 #ifndef MAP_VARIABLE
 #define MAP_VARIABLE 0x00
 #endif
+#endif
+
+#include "mem_statistics.h"
 
 namespace libbyzea {
 
@@ -36,6 +39,16 @@ Log_allocator::Chunk *Log_allocator::alloc_chunk() {
     MEMSTATS_SET_MEM_TYPE(MEM_TYPE_LOG_ALLOCATOR);
     // Allocate a new chunks array. The array must be chunk_size-aligned.
     void *addr = (void *)-1;
+    
+#ifdef ESP_PLATFORM
+    // ESP32: Use heap_caps_malloc with internal memory for DMA-capable buffer
+    size_t alloc_size = chunk_size * max_num_chunks;
+    addr = heap_caps_malloc(alloc_size, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    if (addr != nullptr) {
+      MEMSTATS_TRACK_CHANGE((long)alloc_size);
+    }
+#else
+    // POSIX: Use mmap for memory allocation
     for (int i = 1; i <= 1000; i++) {
       addr = (void *)(chunks + (chunk_size * max_num_chunks) * i);
       MEMSTATS_CALL_STACK_PUSH(mmap);
@@ -56,6 +69,7 @@ Log_allocator::Chunk *Log_allocator::alloc_chunk() {
         addr = (void *)-1;
       }
     }
+#endif
 
     if (addr == (void *)-1) {
       th_fail("Unable to allocate memory");

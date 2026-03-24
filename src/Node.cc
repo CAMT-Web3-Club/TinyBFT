@@ -1,5 +1,9 @@
 #include "Node.h"
 
+#ifndef MAXHOSTNAMELEN
+#define MAXHOSTNAMELEN 256
+#endif
+
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <netdb.h>
@@ -509,5 +513,96 @@ void Node::send_new_key() {
   atimer->stop();
   atimer->restart();
 }
+
+#ifdef ESP_PLATFORM
+#include <esp_log.h>
+#include <esp_spiffs.h>
+#include <cJSON.h>
+
+static const char* TAG = "Node";
+
+void Node::init_transport() {
+    transport = Transport::create(TINYBFT_DEFAULT_TRANSPORT);
+    if (!transport) {
+        ESP_LOGE(TAG, "Failed to create transport");
+        return;
+    }
+    
+    transport->init();
+    
+    load_peers_from_spiffs();
+    
+    int retries = 0;
+    while (!transport->is_ready() && retries < 100) {
+        vTaskDelay(pdMS_TO_TICKS(100));
+        retries++;
+    }
+    
+    if (!transport->is_ready()) {
+        ESP_LOGW(TAG, "Transport not ready after %d retries", retries);
+    } else {
+        ESP_LOGI(TAG, "Transport initialized successfully");
+    }
+}
+
+void Node::load_peers_from_spiffs() {
+    const char* base_path = "/spiffs";
+    const char* config_path = "/spiffs/tinybft.conf";
+    
+    FILE* f = fopen(config_path, "r");
+    if (!f) {
+        ESP_LOGW(TAG, "Config file not found at %s, trying /spiffs/config", config_path);
+        f = fopen("/spiffs/config", "r");
+    }
+    
+    if (!f) {
+        ESP_LOGW(TAG, "Could not open config file, using defaults");
+        return;
+    }
+    
+    char line[256];
+    int line_num = 0;
+    int num_peers_parsed = 0;
+    
+    while (fgets(line, sizeof(line), f) && num_peers_parsed < num_replicas) {
+        line_num++;
+        
+        char* trimmed = line;
+        while (*trimmed == ' ' || *trimmed == '\t') trimmed++;
+        
+        if (*trimmed == '#' || *trimmed == '\n' || *trimmed == '\0') {
+            continue;
+        }
+        
+        size_t len = strlen(trimmed);
+        if (len > 0 && trimmed[len-1] == '\n') {
+            trimmed[len-1] = '\0';
+        }
+        
+        uint8_t mac[6];
+        int id;
+        
+        if (sscanf(trimmed, "%d %hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
+                   &id, &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]) == 7) {
+            if (id >= 0 && id < num_replicas && id != node_id) {
+                transport->add_peer(id, mac);
+                ESP_LOGI(TAG, "Added peer %d: %02X:%02X:%02X:%02X:%02X:%02X",
+                         id, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+                num_peers_parsed++;
+            }
+        }
+    }
+    
+    fclose(f);
+    ESP_LOGI(TAG, "Loaded %d peers from config", num_peers_parsed);
+}
+
+#else
+
+void Node::init_transport() {
+    // No-op on non-ESP platforms
+}
+
+#endif
 
 }  // namespace libbyzea
