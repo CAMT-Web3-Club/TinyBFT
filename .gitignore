@@ -1,32 +1,43 @@
-/.cache/
-*.swp
-*.o
+# Build outputs
 build/
+*.o
+*.bin
+*.elf
+*.map
+
+# Editor files
 .vscode/
-/build-*
+*.swp
+
+# Python
+*.pyc
+__pycache__/
+.pytest_cache/
+
+# Environment
 .direnv/
+.envrc
+
+# Linux build
 /examples/build/
 /test_runtime/*.log
 /test_runtime/priv/*.pem
 /test_runtime/pub/*.pub
 /test_runtime/test_unicast.conf
-*.pyc
-__pycache__/
 
-# ESP-IDF build artifacts
+# ESP-IDF artifacts (generated in build/ when using idf.py build)
 /esp-idf/
-/build/
 sdkconfig
 sdkconfig.defaults
-*.bin
-*.elf
-*.map
-/bootloader/
-/partition_table/
-/toolchain/
-/flash_args
-/flash_args.in
-/flash_*.args
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+cmake_install.cmake
+Makefile
+*.a
+.flash_args
+.flash_args.in
+.flash_*.args
 /flasher_args.json
 /project_description.json
 /compile_commands.json
@@ -40,4 +51,9 @@ sdkconfig.defaults
 /x509_crt_bundle.S
 /app-flash_args
 /bootloader-flash_args
+/partition-table-flash_args
 /bootloader-prefix/
+/bootloader/
+/partition_table/
+/toolchain/
+/project_elf_src_esp32.c
