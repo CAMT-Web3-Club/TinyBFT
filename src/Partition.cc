@@ -7,10 +7,8 @@
 
 namespace libbyzea {
 
-int PLevels;
-int PSize[MAX_PARTITION_LEVELS];
-int PLevelSize[MAX_PARTITION_LEVELS];
-int PBlocks[MAX_PARTITION_LEVELS];
+// Note: PLevels, PSize, PLevelSize, PBlocks defined in Partition.h as constexpr
+// No need to redeclare here
 
 namespace partition {
 int init(size_t mem_size) {
