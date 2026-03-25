@@ -1,0 +1,11 @@
+idf_component_register(
+    SRCS 
+        "test_consensus.cc"
+        "test_safety.cc"
+        "test_view_change.cc"
+    INCLUDE_DIRS 
+        "."
+    REQUIRES 
+        unity
+        tinybft
+)

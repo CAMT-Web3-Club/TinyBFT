@@ -28,14 +28,21 @@ make -j$(nproc)
 ### ESP32-C3 Build (ESP-IDF)
 
 ```bash
+# Build using Docker (recommended)
+podman run --rm -v $PWD:/project -w /project espressif/idf:release-v5.5 idf.py build
+
+# Or with local ESP-IDF
+source /path/to/esp-idf/export.sh
+idf.py build
+
 # Set target
 idf.py set-target esp32c3
 
 # Configure via menuconfig
 idf.py menuconfig
 
-# Build
-idf.py build
+# Flash to device
+idf.py -p /dev/ttyUSB0 flash monitor
 ```
 
 ### Running Tests
@@ -152,7 +159,7 @@ TinyBFT/
 │   ├── Message.cc/h        # Message base class
 │   ├── Request.cc/h        # Client request
 │   ├── Reply.cc/h          # Client reply
-│   ├── Transport.cc/h       # Transport abstraction
+│   ├── Transport.cc/h      # Transport abstraction
 │   ├── EspNowTransport.cc/h # ESP-NOW implementation
 │   ├── Fragmentation.cc/h  # Message fragmentation
 │   └── ...
@@ -161,11 +168,16 @@ TinyBFT/
 │   ├── simple_client.cc   # Basic client
 │   ├── simple_replica.cc  # Basic replica with KV store
 │   └── test_client.cc     # Test client with SET/GET
+├── test/                  # Unit/integration tests
+│   └── component/         # ESP-IDF test component
+│       ├── test_consensus.cc
+│       ├── test_safety.cc
+│       └── test_view_change.cc
 ├── test_runtime/          # Test configuration
 │   ├── test.conf          # Main config
 │   ├── priv/             # Private keys (gitignored)
 │   └── run_full_test.py   # Python test runner
-├── components/tinybft/    # ESP-IDF component
+├── components/tinybft/    # ESP-IDF library component
 └── build/                 # Build output (gitignored)
 ```
 
@@ -215,21 +227,50 @@ All message types should:
 
 ## 5. Testing Guidelines
 
-### Running a Single Test
-
-The Python test runner starts 4 replicas and 1 client automatically:
+### Running Tests on Linux
 
 ```bash
-# Full test with all SET/GET operations
+# Build the library first
+cd build && cmake .. && make -j4
+
+# Build examples
+cd examples/build && cmake .. && make -j4
+
+# Run full consensus test (1 client + 4 replicas)
 python3 test_runtime/run_full_test.py
 
-# Manual testing
-./examples/build/simple_replica test_runtime/test.conf test_runtime/priv/r0.pem 5679 &
-./examples/build/simple_replica test_runtime/test.conf test_runtime/priv/r1.pem 5680 &
+# Run simple client test
 ./examples/build/simple_client test_runtime/test.conf test_runtime/priv/client0.pem
 ```
 
-### Manual Test Commands
+### Running Tests on ESP-IDF
+
+```bash
+# Build tests using Docker
+podman run --rm -v $PWD:/project -w /project espressif/idf:release-v5.5 idf.py build
+
+# Run tests (requires hardware)
+podman run --rm -v $PWD:/project -w /project espressif/idf:release-v5.5 idf.py -p /dev/ttyUSB0 flash monitor
+```
+
+### Test Configuration (f=2, n=7)
+
+| Parameter | Value | Description |
+|-----------|-------|-------------|
+| n | 7 | Total replicas |
+| f | 2 | Maximum faulty |
+| quorum | 5 | 2f+1 required |
+
+### Test Priorities
+
+| Priority | Test Area | Status |
+|----------|-----------|--------|
+| P0 | Consensus Protocol | Implemented |
+| P0 | Quorum Verification | Implemented |
+| P0 | Safety Invariants | Implemented |
+| P1 | View Changes | Implemented |
+
+### Manual Test Commands (Linux)
 
 ```bash
 # Start replica
