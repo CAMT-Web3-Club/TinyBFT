@@ -23,6 +23,7 @@
           pkgs.cmake
           pkgs.gnumake
           pkgs.gcc
+          pkgs.gtest
           mbedtls-custom
         ];
       };

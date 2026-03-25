@@ -168,16 +168,21 @@ TinyBFT/
 │   ├── simple_client.cc   # Basic client
 │   ├── simple_replica.cc  # Basic replica with KV store
 │   └── test_client.cc     # Test client with SET/GET
-├── test/                  # Unit/integration tests
-│   └── component/         # ESP-IDF test component
-│       ├── test_consensus.cc
-│       ├── test_safety.cc
-│       └── test_view_change.cc
+├── test/                  # Linux CMake tests (gtest)
+│   ├── CMakeLists.txt
+│   ├── test_consensus.cc
+│   ├── test_safety.cc
+│   └── test_view_change.cc
 ├── test_runtime/          # Test configuration
 │   ├── test.conf          # Main config
 │   ├── priv/             # Private keys (gitignored)
 │   └── run_full_test.py   # Python test runner
 ├── components/tinybft/    # ESP-IDF library component
+│   └── test/              # ESP-IDF native tests (Unity)
+│       ├── CMakeLists.txt
+│       ├── test_consensus.cc
+│       ├── test_safety.cc
+│       └── test_view_change.cc
 └── build/                 # Build output (gitignored)
 ```
 
@@ -227,30 +232,54 @@ All message types should:
 
 ## 5. Testing Guidelines
 
-### Running Tests on Linux
+TinyBFT uses a dual-layer testing strategy:
+- **Linux Tests**: Fast iteration during development
+- **ESP-IDF Tests**: Native tests on hardware for release validation
+
+### Running Linux Tests (Fast)
+
+```bash
+# Build and run Linux unit tests (Google Test)
+cd test
+mkdir -p build && cd build
+cmake .. -DTINY_BFT=1
+make -j$(nproc)
+./tinybft_test
+
+# Run specific test suite
+./tinybft_test --gtest_filter="ConsensusTest*"
+
+# Run all tests
+./tinybft_test
+```
+
+### Running ESP-IDF Native Tests (Hardware)
+
+```bash
+# Build library and tests
+podman run --rm -v $PWD:/project -w /project espressif/idf:release-v5.5 idf.py build
+
+# Run tests on hardware
+podman run --rm -v $PWD:/project -w /project espressif/idf:release-v5.5 idf.py -p /dev/ttyUSB0 flash monitor
+
+# Or run specific test case
+podman run --rm -v $PWD:/project -w /project espressif/idf:release-v5.5 idf.py test "quorum calculation"
+```
+
+### Running Integration Tests (Linux)
 
 ```bash
 # Build the library first
 cd build && cmake .. && make -j4
 
 # Build examples
-cd examples/build && cmake .. && make -j4
+cd ../examples/build && cmake .. && make -j4
 
 # Run full consensus test (1 client + 4 replicas)
-python3 test_runtime/run_full_test.py
+python3 ../test_runtime/run_full_test.py
 
 # Run simple client test
-./examples/build/simple_client test_runtime/test.conf test_runtime/priv/client0.pem
-```
-
-### Running Tests on ESP-IDF
-
-```bash
-# Build tests using Docker
-podman run --rm -v $PWD:/project -w /project espressif/idf:release-v5.5 idf.py build
-
-# Run tests (requires hardware)
-podman run --rm -v $PWD:/project -w /project espressif/idf:release-v5.5 idf.py -p /dev/ttyUSB0 flash monitor
+./simple_client ../test_runtime/test.conf ../test_runtime/priv/client0.pem
 ```
 
 ### Test Configuration (f=2, n=7)
@@ -263,25 +292,28 @@ podman run --rm -v $PWD:/project -w /project espressif/idf:release-v5.5 idf.py -
 
 ### Test Priorities
 
-| Priority | Test Area | Status |
-|----------|-----------|--------|
-| P0 | Consensus Protocol | Implemented |
-| P0 | Quorum Verification | Implemented |
-| P0 | Safety Invariants | Implemented |
-| P1 | View Changes | Implemented |
+| Priority | Test Area | Location | Framework |
+|---------|-----------|----------|-----------|
+| P0 | Consensus Protocol | test/ & components/tinybft/test/ | gtest & Unity |
+| P0 | Quorum Verification | test/ & components/tinybft/test/ | gtest & Unity |
+| P0 | Safety Invariants | test/ & components/tinybft/test/ | gtest & Unity |
+| P1 | View Changes | test/ & components/tinybft/test/ | gtest & Unity |
 
-### Manual Test Commands (Linux)
+### Test Directory Structure
 
-```bash
-# Start replica
-./examples/build/simple_replica <config> <private_key> <port>
-
-# Start client  
-./examples/build/simple_client <config> <private_key>
-
-# Client sends commands like:
-# - SET key=value
-# - GET key
+```
+TinyBFT/
+├── test/                          # Linux CMake tests (gtest)
+│   ├── CMakeLists.txt
+│   ├── test_consensus.cc
+│   ├── test_safety.cc
+│   └── test_view_change.cc
+├── components/tinybft/test/       # ESP-IDF native tests (Unity)
+│   ├── CMakeLists.txt
+│   ├── test_consensus.cc
+│   ├── test_safety.cc
+│   └── test_view_change.cc
+└── test_runtime/                   # Integration tests
 ```
 
 ---
