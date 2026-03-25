@@ -3,37 +3,36 @@ cmake_minimum_required(VERSION 3.18.4)
 project(libbyzea_examples)
 
 set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
 # Link to the built library
-link_directories(${CMAKE_SOURCE_DIR}/../build)
+link_directories(${CMAKE_SOURCE_DIR}/..)
 
 # Include paths
 include_directories(${CMAKE_SOURCE_DIR}/../include)
 include_directories(${CMAKE_SOURCE_DIR}/../src)
 
-# Find mbedtls - use system libraries by default
-# Can be overridden with MBEDTLS_INCLUDE_PATH
-if(DEFINED MBEDTLS_INCLUDE_PATH)
-    get_filename_component(MBEDTLS_INCLUDE_PATH ${MBEDTLS_INCLUDE_PATH} ABSOLUTE)
-    include_directories(${MBEDTLS_INCLUDE_PATH})
-    set(MBEDTLS_LIBRARIES 
-        ${MBEDTLS_INCLUDE_PATH}/../lib/libmbedtls.a
-        ${MBEDTLS_INCLUDE_PATH}/../lib/libmbedcrypto.a
-        ${MBEDTLS_INCLUDE_PATH}/../lib/libmbedx509.a
-    )
-else()
-    # Try to find system mbedtls
-    find_library(MBEDTLS_LIB mbedtls PATHS /home/phukrit7171/.local/share/containers/storage/overlay/*/diff/usr/lib)
-    if(MBEDTLS_LIB)
-        get_filename_component(MBEDTLS_DIR ${MBEDTLS_LIB} DIRECTORY)
+# Find mbedtls using pkg-config
+find_package(PkgConfig)
+if(PkgConfig_FOUND)
+    pkg_check_modules(MBEDTLS REQUIRED mbedtls mbedcrypto mbedx509)
+    set(MBEDTLS_INCLUDE_DIRS ${MBEDTLS_INCLUDE_DIR})
+    set(MBEDTLS_LIBRARIES ${MBEDTLS_LIBRARIES})
+endif()
+
+if(NOT MBEDTLS_FOUND)
+    # Fallback: find system library 
+    find_library(MBEDTLS_LIB mbedtls)
+    find_library(MBEDCRYPTO_LIB mbedcrypto)
+    find_library(MBEDX509_LIB mbedx509)
+    if(MBEDTLS_LIB AND MBEDCRYPTO_LIB AND MBEDX509_LIB)
         set(MBEDTLS_LIBRARIES 
-            ${MBEDTLS_DIR}/libmbedtls.so.3.6.5
-            ${MBEDTLS_DIR}/libmbedcrypto.so.3.6.5
-            ${MBEDTLS_DIR}/libmbedx509.so.3.6.5
+            ${MBEDTLS_LIB}
+            ${MBEDCRYPTO_LIB}
+            ${MBEDX509_LIB}
         )
     else()
-        set(MBEDTLS_LIBRARIES mbedtls mbedcrypto mbedx509)
+        message(WARNING "mbedtls not found, build may fail")
     endif()
 endif()
 

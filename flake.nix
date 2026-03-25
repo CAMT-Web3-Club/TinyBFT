@@ -13,9 +13,6 @@
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs { inherit system; };
-      mbedtls-custom = pkgs.mbedtls.overrideAttrs (old: {
-        version = "v3.6.5";
-      });
     in
     {
       devShells.${system}.default = pkgs.mkShell {
@@ -24,7 +21,9 @@
           pkgs.gnumake
           pkgs.gcc
           pkgs.gtest
-          mbedtls-custom
+          pkgs.mbedtls
+          pkgs.openssl
+          pkgs.pkg-config
         ];
       };
     };
