@@ -31,7 +31,7 @@ enum class TransportType {
 
 ---
 
-## 2. UDP Transport (Linux)
+## 2. UDP Transport
 
 ### 2.1 Socket Configuration
 
@@ -254,7 +254,7 @@ size_t max_payload_size() const {
 
 ## 5. Peer Discovery
 
-### 5.1 Linux (Config File)
+### 5.1 UDP (Config File)
 
 Peers specified in config file:
 ```
@@ -266,7 +266,7 @@ localhost 127.0.0.1 5680 /path/to/r1.pem
 
 Parsed by `Node` constructor, populates `peers[]` array.
 
-### 5.2 ESP32 (SPIFFS Config)
+### 5.2 ESP-NOW (SPIFFS Config)
 
 Peers loaded from SPIFFS filesystem:
 
@@ -308,8 +308,9 @@ void Node::load_peers_from_spiffs() {
 #ifdef ESP_PLATFORM
     // ESP32 code
     #include "EspNowTransport.h"
+    #include "UdpTransport.h"
 #else
-    // Linux code
+    // Other platforms
     #include "UdpTransport.h"
 #endif
 ```

@@ -6,20 +6,20 @@ Configuration file format, compile-time constants, and build options.
 
 ### 1.1 Core Protocol Parameters
 
-| Constant | Default (Linux) | Default (ESP32) | Range | Description |
-|----------|-----------------|-----------------|-------|-------------|
-| `MAX_MESSAGE_SIZE` | 16384 | 8192 | 1024-16384 | Maximum message size (bytes) |
-| `MAX_NUM_REPLICAS` | 32 | 7 | 4-32 | Maximum replicas in cluster |
-| `WINDOW_SIZE` | 256 | 128 | 32-256 | Outstanding requests window |
-| `MAX_NUM_CLIENTS` | 1 | 1 | 1-10 | Maximum concurrent clients |
-| `CHECKPOINT_INTERVAL` | 128 | 128 | 16-256 | Checkpoint every N seqnos |
-| `BLOCK_SIZE` | 4096 | 4096 | - | State block size (power of 2) |
+| Constant | Default (ESP32) | Range | Description |
+|----------|-----------------|-------|-------------|
+| `MAX_MESSAGE_SIZE` | 8192 | 1024-16384 | Maximum message size (bytes) |
+| `MAX_NUM_REPLICAS` | 7 | 4-32 | Maximum replicas in cluster |
+| `WINDOW_SIZE` | 128 | 32-256 | Outstanding requests window |
+| `MAX_NUM_CLIENTS` | 1 | 1-10 | Maximum concurrent clients |
+| `CHECKPOINT_INTERVAL` | 128 | 16-256 | Checkpoint every N seqnos |
+| `BLOCK_SIZE` | 4096 | - | State block size (power of 2) |
 
 ### 1.2 Transport Parameters
 
 | Constant | Default | Description |
 |----------|---------|-------------|
-| `TINYBFT_TRANSPORT` | `UDP` (Linux), `ESP_NOW` (ESP32) | Transport layer |
+| `TINYBFT_TRANSPORT` | `ESP_NOW` | Transport layer (UDP or ESP_NOW) |
 | `DISABLE_MULTICAST` | 0 | Use unicast instead of multicast |
 | `TINYBFT_WIFI_CHANNEL` | 6 | ESP-NOW WiFi channel (1-14) |
 | `TINYBFT_FRAG_TIMEOUT_MS` | 5000 | Fragment reassembly timeout (ms) |
@@ -172,49 +172,30 @@ pub_key=/spiffs/priv/r0.pub
 
 ---
 
-## 3. Linux Build Options
+## 3. ESP-IDF Build Options
 
-### 3.1 CMake Options
+### 3.1 Build Commands
 
 ```bash
-# Default UDP transport
-mkdir -p build && cd build
-cmake ..
+# Build using Docker (recommended)
+podman run --rm -v $PWD:/project -w /project espressif/idf:release-v5.5 idf.py build
 
-# With specific options
-cmake .. -DTINYBFT_TRANSPORT=UDP        # UDP (default)
-cmake .. -DTINYBFT_TRANSPORT=LOOPBACK   # Loopback for testing
-cmake .. -DDISABLE_MULTICAST=1          # Unicast instead of multicast
-cmake .. -DTINY_BFT=1                  # Memory optimizations
-cmake .. -DMAX_MESSAGE_SIZE=8192       # Custom message size
-cmake .. -DMAX_NUM_REPLICAS=7          # Number of replicas
-cmake .. -DWINDOW_SIZE=128             # Outstanding requests
-cmake .. -DCHECKPOINT_INTERVAL=64      # Checkpoint interval
+# Set target
+idf.py set-target esp32c3
 
-# Build
-make -j$(nproc)
+# Configure via menuconfig
+idf.py menuconfig
+
+# Flash to device
+idf.py -p /dev/ttyUSB0 flash monitor
 ```
 
 ### 3.2 Build Configuration Matrix
 
-| Target | Transport | Message Size | Window | Replicas |
-|--------|-----------|-------------|--------|----------|
-| Linux default | UDP | 16384 | 256 | 32 |
-| Linux test | LOOPBACK | 16384 | 256 | 32 |
-| Linux small | UDP | 8192 | 128 | 7 |
-| ESP32 default | ESP-NOW | 8192 | 128 | 7 |
-
-### 3.3 Dependencies
-
-**Linux:**
-- GCC with C++14 support
-- CMake 3.18.4+
-- mbedTLS 3.x
-- pthreads
-
-**ESP32:**
-- ESP-IDF 5.5+
-- Built-in mbedTLS component
+| Transport | Message Size | Window | Replicas |
+|-----------|-------------|--------|----------|
+| UDP | 8192 | 128 | 7 |
+| ESP-NOW | 8192 | 128 | 7 |
 
 ---
 
@@ -352,13 +333,7 @@ static_assert(max_view_change_size <= MAX_MESSAGE_SIZE,
 **Development/Testing:**
 ```
 f=1, n=4, WINDOW_SIZE=32, CHECKPOINT_INTERVAL=16
-MAX_MESSAGE_SIZE=4096, TRANSPORT=LOOPBACK
-```
-
-**Production (Linux):**
-```
-f=2, n=7, WINDOW_SIZE=256, CHECKPOINT_INTERVAL=128
-MAX_MESSAGE_SIZE=16384, TRANSPORT=UDP
+MAX_MESSAGE_SIZE=4096, TRANSPORT=UDP
 ```
 
 **Production (ESP32):**

@@ -42,7 +42,7 @@
 - Updated README.md with build instructions, key generation, config format
 - Updated ARCHITECTURE.md
 - Generated valid RSA keys using ssh-keygen + PEM conversion
-- Successfully tested 4 replicas + 1 client initialization on Linux
+- Successfully tested 4 replicas + 1 client initialization
 - **Full consensus test working** - SET/GET commands with 4 replicas
 - Created Transport abstraction layer (UDP + ESP-NOW)
 - Created Fragmentation layer for ESP-NOW MTU
@@ -54,14 +54,13 @@
 
 ## 1. Overview
 
-This document specifies the port of TinyBFT from UDP/IP sockets to ESP-NOW protocol for ESP32-C3 microcontrollers. The port maintains backward compatibility with Linux for testing while adding native ESP32-C3 support.
+This document specifies the port of TinyBFT from UDP/IP sockets to ESP-NOW protocol for ESP32-C3 microcontrollers. The port provides native ESP32-C3 support using ESP-NOW.
 
 ### 1.1 Architecture Goals
 
 1. **Memory Efficiency**: Fit within 384KB SRAM on ESP32-C3
 2. **Low Latency**: Leverage ESP-NOW's sub-5ms latency
-3. **Backward Compatibility**: Keep UDP transport for Linux testing
-4. **Standard Components**: Use ESP-IDF's built-in mbedTLS
+3. **Standard Components**: Use ESP-IDF's built-in mbedTLS
 
 ---
 
@@ -69,14 +68,14 @@ This document specifies the port of TinyBFT from UDP/IP sockets to ESP-NOW proto
 
 ### 2.1 Build Parameters
 
-| Parameter | Linux Default | ESP32-C3 Value | Notes |
-|-----------|---------------|----------------|-------|
-| MAX_MESSAGE_SIZE | 16384 | 8192 | Reduced for memory |
-| MAX_NUM_REPLICAS | 32 | 7 | Fixed for deployment |
-| BLOCK_SIZE | 4096 | 4096 | Unchanged |
-| WINDOW_SIZE | 256 | 128 | Reduced for memory |
-| CHECKPOINT_INTERVAL | 128 | 128 | Unchanged |
-| MAX_NUM_CLIENTS | 1 | 1 | Unchanged |
+| Parameter | ESP32-C3 Value | Notes |
+|-----------|----------------|-------|
+| MAX_MESSAGE_SIZE | 8192 | Reduced for memory |
+| MAX_NUM_REPLICAS | 7 | Fixed for deployment |
+| BLOCK_SIZE | 4096 | Unchanged |
+| WINDOW_SIZE | 128 | Reduced for memory |
+| CHECKPOINT_INTERVAL | 128 | Unchanged |
+| MAX_NUM_CLIENTS | 1 | Unchanged |
 
 ### 2.2 Memory Budget (ESP32-C3)
 
@@ -143,7 +142,7 @@ public:
 #endif // _Transport_h
 ```
 
-### 3.2 UDP Transport (Linux)
+### 3.2 UDP Transport
 
 ```cpp
 // src/UdpTransport.h
@@ -190,8 +189,8 @@ public:
 ```cpp
 // src/TransportFactory.h
 enum class TransportType {
-    UDP,      // Linux testing
-    ESP_NOW   // ESP32-C3 deployment
+    UDP,      // UDP over Wi-Fi
+    ESP_NOW   // ESP-NOW direct
 };
 
 class TransportFactory {
@@ -293,7 +292,7 @@ WAITING ──(receive all)──> COMPLETE
 
 ## 5. Configuration File Format
 
-### 5.1 Linux/UDP Config (Existing)
+### 5.1 UDP Config
 
 ```
 service_name
@@ -309,7 +308,7 @@ status_timeout
 recovery_timeout
 ```
 
-### 5.2 ESP-NOW Config (New)
+### 5.2 ESP-NOW Config
 
 ```
 service_name
@@ -535,7 +534,7 @@ void handle_frag_timeout(uint32_t msg_id) {
 ### Phase 1: Transport Abstraction
 - [x] Create Transport interface (Transport.h)
 - [x] Modify Node.cc to use Transport*
-- [x] Implement UdpTransport for Linux
+- [x] Implement UdpTransport
 
 ### Phase 2: ESP-NOW Implementation
 - [x] Create EspNowTransport class
@@ -567,16 +566,16 @@ void handle_frag_timeout(uint32_t msg_id) {
 
 ---
 
-## 10. Compatibility Matrix
+## 10. Supported Features
 
-| Feature | Linux | ESP32-C3 |
-|---------|-------|----------|
-| UDP Transport | ✅ | ✅ (via Wi-Fi) |
-| ESP-NOW Transport | ❌ | ✅ |
-| mbedTLS | ✅ | ✅ |
-| RSA Keys | ✅ | ✅ |
-| 7 Replicas | ✅ | ✅ |
-| Fragmentation | ✅ (not needed) | ✅ |
+| Feature | ESP32-C3 |
+|---------|----------|
+| UDP Transport | ✅ |
+| ESP-NOW Transport | ✅ |
+| mbedTLS | ✅ |
+| RSA Keys | ✅ |
+| 7 Replicas | ✅ |
+| Fragmentation | ✅ (ESP-NOW only) |
 
 ---
 
