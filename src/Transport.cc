@@ -2,13 +2,17 @@
 
 #ifdef ESP_PLATFORM
 #include "Fragmentation.h"
-#endif
-
+#include <lwip/sockets.h>
+#include <lwip/netdb.h>
+#include <fcntl.h>
+#else
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <fcntl.h>
+#endif
+
 #include <cstring>
 #include <errno.h>
 #include <queue>
@@ -28,7 +32,15 @@ namespace libbyzea {
 class UdpTransport : public Transport {
 public:
     UdpTransport() : sock_(-1), node_(nullptr) {}
-    ~UdpTransport() override { if (sock_ >= 0) close(sock_); }
+    ~UdpTransport() override { 
+        if (sock_ >= 0) {
+#ifdef ESP_PLATFORM
+            lwip_close(sock_);
+#else
+            close(sock_);
+#endif
+        }
+    }
     
     void init() override;
     void send(Message* m, int dest_id) override;

@@ -5,11 +5,18 @@
  * Definitions of various types.
  */
 #include <limits.h>
+
+#ifdef ESP_PLATFORM
+#include <lwip/sockets.h>
+#include <lwip/netdb.h>
+#include <sys/time.h>
+#else
 #include <netinet/in.h>
 #include <sys/param.h>
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <unistd.h>
+#endif
 
 #ifndef MAX
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
