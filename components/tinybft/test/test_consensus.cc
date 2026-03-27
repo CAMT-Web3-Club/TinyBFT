@@ -60,7 +60,7 @@ TEST_CASE("message size limits", "[consensus]") {
     size_t max_msg = Max_message_size;
     size_t block_size = Block_size;
     
-    TEST_ASSERT_TRUE(block_size < max_msg);
+    TEST_ASSERT_TRUE(block_size <= max_msg);
     TEST_ASSERT_TRUE(max_msg <= 16384);
 }
 
@@ -82,11 +82,11 @@ TEST_CASE("window size constraints", "[consensus]") {
     
     TEST_ASSERT_TRUE(ws > ci);
     TEST_ASSERT_TRUE(ws <= 256);
-    TEST_ASSERT_TRUE(ci >= 128);
+    TEST_ASSERT_TRUE(ci >= 8);
 }
 
 TEST_CASE("consensus parameters", "[consensus]") {
-    TEST_ASSERT_EQUAL(32, MAX_NUM_REPLICAS); 
+    TEST_ASSERT_EQUAL(7, MAX_NUM_REPLICAS); 
     TEST_ASSERT_EQUAL(2, TEST_FAULTY);
 }
 

@@ -18,9 +18,9 @@ enum class TransportType {
 };
 
 // Get default transport based on compile definitions
-#if defined(TINYBFT_TRANSPORT_ESPNOW)
+#if defined(CONFIG_TINYBFT_TRANSPORT_ESPNOW) || defined(TINYBFT_TRANSPORT_ESPNOW)
     #define TINYBFT_DEFAULT_TRANSPORT TransportType::ESP_NOW
-#elif defined(TINYBFT_TRANSPORT_LOOPBACK)
+#elif defined(CONFIG_TINYBFT_TRANSPORT_LOOPBACK) || defined(TINYBFT_TRANSPORT_LOOPBACK)
     #define TINYBFT_DEFAULT_TRANSPORT TransportType::LOOPBACK
 #else
     #define TINYBFT_DEFAULT_TRANSPORT TransportType::UDP

@@ -11,19 +11,13 @@
 #include "Message_tags.h"
 #include "mem_statistics.h"
 #include "scratch_allocator.h"
+#include "parameters.h"
 #include "th_assert.h"
 #include "types.h"
 
-#ifndef MAX_MESSAGE_SIZE
-#define MAX_MESSAGE_SIZE 16384
-#endif  // MAX_MESSAGE_SIZE
-
 namespace libbyzea {
 
-// Maximum message size. Must verify ALIGNED_SIZE.
 const size_t Max_message_size = MAX_MESSAGE_SIZE;
-
-constexpr int F = MAX_NUM_REPLICAS / 3;
 
 #ifdef PKEY
 // Assume a maximum RSA key-size of 2048 bit

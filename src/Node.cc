@@ -28,6 +28,13 @@
 #include "rsa_private_key.h"
 #include "special_region.h"
 #include "th_assert.h"
+#include "Transport.h"
+
+#ifdef ESP_PLATFORM
+#include "sdkconfig.h"
+#include <esp_log.h>
+#include "EspNowTransport.h"
+#endif
 
 #ifndef NDEBUG
 #define NDEBUG
@@ -114,6 +121,7 @@ Node::Node(MEM_STATS_PARAM FILE *config_file,
 
   // read in remaining principals' addresses and figure out my principal
   char host_name[MAXHOSTNAMELEN + 1];
+#ifndef ESP_PLATFORM
   if (gethostname(host_name, MAXHOSTNAMELEN)) {
     perror("Unable to get hostname");
     exit(1);
@@ -124,6 +132,15 @@ Node::Node(MEM_STATS_PARAM FILE *config_file,
   MEM_STATS_GUARD_POP();
   if (hent == 0) th_fail("Could not get hostent");
   struct in_addr my_address = *((in_addr *)hent->h_addr_list[0]);
+#else
+  strncpy(host_name, "esp32", MAXHOSTNAMELEN);
+  struct in_addr my_address;
+  my_address.s_addr = 0; // Not used for identification on ESP32
+#ifdef CONFIG_TINYBFT_NODE_ID
+  node_id = CONFIG_TINYBFT_NODE_ID;
+  ESP_LOGI("Node", "Using fixed Node ID from Kconfig: %d", node_id);
+#endif
+#endif
   node_id = -1;
 
   principals = (Principal **)malloc(num_principals * sizeof(Principal *));
@@ -224,13 +241,31 @@ Node::Node(MEM_STATS_PARAM FILE *config_file,
 #endif  // ASYNC_SOCK
 
   // Initialize transport based on compile-time selection
-  // Note: Currently disabled to keep direct socket compatibility working
-  // Transport infrastructure is in place but not fully wired up
+#ifdef ESP_PLATFORM
+  transport = Transport::create(TINYBFT_DEFAULT_TRANSPORT);
+  if (transport) {
+    transport->init();
+    
+    // Load MAC addresses for ESP-NOW if applicable
+    if (transport->type() == TransportType::ESP_NOW) {
+      FILE* mac_file = fopen("/spiffs/tinybft.conf", "r");
+      if (mac_file) {
+        int id;
+        uint8_t mac_bytes[6];
+        while (fscanf(mac_file, "%d %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
+                      &id, &mac_bytes[0], &mac_bytes[1], &mac_bytes[2],
+                      &mac_bytes[3], &mac_bytes[4], &mac_bytes[5]) == 7) {
+          transport->add_peer(id, mac_bytes);
+        }
+        fclose(mac_file);
+      } else {
+        ESP_LOGE("Node", "Failed to open /spiffs/tinybft.conf for ESP-NOW MACs");
+      }
+    }
+  }
+#else
   transport = nullptr;
-  
-  // TODO: Enable transport when peer address handling is complete
-  // transport = Transport::create(TINYBFT_DEFAULT_TRANSPORT);
-  // if (transport) { transport->init(); ... }
+#endif
 
   // Sleep for more than a second to ensure strictly increasing
   // timestamps.
