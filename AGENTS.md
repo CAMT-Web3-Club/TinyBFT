@@ -17,6 +17,16 @@ podman run --rm -v $PWD:/project -w /project espressif/idf:release-v5.5 idf.py s
 podman run --rm -v $PWD:/project -w /project espressif/idf:release-v5.5 idf.py menuconfig
 ```
 
+### Build (PlatformIO)
+
+```bash
+# Build using PlatformIO
+pio run
+
+# Run tests using PlatformIO
+pio test -e esp32c3
+```
+
 ### Flash (Host)
 
 ```bash

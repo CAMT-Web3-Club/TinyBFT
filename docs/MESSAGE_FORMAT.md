@@ -83,13 +83,13 @@ Replica sends reply to client. Authenticated with HMAC.
 Offset  Size    Type      Field          Description
 ------  ------  --------  -------------  -----------
 0       8       header    (base header)  tag=2, size=total
-8       4       int32     v              Current view number
-12      8       uint64    rid            Request ID
-20      32      Digest    digest         Reply digest
-52      4       int32     replica        Sending replica ID
-56      4       int32     reply_size     Reply length (negative = empty)
-60      N       bytes     reply          Reply payload
-60+N    32      bytes     mac            HMAC-SHA256 authenticator
+8       8       View      v              Current view number
+16      8       RequestID rid            Request ID
+24      32      Digest    digest         Reply digest
+56      4       int32     replica        Sending replica ID
+60      4       int32     reply_size     Reply length (negative = empty)
+64      N       bytes     reply          Reply payload
+64+N    32      bytes     mac            HMAC-SHA256 authenticator
 ```
 
 **Flags (extra field):**
@@ -110,10 +110,10 @@ Offset  Size      Type      Field          Description
 0       8         header    (base header)  tag=3, size=total
 8       8         View      v              View number
 16      8         Seqno     seqno          Sequence number
-24      32      Digest    digest         SHA-256(rset || non_det)
+24      32        Digest    digest         SHA-256(rset || non_det)
 56      4         int32     rset_size      Request set size (bytes)
 60      2         int16     non_det_size   Non-det choices size (bytes)
-        ...       padding   (2 bytes)      Alignment padding
+62      2         padding   (unused)       Alignment padding
 64      rset_size bytes     requests       Serialized request set
 64+rs   nd_size   bytes     non_det        Non-deterministic choices
 64+rs+  M         bytes     signature      RSA-PSS signature
@@ -209,21 +209,19 @@ Offset  Size          Type         Field          Description
 0       8             header       (base header)  tag=8, size=total
 8       8             View         v              New view number
 16      8             Seqno        ls             Last stable checkpoint
-24      32*(max_out/  Digest[]     ckpts[]        Checkpoint digests
-        ckpt_int+1)
+24      32*N          Digest[]     ckpts[]        Checkpoint digests (N=max_out/ckpt_int+1)
 var     4             int32        id             Sending replica ID
 var+4   2             int16        n_ckpts        Number of ckpts
 var+6   2             int16        n_reqs         Number of requests
-var+8   8*N           uint64[]     prepared[]     Bitmap of prepared reqs
+var+8   8*K           uint64[]     prepared[]     Bitmap of prepared reqs (K=max_out/64)
 var+8+  32            Digest       d              Message digest
-  8*N
-var+8+  n_reqs * 16   Req_info[]   req_info[]     Request info entries
-  8*N+32
+  8*K
+var     variable      Req_info[]   req_info[]     Request info entries (n_reqs entries)
 var     M             bytes        signature      RSA-PSS signature
 var+M   AUTH_SZ       bytes        authenticator  HMAC array
 ```
 
-**Req_info structure (16 bytes each):**
+**Req_info structure (48 bytes each):**
 ```c
 struct Req_info {
     View lv;    // 8 bytes - Last view where pre-prepare/prepare sent
@@ -231,15 +229,6 @@ struct Req_info {
     Digest d;   // 32 bytes - Request digest
 };
 ```
-
-Wait - let me correct: each Req_info is:
-```
-Offset  Size  Type    Field
-0       8     View    lv
-8       8     View    v
-16      32    Digest  d
-```
-Total: 48 bytes per Req_info
 
 **prepared bitmap:** Bit i is set if request with `seqno = ls + i + 1` is prepared.
 
@@ -256,7 +245,7 @@ Offset  Size      Type         Field          Description
 8       8         View         v              New view number
 16      8         Seqno        min            Checkpoint seqno to propagate
 24      8         Seqno        max            Requests < max propagated
-32      variable  VC_info[]    vc_info        View change proofs
+32      variable  VC_info[]    vc_info        View change proofs (f+1 entries)
 var     variable  Pre_prepare[] picked         Re-proposed pre-prepares
 var     M         bytes        signature      RSA-PSS signature
 var+M   AUTH_SZ   bytes        authenticator  HMAC array
@@ -288,7 +277,27 @@ Offset  Size    Type      Field          Description
 
 ---
 
-## 12. Authenticator Format
+## 12. Status (tag=7)
+
+Replica announces its current state and missing information.
+
+```
+Offset  Size      Type         Field          Description
+------  --------  -----------  -------------  -----------
+0       8         header       (base header)  tag=7, size=total
+8       8         View         v              Replica's current view
+16      8         Seqno        ls             Seqno of last stable checkpoint
+24      8         Seqno        le             Seqno of last request executed
+32      4         int32        id             Replica ID
+36      2         int16        sz             Size of bitmaps/arrays
+38      2         int16        brsz           Size of big request info
+40      variable  -            payload        Prepared/Committed bitmaps or VC/PP info
+var     AUTH_SZ   bytes        authenticator  HMAC array
+```
+
+---
+
+## 13. Authenticator Format
 
 ### HMAC Mode (default)
 
@@ -371,8 +380,8 @@ total = 56 + command_size + signature_size + authenticator_size
 
 ### Pre-prepare
 ```
-sizeof(Pre_prepare_rep) = 8 + 8 + 8 + 32 + 4 + 2 + 2 = 70 -> 72 (aligned)
-total = 72 + rset_size + non_det_size + signature_size + authenticator_size
+sizeof(Pre_prepare_rep) = 8 + 8 + 8 + 32 + 4 + 2 + 2 = 64 bytes (aligned)
+total = 64 + rset_size + non_det_size + signature_size + authenticator_size
 ```
 
 ### Prepare
@@ -395,8 +404,14 @@ total = 56 + signature_size + authenticator_size
 
 ### Reply
 ```
-sizeof(Reply_rep) = 8 + 4 + 8 + 32 + 4 + 4 = 60 bytes
-total = 60 + reply_size + mac_size (32 bytes)
+sizeof(Reply_rep) = 8 + 8 + 8 + 32 + 4 + 4 = 64 bytes
+total = 64 + reply_size + mac_size (32 bytes)
+```
+
+### Status
+```
+sizeof(Status_rep) = 8 + 8 + 8 + 8 + 4 + 2 + 2 = 40 bytes
+total = 40 + payload_size + authenticator_size
 ```
 
 ### Authenticator size

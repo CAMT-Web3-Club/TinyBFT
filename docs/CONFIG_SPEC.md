@@ -33,7 +33,12 @@ namespace libbyzea {
     constexpr int max_out = WINDOW_SIZE;
     constexpr int max_num_clients = MAX_NUM_CLIENTS;
     constexpr int F = MAX_NUM_REPLICAS / 3;
-    constexpr unsigned AUTHENTICATOR_SIZE = 32 * (MAX_NUM_REPLICAS - 1);  // HMAC mode
+
+    // HMAC mode (default)
+    constexpr unsigned AUTHENTICATOR_SIZE = 32 * (MAX_NUM_REPLICAS - 1);
+    
+    // RSA-1024 mode (PKEY flag)
+    // constexpr unsigned AUTHENTICATOR_SIZE = 128; 
 }
 ```
 
@@ -131,7 +136,7 @@ test_bft
 2
 1800000
 8
-239.255.0.1 5679
+239.255.0.1 5678
 localhost 127.0.0.1 7001 /home/user/priv/r0.pem
 localhost 127.0.0.1 7002 /home/user/priv/r1.pem
 localhost 127.0.0.1 7003 /home/user/priv/r2.pem

@@ -1,8 +1,9 @@
 cmake_minimum_required(VERSION 3.18.4)
 
 # Auto-detect platform: ESP-IDF vs Linux
-if(DEFINED ENV{IDF_PATH})
+if(DEFINED ENV{IDF_PATH} OR DEFINED ENV{PLATFORMIO_CORE_DIR})
     # ESP-IDF build - delegate to ESP-IDF system
+    set(EXCLUDE_COMPONENTS mqtt)
     include($ENV{IDF_PATH}/tools/cmake/project.cmake)
     project(tinybft_app)
 else()

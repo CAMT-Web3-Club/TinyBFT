@@ -162,7 +162,7 @@ parts of the protocol.
 #### Enable Memory Demand Statistics (PRINT_MEM_STATISTICS)
 
 ```sh
-camke -DPRINT_MEM_STATISTICS=1 ..
+cmake -DPRINT_MEM_STATISTICS=1 ..
 ```
 
 Enables the (dynamic) memory demand benchmark. This compiles a custom
@@ -316,6 +316,27 @@ idf.py build
 idf.py -p /dev/ttyUSB0 flash monitor
 ```
 
+### Building with PlatformIO
+
+TinyBFT also supports [PlatformIO](https://platformio.org/) for building and testing, which is recommended for most users.
+
+```sh
+# Build application
+pio run
+
+# Run unit tests on ESP32-C3 hardware
+pio test -e esp32c3
+
+# Build tests without uploading (for CI/Validation)
+pio test -e esp32c3 --without-uploading --without-testing
+```
+
+See [platformio.ini](platformio.ini) for configuration details.
+
+### Developer Guidelines
+
+For detailed information on coding standards, build commands, and project structure, please refer to [AGENTS.md](AGENTS.md).
+
 ### ESP-IDF Component Structure
 
 ```
@@ -433,11 +454,11 @@ Or manually:
 # Start 4 replicas (in separate terminals or background)
 ./examples/build/simple_replica test_runtime/test.conf test_runtime/priv/r0.pem 5679 &
 ./examples/build/simple_replica test_runtime/test.conf test_runtime/priv/r1.pem 5680 &
-./examples/build/simple_replica test_runtime/test_conf test_runtime/priv/r2.pem 5681 &
-./examples/build/simple_replica test_runtime/test_conf test_runtime/priv/r3.pem 5682 &
+./examples/build/simple_replica test_runtime/test.conf test_runtime/priv/r2.pem 5681 &
+./examples/build/simple_replica test_runtime/test.conf test_runtime/priv/r3.pem 5682 &
 
 # Run client
-./examples/build/test_client test_runtime/test_conf test_runtime/priv/client0.pem
+./examples/build/test_client test_runtime/test.conf test_runtime/priv/client0.pem
 ```
 
 ### Test Output

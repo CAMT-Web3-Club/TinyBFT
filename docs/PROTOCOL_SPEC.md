@@ -29,7 +29,7 @@ typedef uint64_t Request_id; // Client request identifier
 
 | Constant | Default | Description |
 |----------|---------|-------------|
-| `WINDOW_SIZE` | 256 | Max outstanding requests (`max_out`) |
+| `WINDOW_SIZE` | 256 | Max outstanding requests (`max_out`) - 128 on ESP32 |
 | `CHECKPOINT_INTERVAL` | 128 | Checkpoint every N sequence numbers |
 | `MAX_MESSAGE_SIZE` | 16384 | Maximum message size in bytes |
 | `MAX_NUM_REPLICAS` | 32 | Maximum replicas in cluster |
@@ -220,9 +220,9 @@ struct View_change_rep {
 
 ```c
 struct Req_info {
-    View lv;    // Last view where pre-prepare/prepare was sent
-    View v;     // View where request prepared
-    Digest d;   // Digest of the request
+    View lv;    // 8 bytes - Last view where pre-prepare/prepare sent
+    View v;     // 8 bytes - View where request prepared
+    Digest d;   // 32 bytes - Request digest (SHA-256)
 };
 ```
 

@@ -377,27 +377,46 @@ idf_build_set_property(COMPILE_OPTIONS "-DWINDOW_SIZE=128" APPEND)
 
 ## 11. Building
 
-### 11.1 Docker Build (Recommended)
+### 11.1 Standard ESP-IDF Build
 
 ```bash
-# Build with ESP-IDF Docker image
-podman run --rm -v $PWD:/project -w /project \
-    espressif/idf:release-v5.5 idf.py build
-
-# Flash
-podman run --rm -v $PWD:/project -w /project \
-    espressif/idf:release-v5.5 idf.py -p /dev/ttyUSB0 flash monitor
-```
-
-### 11.2 Local Build
-
-```bash
-source /path/to/esp-idf/export.sh
+# Set target
 idf.py set-target esp32c3
-idf.py menuconfig  # Configure TinyBFT options
+
+# Local build
 idf.py build
+
+# Flash and monitor
 idf.py -p /dev/ttyUSB0 flash monitor
 ```
+
+### 11.2 Docker/Podman Build (Recommended)
+
+```bash
+# Build using ESP-IDF container
+podman run --rm -v $PWD:/project -w /project espressif/idf:release-v5.5 idf.py build
+```
+
+### 11.3 PlatformIO Build
+
+PlatformIO is the recommended environment for development and testing.
+
+```bash
+# Build application
+pio run
+
+# Run unit tests on hardware
+pio test -e esp32c3
+```
+
+> [!TIP]
+> **Unity Linkage Fix**: When using the native ESP-IDF Unity runner in C++ files, ensure all Unity headers are wrapped in `extern "C"` to avoid linkage errors:
+> ```cpp
+> extern "C" {
+> #include <unity.h>
+> #include <unity_test_runner.h>
+> }
+> ```
 
 ## 12. Running Tests on Hardware
 

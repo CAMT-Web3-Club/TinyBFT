@@ -74,7 +74,7 @@ AUTHENTICATOR_SIZE = Digest::SIZE * (MAX_NUM_REPLICAS - 1)
                    = 32 * (n - 1)
 
 // RSA mode (PKEY)
-AUTHENTICATOR_SIZE = 256  // Fixed for 2048-bit RSA max
+AUTHENTICATOR_SIZE = 128  // Fixed for 1024-bit RSA
 ```
 
 ---

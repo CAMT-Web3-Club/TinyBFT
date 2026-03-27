@@ -1,8 +1,11 @@
 idf_component_register(
     SRCS 
+        "test_main.c"
         "test_consensus.cc"
         "test_safety.cc"
         "test_view_change.cc"
+        "test_transport.cc"
+        "test_cryptography.cc"
     INCLUDE_DIRS 
         "."
     REQUIRES 

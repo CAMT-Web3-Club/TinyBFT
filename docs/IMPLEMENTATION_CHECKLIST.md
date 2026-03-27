@@ -189,14 +189,14 @@ Step-by-step checklist for porting TinyBFT to another language.
 
 ### 5.3 ESP-NOW Transport (ESP32)
 
-- [ ] Initialize WiFi (STA mode)
-- [ ] Set WiFi channel
-- [ ] Initialize ESP-NOW
-- [ ] Register send/receive callbacks
-- [ ] Add peers by MAC address
-- [ ] Fragment messages > 1470 bytes
-- [ ] Reassemble fragmented messages
-- [ ] Load peer MACs from SPIFFS config
+- [x] Initialize WiFi (STA mode)
+- [x] Set WiFi channel
+- [x] Initialize ESP-NOW
+- [x] Register send/receive callbacks
+- [x] Add peers by MAC address
+- [x] Fragment messages > 1470 bytes
+- [x] Reassemble fragmented messages
+- [x] Load peer MACs from SPIFFS config
 
 ### 5.4 Fragmentation
 
@@ -341,11 +341,11 @@ Step-by-step checklist for porting TinyBFT to another language.
 
 ### 9.3 ESP32 Tests
 
-- [ ] ESP-NOW peer discovery
-- [ ] Fragmentation/reassembly
-- [ ] Memory usage within budget
-- [ ] Timer accuracy
-- [ ] Consensus on hardware
+- [x] ESP-NOW peer discovery
+- [x] Fragmentation/reassembly
+- [x] Memory usage within budget
+- [x] Timer accuracy
+- [x] Consensus on hardware
 
 ---
 

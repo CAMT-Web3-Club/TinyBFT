@@ -59,7 +59,7 @@ class Message {
   /**
    * Effects: Deallocates all storage associated with this message.
    */
-  ~Message();
+  virtual ~Message();
 
   /** Effects: Deallocates surplus storage. */
   void trim();

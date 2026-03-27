@@ -1,11 +1,18 @@
+extern "C" {
 #include "unity.h"
+#include "unity_test_runner.h"
+}
 #include "types.h"
 #include "View_change.h"
 #include "New_view.h"
 #include "parameters.h"
+#include "Message.h"
+#include "Digest.h"
 
 #define TEST_FAULTY 2
 #define TEST_REPLICAS 7
+
+using namespace libbyzea;
 
 TEST_CASE("trigger view timeout", "[view_change]") {
     View current_view = 0;
@@ -127,7 +134,7 @@ TEST_CASE("byzantine replicas excluded", "[view_change]") {
 
 TEST_CASE("view change message size", "[view_change]") {
     int n = TEST_REPLICAS;
-    int max_msg = libbyzea::Max_message_size;
+    int max_msg = Max_message_size;
     
     size_t view_change_base = sizeof(View) * 2 + sizeof(Seqno);
     size_t vcerts_size = n * (sizeof(View) + sizeof(Digest));
@@ -137,7 +144,7 @@ TEST_CASE("view change message size", "[view_change]") {
 
 TEST_CASE("new view message size", "[view_change]") {
     int n = TEST_REPLICAS;
-    int max_msg = libbyzea::Max_message_size;
+    int max_msg = Max_message_size;
     
     size_t new_view_base = sizeof(View) * 2 + sizeof(Seqno);
     size_t vcerts_size = n * (sizeof(View) + sizeof(Digest));

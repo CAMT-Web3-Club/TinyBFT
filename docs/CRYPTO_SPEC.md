@@ -170,13 +170,13 @@ mbedtls_rsa_set_padding(mbedtls_pk_rsa(pk_ctx),
 unsigned char hash[32];
 mbedtls_sha256(message, msg_len, hash, 0);
 
-unsigned char signature[256];  // Max for 2048-bit key
+unsigned char signature[128];  // Exact for 1024-bit key
 size_t sig_len;
 mbedtls_rsa_rsassa_pss_sign(mbedtls_pk_rsa(pk_ctx),
                             mbedtls_ctr_drbg_random, &drbg_ctx,
                             MBEDTLS_MD_SHA256, 32, hash,
                             signature);
-sig_len = 128;  // 1024-bit RSA = 128 bytes
+sig_len = 128;  // 1024-bit RSA signature length
 ```
 
 ### 4.5 Signature Verification

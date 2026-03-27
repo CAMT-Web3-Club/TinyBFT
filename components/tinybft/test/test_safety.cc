@@ -1,10 +1,18 @@
+extern "C" {
 #include "unity.h"
+#include "unity_test_runner.h"
+}
+#include "libbyz.h"
 #include "types.h"
 #include "Message.h"
 #include "parameters.h"
+#include "Digest.h"
+#include <string.h>
 
 #define TEST_FAULTY 2
 #define TEST_REPLICAS 7
+
+using namespace libbyzea;
 
 TEST_CASE("no double prepare same seqno", "[safety]") {
     Seqno seqno = 100;
@@ -79,15 +87,15 @@ TEST_CASE("quorum intersection property", "[safety]") {
 }
 
 TEST_CASE("checkpoint interval divides window", "[safety]") {
-    int ws = libbyzea::WINDOW_SIZE;
-    int ci = libbyzea::CHECKPOINT_INTERVAL;
+    int ws = WINDOW_SIZE;
+    int ci = CHECKPOINT_INTERVAL;
     
     TEST_ASSERT_TRUE(ws >= (2 * ci));
 }
 
 TEST_CASE("message size within limits", "[safety]") {
-    size_t max_msg = libbyzea::Max_message_size;
-    size_t block_size = libbyzea::Block_size;
+    size_t max_msg = Max_message_size;
+    size_t block_size = Block_size;
     
     TEST_ASSERT_TRUE(block_size <= max_msg);
     TEST_ASSERT_TRUE(max_msg <= 16384);
@@ -95,7 +103,7 @@ TEST_CASE("message size within limits", "[safety]") {
 }
 
 TEST_CASE("state block alignment", "[safety]") {
-    size_t block_size = libbyzea::Block_size;
+    size_t block_size = Block_size;
     
     TEST_ASSERT_TRUE((block_size & (block_size - 1)) == 0);
 }
