@@ -21,8 +21,8 @@ __pycache__/
 # Linux build
 /examples/build/
 /test_runtime/*.log
-/test_runtime/priv/*.pem
-/test_runtime/pub/*.pub
+/test_runtime/priv/
+/test_runtime/pub/
 /test_runtime/test_unicast.conf
 
 # ESP-IDF artifacts (generated in build/ when using idf.py build)
