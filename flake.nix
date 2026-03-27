@@ -17,6 +17,7 @@
     {
       devShells.${system}.default = pkgs.mkShell {
         buildInputs = [
+          # Build tools
           pkgs.cmake
           pkgs.gnumake
           pkgs.gcc
@@ -24,6 +25,10 @@
           pkgs.mbedtls
           pkgs.openssl
           pkgs.pkg-config
+
+          # ESP32 tools
+          pkgs.esptool
+          pkgs.screen
         ];
       };
     };
