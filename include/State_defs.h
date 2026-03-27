@@ -7,7 +7,9 @@
 #ifdef BASE
 #define OBJ_REP
 #else
+#ifndef NO_STATE_TRANSLATION
 #define NO_STATE_TRANSLATION
+#endif
 #endif
 
 #endif
