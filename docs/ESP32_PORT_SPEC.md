@@ -47,6 +47,9 @@
 - Created Transport abstraction layer (UDP + ESP-NOW)
 - Created Fragmentation layer for ESP-NOW MTU
 - Created ESP-IDF component structure
+- **Fixed ESP-IDF platform guards** - types.h and Transport.cc now use lwIP headers on ESP-IDF
+- **ESP32-C3 firmware working** - NVS, WiFi STA mode, heartbeat loop verified on real hardware
+- **Build workflow documented** - Container for build, host for flash/monitor
 
 ---
 

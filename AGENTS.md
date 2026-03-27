@@ -4,27 +4,42 @@ This document provides guidelines for agents operating in the TinyBFT codebase.
 
 ## 1. Build Commands (ESP-IDF)
 
+### Build (Container)
+
 ```bash
-# Build using Docker (recommended)
+# Build using Docker/Podman container
 podman run --rm -v $PWD:/project -w /project espressif/idf:release-v5.5 idf.py build
 
-# Or with local ESP-IDF
-source /path/to/esp-idf/export.sh
-idf.py build
-
 # Set target
-idf.py set-target esp32c3
+podman run --rm -v $PWD:/project -w /project espressif/idf:release-v5.5 idf.py set-target esp32c3
 
 # Configure via menuconfig
-idf.py menuconfig
-
-# Flash to device
-idf.py -p /dev/ttyUSB0 flash monitor
+podman run --rm -v $PWD:/project -w /project espressif/idf:release-v5.5 idf.py menuconfig
 ```
 
-### Build Options (menuconfig)
+### Flash (Host)
 
-Configure via `idf.py menuconfig` under **TinyBFT Configuration**.
+```bash
+# Flash using esptool on host (not in container)
+esptool --chip esp32c3 --port /dev/ttyACM0 --baud 460800 write-flash \
+  --flash-mode dio --flash-size 4MB --flash-freq 80m \
+  0x0 build/bootloader/bootloader.bin \
+  0x8000 build/partition_table/partition-table.bin \
+  0x10000 build/tinybft_app.bin
+
+# Or reset only (no flash)
+esptool --chip esp32c3 --port /dev/ttyACM0 --baud 460800 run
+```
+
+### Monitor (Host)
+
+```bash
+# Monitor using screen on host
+screen /dev/ttyACM0 115200
+
+# Or capture output to file
+timeout 30 cat /dev/ttyACM0 > output.txt
+```
 
 ---
 
