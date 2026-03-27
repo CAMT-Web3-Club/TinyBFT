@@ -2,30 +2,7 @@
 
 This document provides guidelines for agents operating in the TinyBFT codebase.
 
-## 1. Build Commands
-
-### Linux Build
-
-```bash
-# Create and enter build directory
-mkdir -p build && cd build
-
-# Configure with default settings (UDP transport)
-cmake ..
-
-# Or with specific options
-cmake .. -DTINYBFT_TRANSPORT=UDP        # UDP transport (default)
-cmake .. -DTINYBFT_TRANSPORT=LOOPBACK   # Loopback transport for testing
-cmake .. -DDISABLE_MULTICAST=1          # Use unicast instead of multicast
-cmake .. -DTINY_BFT=1                  # Enable TinyBFT memory optimizations
-cmake .. -DMAX_MESSAGE_SIZE=8192       # Custom max message size
-cmake .. -DMAX_NUM_REPLICAS=7          # Number of replicas (default: 32)
-
-# Build
-make -j$(nproc)
-```
-
-### ESP32-C3 Build (ESP-IDF)
+## 1. Build Commands (ESP-IDF)
 
 ```bash
 # Build using Docker (recommended)
@@ -45,32 +22,9 @@ idf.py menuconfig
 idf.py -p /dev/ttyUSB0 flash monitor
 ```
 
-### Running Tests
+### Build Options (menuconfig)
 
-```bash
-# Build the library first
-cd build && cmake .. && make -j4
-
-# Build examples
-cd examples/build && cmake .. && make -j4
-
-# Run full consensus test (1 client + 4 replicas)
-python3 test_runtime/run_full_test.py
-
-# Run simple client test
-./examples/build/simple_client test_runtime/test.conf test_runtime/priv/client0.pem
-```
-
-### Build Options Reference
-
-| Option | Values | Default | Description |
-|--------|--------|---------|--------------|
-| `TINYBFT_TRANSPORT` | UDP, LOOPBACK, ESP_NOW | UDP | Transport layer |
-| `DISABLE_MULTICAST` | 0, 1 | 0 | Use unicast instead of multicast |
-| `MAX_MESSAGE_SIZE` | 1024-16384 | 16384 | Max message size in bytes |
-| `MAX_NUM_REPLICAS` | 4-19 | 32 | Number of replicas |
-| `WINDOW_SIZE` | 32-256 | 256 | Outstanding requests window |
-| `TINY_BFT` | 0, 1 | 0 | Enable memory optimizations |
+Configure via `idf.py menuconfig` under **TinyBFT Configuration**.
 
 ---
 
@@ -109,7 +63,7 @@ python3 test_runtime/run_full_test.py
 - **Namespaces**: Use `libbyzea` namespace for all library code
 - **Include order**:
   1. Library headers (libbyzea)
-  2. System headers (`<cstdint>`, `<sys/socket.h>`)
+  2. System headers (`<cstdint>`, `<esp_now.h>`)
   3. Third-party (`<mbedtls/...>`)
 
 ### Type Guidelines
@@ -168,15 +122,6 @@ TinyBFT/
 │   ├── simple_client.cc   # Basic client
 │   ├── simple_replica.cc  # Basic replica with KV store
 │   └── test_client.cc     # Test client with SET/GET
-├── test/                  # Linux CMake tests (gtest)
-│   ├── CMakeLists.txt
-│   ├── test_consensus.cc
-│   ├── test_safety.cc
-│   └── test_view_change.cc
-├── test_runtime/          # Test configuration
-│   ├── test.conf          # Main config
-│   ├── priv/             # Private keys (gitignored)
-│   └── run_full_test.py   # Python test runner
 ├── components/tinybft/    # ESP-IDF library component
 │   └── test/              # ESP-IDF native tests (Unity)
 │       ├── CMakeLists.txt
@@ -232,26 +177,7 @@ All message types should:
 
 ## 5. Testing Guidelines
 
-TinyBFT uses a dual-layer testing strategy:
-- **Linux Tests**: Fast iteration during development
-- **ESP-IDF Tests**: Native tests on hardware for release validation
-
-### Running Linux Tests (Fast)
-
-```bash
-# Build and run Linux unit tests (Google Test)
-cd test
-mkdir -p build && cd build
-cmake .. -DTINY_BFT=1
-make -j$(nproc)
-./tinybft_test
-
-# Run specific test suite
-./tinybft_test --gtest_filter="ConsensusTest*"
-
-# Run all tests
-./tinybft_test
-```
+TinyBFT uses ESP-IDF native tests on hardware for validation.
 
 ### Running ESP-IDF Native Tests (Hardware)
 
@@ -266,22 +192,6 @@ podman run --rm -v $PWD:/project -w /project espressif/idf:release-v5.5 idf.py -
 podman run --rm -v $PWD:/project -w /project espressif/idf:release-v5.5 idf.py test "quorum calculation"
 ```
 
-### Running Integration Tests (Linux)
-
-```bash
-# Build the library first
-cd build && cmake .. && make -j4
-
-# Build examples
-cd ../examples/build && cmake .. && make -j4
-
-# Run full consensus test (1 client + 4 replicas)
-python3 ../test_runtime/run_full_test.py
-
-# Run simple client test
-./simple_client ../test_runtime/test.conf ../test_runtime/priv/client0.pem
-```
-
 ### Test Configuration (f=2, n=7)
 
 | Parameter | Value | Description |
@@ -294,26 +204,20 @@ python3 ../test_runtime/run_full_test.py
 
 | Priority | Test Area | Location | Framework |
 |---------|-----------|----------|-----------|
-| P0 | Consensus Protocol | test/ & components/tinybft/test/ | gtest & Unity |
-| P0 | Quorum Verification | test/ & components/tinybft/test/ | gtest & Unity |
-| P0 | Safety Invariants | test/ & components/tinybft/test/ | gtest & Unity |
-| P1 | View Changes | test/ & components/tinybft/test/ | gtest & Unity |
+| P0 | Consensus Protocol | components/tinybft/test/ | Unity |
+| P0 | Quorum Verification | components/tinybft/test/ | Unity |
+| P0 | Safety Invariants | components/tinybft/test/ | Unity |
+| P1 | View Changes | components/tinybft/test/ | Unity |
 
 ### Test Directory Structure
 
 ```
 TinyBFT/
-├── test/                          # Linux CMake tests (gtest)
-│   ├── CMakeLists.txt
-│   ├── test_consensus.cc
-│   ├── test_safety.cc
-│   └── test_view_change.cc
 ├── components/tinybft/test/       # ESP-IDF native tests (Unity)
 │   ├── CMakeLists.txt
 │   ├── test_consensus.cc
 │   ├── test_safety.cc
 │   └── test_view_change.cc
-└── test_runtime/                   # Integration tests
 ```
 
 ---
@@ -350,15 +254,12 @@ Consensus is implemented in:
 
 ### Platform-Specific Code
 
-Use compile definitions for platform-specific code:
+Use compile definitions for ESP-IDF specific code:
 
 ```cpp
 #ifdef ESP_PLATFORM
     // ESP32-C3 specific
     #include <esp_now.h>
-#else
-    // Linux specific
-    #include <sys/socket.h>
 #endif
 ```
 

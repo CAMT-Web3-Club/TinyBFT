@@ -18,26 +18,25 @@ QUORUM = 2 * NUM_FAULTY + 1  # 5
 CLIENT_PORT_BASE = 7008
 REPLICA_PORT_BASE = 7001
 
+
 class ReplicaProcess:
     """Manages a single replica process"""
-    
+
     def __init__(self, replica_id: int, config_file: str, key_file: str, port: int):
         self.replica_id = replica_id
         self.config_file = config_file
         self.key_file = key_file
         self.port = port
         self.process = None
-        
+
     def start(self, binary_path: str):
         """Start the replica process"""
         cmd = [binary_path, self.config_file, self.key_file, str(self.port)]
         self.process = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
         return self.process
-        
+
     def stop(self):
         """Stop the replica process"""
         if self.process:
@@ -46,11 +45,11 @@ class ReplicaProcess:
                 self.process.wait(timeout=5)
             except subprocess.TimeoutExpired:
                 self.process.kill()
-                
+
     def is_alive(self) -> bool:
         """Check if replica is still running"""
         return self.process and self.process.poll() is None
-    
+
     def send_request(self, request: str) -> str:
         """Send a request to the replica via UDP"""
         pass  # Client handles this
@@ -58,13 +57,13 @@ class ReplicaProcess:
 
 class TestClient:
     """Manages the client connection"""
-    
+
     def __init__(self, config_file: str, key_file: str, port: int = CLIENT_PORT_BASE):
         self.config_file = config_file
         self.key_file = key_file
         self.port = port
         self.process = None
-        
+
     def connect(self, binary_path: str):
         """Connect to the BFT cluster"""
         cmd = [binary_path, self.config_file, self.key_file]
@@ -73,17 +72,17 @@ class TestClient:
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            text=True
+            text=True,
         )
-        
+
     def send_command(self, command: str) -> str:
         """Send a command and get response"""
         if not self.process or self.process.stdin is None:
             return ""
-            
+
         self.process.stdin.write(command + "\n")
         self.process.stdin.flush()
-        
+
         # Read response (simple read - may need adjustment)
         response = ""
         start_time = time.time()
@@ -94,9 +93,9 @@ class TestClient:
             response += line
             if "OK" in line or "ERROR" in line:
                 break
-                
+
         return response
-    
+
     def close(self):
         """Close client connection"""
         if self.process:
@@ -105,47 +104,53 @@ class TestClient:
 
 class ClusterManager:
     """Manages a 7-replica BFT cluster"""
-    
+
     def __init__(self, binary_dir: str, config_file: str):
         self.binary_dir = binary_dir
         self.config_file = config_file
         self.replicas: List[ReplicaProcess] = []
         self.client: Optional[TestClient] = None
-        
+
     def start_cluster(self, simple_replica: str, simple_client: str):
         """Start 7 replicas"""
         # Create replica processes
         for i in range(NUM_REPLICAS):
-            key_file = f"priv/r{i}.pem"
+            key_file = (
+                f"/home/phukrit7171/Development/TinyBFT/test_runtime/priv/r{i}_priv.pem"
+            )
             port = REPLICA_PORT_BASE + i
             replica = ReplicaProcess(i, self.config_file, key_file, port)
             replica.start(simple_replica)
             self.replicas.append(replica)
-            
+
         # Wait for replicas to initialize
         time.sleep(2)
-        
+
     def stop_cluster(self):
         """Stop all replicas"""
         for replica in self.replicas:
             replica.stop()
-            
+
     def get_live_replicas(self) -> List[int]:
         """Get list of alive replica IDs"""
         return [r.replica_id for r in self.replicas if r.is_alive()]
-    
+
     def kill_replicas(self, replica_ids: List[int]):
         """Kill specified replicas"""
         for rid in replica_ids:
             for r in self.replicas:
                 if r.replica_id == rid:
                     r.stop()
-                    
-    def start_client(self, simple_client: str, key_file: str = "priv/client0.pem"):
+
+    def start_client(
+        self,
+        simple_client: str,
+        key_file: str = "/home/phukrit7171/Development/TinyBFT/test_runtime/priv/client0_priv.pem",
+    ):
         """Start client"""
         self.client = TestClient(self.config_file, key_file)
         self.client.connect(simple_client)
-        
+
     def stop_client(self):
         """Stop client"""
         if self.client:
@@ -163,7 +168,9 @@ def wait_for_quorum(cluster: ClusterManager, timeout: int = 10) -> bool:
     return False
 
 
-def verify_all_replicas_agree(cluster: ClusterManager, key: str, expected_value: str) -> bool:
+def verify_all_replicas_agree(
+    cluster: ClusterManager, key: str, expected_value: str
+) -> bool:
     """Verify all live replicas agree on the value of key"""
     # This would require querying each replica's state
     # For now, simplified - client receives response means quorum achieved
@@ -172,9 +179,9 @@ def verify_all_replicas_agree(cluster: ClusterManager, key: str, expected_value:
 
 def print_test_header(test_name: str):
     """Print test header"""
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"TEST: {test_name}")
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
 
 def print_test_result(test_name: str, passed: bool, message: str = ""):
